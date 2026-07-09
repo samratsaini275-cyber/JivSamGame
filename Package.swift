@@ -7,7 +7,11 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "CloutEmpire",
-            path: "Sources/CloutEmpire"
+            path: "Sources/CloutEmpire",
+            resources: [
+                .copy("Resources/Images"),
+                .process("Resources/ATTRIBUTION.txt"),
+            ]
         ),
         .testTarget(
             name: "CloutEmpireTests",

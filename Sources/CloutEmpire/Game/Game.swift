@@ -155,15 +155,6 @@ final class Game: ObservableObject {
         state.colorway = id
     }
 
-    /// Emoji portrait: base look + equipped gear. Shown in-app and, later, on the leaderboard.
-    var portrait: String {
-        let base = BaseLook.byID(state.baseLook).emoji
-        let gear = PersonaSlot.allCases
-            .compactMap { PersonaItem.byID(state.equippedCosmetics[$0.rawValue])?.emoji }
-            .joined()
-        return base + gear
-    }
-
     var equippedGrailCount: Int {
         state.equippedCosmetics.values
             .compactMap(PersonaItem.byID)
@@ -191,8 +182,21 @@ final class Game: ObservableObject {
         state.equippedCosmetics[item.slot.rawValue] = item.id
     }
 
+    var portraitImage: String {
+        BaseLook.byID(state.baseLook).imageName
+    }
+
+    /// Legacy emoji portrait for saves — UI uses `portraitImage`.
+    var portrait: String {
+        let base = BaseLook.byID(state.baseLook).imageName
+        let gear = PersonaSlot.allCases
+            .compactMap { PersonaItem.byID(state.equippedCosmetics[$0.rawValue])?.imageName }
+            .joined(separator: ",")
+        return gear.isEmpty ? base : "\(base)|\(gear)"
+    }
+
     var leaderboardEntry: LeaderboardEntry {
-        LeaderboardEntry(id: state.handle, handle: state.handle, portrait: portrait,
+        LeaderboardEntry(id: state.handle, handle: state.handle, portraitImage: portraitImage,
                          clout: state.clout, lifetimeCash: state.lifetimeCash)
     }
 
@@ -246,12 +250,15 @@ final class Game: ObservableObject {
     // MARK: Player actions
 
     func buy(_ index: Int) {
-        let cost = buyCost(for: index)
-        guard state.cash >= cost else { return }
+        let count = buyCount(for: index)
+        let cost = Formulas.bulkCost(base: hustles[index].baseCost,
+                                     owned: state.hustles[index].unitsOwned,
+                                     count: count)
+        guard count > 0, state.cash >= cost else { return }
         let tierBefore = tier(of: index)
         let viralBefore = viralTier
         state.cash -= cost
-        state.hustles[index].unitsOwned += buyCount(for: index)
+        state.hustles[index].unitsOwned += count
 
         // "Richard Mille": every unit purchase doubles income for 10 seconds.
         if state.equippedWrist == "mille" {

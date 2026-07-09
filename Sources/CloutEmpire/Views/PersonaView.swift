@@ -1,7 +1,5 @@
 import SwiftUI
 
-/// First-launch persona creation: handle, free base look, and your brand colorway.
-/// No stats, no builds — the character IS the player.
 struct PersonaCreationView: View {
     @EnvironmentObject var game: Game
     @Environment(\.dismiss) private var dismiss
@@ -14,164 +12,149 @@ struct PersonaCreationView: View {
     var body: some View {
         ZStack {
             Theme.backdrop(preview)
-            VStack(spacing: 16) {
-                Text("Launch your label").kicker()
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 18) {
+                    Text("Launch your label").gameTitle(preview)
 
-                Text(BaseLook.byID(look).emoji)
-                    .font(.system(size: 52))
-                    .glow(preview.accent.opacity(0.6), radius: 14)
+                    GameImage(name: BaseLook.byID(look).imageName, size: 88)
+                        .clipShape(Circle())
+                        .overlay(Circle().strokeBorder(Theme.comicBorder, lineWidth: Theme.comicStroke))
 
-                TextField("@yourbrand", text: $handle)
-                    .textFieldStyle(.roundedBorder)
-                    .multilineTextAlignment(.center)
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                    .frame(width: 210)
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Base look — free, the last free thing here").kicker()
-                    HStack(spacing: 8) {
-                        ForEach(BaseLook.all) { preset in
-                            Button {
-                                look = preset.id
-                            } label: {
-                                VStack(spacing: 2) {
-                                    Text(preset.emoji).font(.system(size: 19))
-                                    Text(preset.name).font(.system(size: 7.5, weight: .semibold))
-                                }
-                                .padding(7)
-                                .luxCard(radius: 10, highlighted: look == preset.id, accent: preview.accent)
-                            }
-                            .buttonStyle(PressableButtonStyle(tint: preview.accent))
-                        }
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Colorway — your whole aesthetic").kicker()
-                    HStack(spacing: 10) {
-                        ForEach(Colorway.all) { c in
-                            Button {
-                                withAnimation(.easeOut(duration: 0.3)) { colorway = c.id }
-                            } label: {
-                                VStack(spacing: 3) {
-                                    Circle()
-                                        .fill(c.gradient)
-                                        .frame(width: 26, height: 26)
-                                        .overlay(Circle().strokeBorder(.white.opacity(colorway == c.id ? 0.9 : 0.15),
-                                                                       lineWidth: 2))
-                                        .glow(colorway == c.id ? c.accent : .clear, radius: 6)
-                                    Text(c.name).font(.system(size: 7.5, weight: .semibold))
-                                        .foregroundStyle(colorway == c.id ? .primary : .secondary)
-                                }
-                            }
-                            .buttonStyle(PressableButtonStyle(tint: c.accent))
-                        }
-                    }
-                }
-
-                Button {
-                    game.createPersona(handle: handle, look: look, colorway: colorway)
-                    dismiss()
-                } label: {
-                    Text("DROP THE BRAND")
-                        .font(.system(size: 13, weight: .black, design: .rounded))
-                        .tracking(1.5)
-                        .frame(maxWidth: .infinity)
+                    TextField("@yourbrand", text: $handle)
+                        .multilineTextAlignment(.center)
+                        .font(Theme.cartoonFont(14, weight: .semibold))
                         .padding(.vertical, 12)
-                        .background(Capsule().fill(preview.gradient))
-                        .foregroundStyle(Theme.bg)
+                        .padding(.horizontal, 14)
+                        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Theme.surface))
+                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .strokeBorder(Theme.comicBorder, lineWidth: Theme.comicStroke))
+
+                    lookPicker
+                    colorwayPicker
+
+                    CartoonButton(
+                        title: "DROP THE BRAND",
+                        color: preview.accent,
+                        colorway: preview,
+                        disabled: handle.trimmingCharacters(in: .whitespaces).isEmpty
+                    ) {
+                        game.createPersona(handle: handle, look: look, colorway: colorway)
+                        dismiss()
+                    }
                 }
-                .buttonStyle(PressableButtonStyle(tint: preview.accent))
-                .disabled(handle.trimmingCharacters(in: .whitespaces).isEmpty)
-                .glow(preview.accent.opacity(0.5), radius: 8)
+                .padding(22)
             }
-            .padding(24)
         }
-        .frame(width: 350, height: 480)
+        .frame(width: 390, height: 620)
         .preferredColorScheme(.dark)
         .interactiveDismissDisabled(!game.personaCreated)
     }
-}
 
-/// The profile screen: live portrait, handle, colorway switcher, and the closet.
-/// Cosmetics survive Rebrand and (grail tier aside) never touch income.
-struct PersonaView: View {
-    @EnvironmentObject var game: Game
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        ZStack {
-            Theme.backdrop(game.theme)
-            VStack(spacing: 0) {
-                profileHeader
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 16) {
-                        colorwayRow
-                        ForEach(PersonaSlot.allCases, id: \.rawValue) { slot in
-                            slotSection(slot)
+    private var lookPicker: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Pick your vibe").kicker()
+            HStack(spacing: 8) {
+                ForEach(BaseLook.all) { preset in
+                    Button { look = preset.id } label: {
+                        VStack(spacing: 4) {
+                            GameImage(name: preset.imageName, size: 40)
+                            Text(preset.name)
+                                .font(Theme.cartoonFont(8, weight: .semibold))
+                                .lineLimit(1)
                         }
-                        Text("Your fit survives Rebrand — labels get burned, you don't. This portrait is what the leaderboard will show next to your name.")
-                            .font(.system(size: 9))
-                            .foregroundStyle(.tertiary)
-                            .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .gameCard(highlighted: look == preset.id, accent: preview.accent)
                     }
-                    .padding(14)
+                    .buttonStyle(PressableButtonStyle())
                 }
-                Button("Done") { dismiss() }
-                    .buttonStyle(.borderless)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                    .padding(10)
             }
         }
-        .frame(width: 370, height: 640)
-        .preferredColorScheme(.dark)
     }
 
-    private var profileHeader: some View {
-        VStack(spacing: 5) {
-            Text(game.portrait)
-                .font(.system(size: 40))
-                .glow(game.theme.accent.opacity(0.5), radius: 12)
-            Text("@\(game.state.handle)")
-                .font(.system(size: 15, weight: .black, design: .rounded))
-                .metallic(game.theme)
-            Text("✨ \(Int(game.state.clout)) lifetime Clout — your future leaderboard rank")
-                .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(.secondary)
-            if game.equippedGrailCount > 0 {
-                Text("Grail drip: +\(String(format: "%.1f", Double(game.equippedGrailCount) * Formulas.grailRebrandBonusPerItem * 100))% Clout on Rebrand")
-                    .font(.system(size: 9, weight: .heavy))
-                    .foregroundStyle(Theme.cloutPurple)
-                    .glow(Theme.cloutPurple, radius: 4)
+    private var colorwayPicker: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Your aesthetic").kicker()
+            HStack(spacing: 10) {
+                ForEach(Colorway.all) { c in
+                    Button { colorway = c.id } label: {
+                        Circle()
+                            .fill(c.gradient)
+                            .frame(width: 30, height: 30)
+                            .overlay(Circle().strokeBorder(.white.opacity(colorway == c.id ? 0.9 : 0.2), lineWidth: 2))
+                    }
+                    .buttonStyle(PressableButtonStyle())
+                }
             }
         }
-        .padding(.vertical, 14)
+    }
+}
+
+struct PersonaView: View {
+    @EnvironmentObject var game: Game
+    var embedded: Bool = false
+
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 14) {
+                profileHero
+                colorwayRow
+                ForEach(PersonaSlot.allCases, id: \.rawValue) { slot in
+                    slotSection(slot)
+                }
+                Text("Your fit survives Rebrand — labels get burned, you don't.")
+                    .font(Theme.cartoonFont(9, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.35))
+                    .multilineTextAlignment(.center)
+            }
+            .padding(Theme.screenPadding)
+            .padding(.top, embedded ? 8 : 0)
+            .padding(.bottom, 20)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var profileHero: some View {
+        VStack(spacing: 8) {
+            GameImage(name: game.portraitImage, size: 80)
+                .clipShape(Circle())
+                .overlay(Circle().strokeBorder(game.theme.accent.opacity(0.6), lineWidth: 3))
+            Text("@\(game.state.handle)")
+                .font(Theme.cartoonFont(18, weight: .black))
+                .foregroundStyle(game.theme.gradient)
+            HStack(spacing: 6) {
+                GameImage(name: "icon_clout", size: 22)
+                Text("\(Int(game.state.clout)) lifetime Clout")
+                    .font(Theme.cartoonFont(11, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.5))
+            }
+            if game.equippedGrailCount > 0 {
+                Text("Grail drip: +\(String(format: "%.1f", Double(game.equippedGrailCount) * Formulas.grailRebrandBonusPerItem * 100))% on Rebrand")
+                    .font(Theme.cartoonFont(10, weight: .heavy))
+                    .foregroundStyle(Theme.cloutPink)
+            }
+        }
+        .padding(.vertical, 8)
     }
 
     private var colorwayRow: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             Text("Brand colorway").kicker()
             HStack(spacing: 10) {
                 ForEach(Colorway.all) { c in
-                    Button {
-                        withAnimation(.easeOut(duration: 0.3)) { game.setColorway(c.id) }
-                    } label: {
+                    Button { game.setColorway(c.id) } label: {
                         Circle()
                             .fill(c.gradient)
-                            .frame(width: 24, height: 24)
-                            .overlay(Circle().strokeBorder(.white.opacity(game.state.colorway == c.id ? 0.9 : 0.15),
-                                                           lineWidth: 2))
-                            .glow(game.state.colorway == c.id ? c.accent : .clear, radius: 5)
+                            .frame(width: 28, height: 28)
+                            .overlay(Circle().strokeBorder(.white.opacity(game.state.colorway == c.id ? 0.9 : 0.2), lineWidth: 2))
                     }
-                    .buttonStyle(PressableButtonStyle(tint: c.accent))
-                    .help(c.name)
+                    .buttonStyle(PressableButtonStyle())
                 }
                 Spacer()
             }
         }
-        .padding(11)
-        .luxCard(radius: 13)
+        .padding(12)
+        .gameCard()
     }
 
     private func slotSection(_ slot: PersonaSlot) -> some View {
@@ -189,61 +172,41 @@ struct PersonaView: View {
         let color = Theme.tierColor(item.tier)
 
         return HStack(spacing: 10) {
-            Text(item.emoji)
-                .font(.system(size: 18))
-                .frame(width: 34, height: 34)
-                .background(RoundedRectangle(cornerRadius: 10).fill(color.opacity(0.12)))
+            GameIconTile(name: item.imageName, size: 46, tint: color)
             VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text(item.name).font(.system(size: 11, weight: .bold, design: .rounded))
+                HStack(spacing: 5) {
+                    Text(item.name).font(Theme.cartoonFont(12))
                     Text(item.tierName.uppercased())
-                        .font(.system(size: 7.5, weight: .heavy))
-                        .padding(.horizontal, 5).padding(.vertical, 1.5)
-                        .background(Capsule().fill(color.opacity(0.16)))
+                        .font(Theme.cartoonFont(8))
                         .foregroundStyle(color)
-                        .glow(item.isGrail ? color : .clear, radius: 4)
                 }
-                Text(item.isGrail ? "+0.5% Clout on Rebrand · pure flex otherwise"
-                                  : "Pure flex. Zero income effect.")
-                    .font(.system(size: 9)).foregroundStyle(.tertiary)
+                Text(item.isGrail ? "+0.5% Clout on Rebrand · pure flex" : "Pure flex · zero income")
+                    .font(Theme.cartoonFont(9, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.4))
             }
-            Spacer(minLength: 4)
-            actionButton(item, owned: owned, equipped: equipped, color: color)
+            Spacer(minLength: 0)
+            personaAction(item, owned: owned, equipped: equipped, color: color)
         }
-        .padding(11)
-        .luxCard(radius: 13, highlighted: equipped, accent: color)
+        .padding(12)
+        .gameCard(highlighted: equipped, accent: color)
     }
 
     @ViewBuilder
-    private func actionButton(_ item: PersonaItem, owned: Bool, equipped: Bool, color: Color) -> some View {
+    private func personaAction(_ item: PersonaItem, owned: Bool, equipped: Bool, color: Color) -> some View {
         if equipped {
-            Text("WEARING")
-                .font(.system(size: 8.5, weight: .heavy, design: .rounded))
-                .foregroundStyle(color)
-                .frame(width: 62)
+            Text("WEARING").font(Theme.cartoonFont(9)).foregroundStyle(color).frame(width: 62)
         } else if owned {
             Button("WEAR") { game.equipCosmetic(item) }
-                .font(.system(size: 8.5, weight: .heavy, design: .rounded))
-                .buttonStyle(PressableButtonStyle(tint: color))
-                .padding(.vertical, 6)
-                .frame(width: 62)
-                .background(Capsule().strokeBorder(color.opacity(0.4), lineWidth: 1))
+                .font(Theme.cartoonFont(9))
                 .foregroundStyle(color)
-        } else {
-            Button {
-                game.buyCosmetic(item)
-            } label: {
-                VStack(spacing: 1) {
-                    Text("COP IT").font(.system(size: 7.5, weight: .heavy))
-                    Text(money(item.cost)).font(.system(size: 8.5, weight: .semibold)).monospacedDigit()
-                }
+                .buttonStyle(PressableButtonStyle())
                 .frame(width: 62)
-                .padding(.vertical, 5)
-                .background(Capsule().fill(game.state.cash >= item.cost ? color.opacity(0.9) : Color.white.opacity(0.06)))
-                .foregroundStyle(game.state.cash >= item.cost ? Theme.bg : Color.secondary)
+        } else {
+            CartoonButton(title: "COP IT", subtitle: money(item.cost), color: color,
+                          disabled: game.state.cash < item.cost) {
+                game.buyCosmetic(item)
             }
-            .buttonStyle(PressableButtonStyle(tint: color))
-            .disabled(game.state.cash < item.cost)
+            .frame(width: 66)
         }
     }
 }

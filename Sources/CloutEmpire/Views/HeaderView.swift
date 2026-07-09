@@ -3,160 +3,117 @@ import SwiftUI
 struct HeaderView: View {
     @EnvironmentObject var game: Game
     var onProfileTap: () -> Void = {}
-    @State private var buffPulse = false
+    @State private var buffBounce = false
 
     var body: some View {
-        VStack(spacing: 10) {
-            ZStack {
-                Text("DRIP EMPIRE")
-                    .font(.system(size: 13, weight: .black, design: .rounded))
-                    .tracking(6)
-                    .metallic(game.theme)
-                    .glow(game.theme.accent, radius: 5)
-                if game.personaCreated {
-                    HStack {
-                        profileChip
-                        Spacer()
-                    }
-                }
-            }
+        VStack(spacing: 12) {
+            topBar
 
-            VStack(spacing: 2) {
+            VStack(spacing: 4) {
                 AnimatedMoney(value: game.state.cash)
-                    .font(.system(size: 42, weight: .black, design: .rounded))
+                    .font(Theme.cartoonFont(44, weight: .black))
                     .foregroundStyle(.white)
-                    .glow(Theme.moneyGreen.opacity(0.6), radius: 10)
+                    .glow(Theme.coinGreen, radius: 10)
                     .rolls(with: game.state.cash)
 
-                Text("+\(money(game.incomePerSecond))/sec · \(money(game.state.lifetimeCash)) lifetime")
-                    .font(.system(size: 10, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
+                HStack(spacing: 8) {
+                    Text("+\(money(game.incomePerSecond))/sec")
+                        .font(Theme.cartoonFont(12))
+                        .foregroundStyle(Theme.coinGreen)
+                    Text("·")
+                        .foregroundStyle(.white.opacity(0.3))
+                    Text("\(money(game.state.lifetimeCash)) all-time")
+                        .font(Theme.cartoonFont(11, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+                .monospacedDigit()
             }
 
             HStack(spacing: 10) {
-                cloutPill
-                hypeWavePill
+                StatBadge(
+                    imageName: "icon_clout",
+                    title: "\(Int(game.state.clout)) CLOUT",
+                    value: "+\(Int(game.state.clout * 2))% forever",
+                    color: Theme.cloutPink
+                )
+                StatBadge(
+                    imageName: "icon_hype",
+                    title: "HYPE ×\(Int(pow(2, Double(game.effectiveViralTier))))",
+                    value: "\(game.hustlesAtNextViralTier)/\(game.hustles.count) ready",
+                    color: Theme.hypeBlue,
+                    progress: Double(game.hustlesAtNextViralTier) / Double(game.hustles.count)
+                )
             }
 
-            if game.milleBuffActive || game.viralBuffActive {
-                buffBadges
-            }
-
-            if game.offlineEarnings > 0 {
-                offlineBanner
-            }
+            if game.milleBuffActive || game.viralBuffActive { buffRow }
+            if game.offlineEarnings > 0 { offlineBanner }
         }
-        .padding(.top, 14)
-        .padding(.horizontal, 14)
+        .padding(.horizontal, Theme.screenPadding)
+        .padding(.top, 10)
+        .padding(.bottom, 4)
     }
 
-    // MARK: Pieces
-
-    private var profileChip: some View {
-        Button(action: onProfileTap) {
-            HStack(spacing: 4) {
-                Text(game.portrait).font(.system(size: 11))
-                Text("@\(game.state.handle)")
-                    .font(.system(size: 10, weight: .bold, design: .rounded))
-                    .lineLimit(1)
-                    .foregroundStyle(.primary)
+    private var topBar: some View {
+        HStack {
+            if game.personaCreated {
+                Button(action: onProfileTap) {
+                    HStack(spacing: 6) {
+                        GameImage(name: game.portraitImage, size: 34)
+                            .clipShape(Circle())
+                            .overlay(Circle().strokeBorder(Theme.comicBorder, lineWidth: 2))
+                        Text("@\(game.state.handle)")
+                            .font(Theme.cartoonFont(11))
+                            .lineLimit(1)
+                    }
+                }
+                .buttonStyle(PressableButtonStyle())
             }
-            .padding(.horizontal, 9)
-            .padding(.vertical, 5)
-            .background(Capsule().fill(.ultraThinMaterial))
-            .overlay(Capsule().strokeBorder(game.theme.accent.opacity(0.35), lineWidth: 1))
+            Spacer()
+            Text("DRIP EMPIRE")
+                .font(Theme.cartoonFont(12, weight: .black))
+                .tracking(2)
+                .foregroundStyle(game.theme.gradient)
         }
-        .buttonStyle(PressableButtonStyle(tint: game.theme.accent))
     }
 
-    private var cloutPill: some View {
-        HStack(spacing: 6) {
-            Text("✨").font(.system(size: 12))
-            VStack(alignment: .leading, spacing: 0) {
-                Text("\(Int(game.state.clout)) CLOUT")
-                    .font(.system(size: 11, weight: .heavy, design: .rounded))
-                    .foregroundStyle(Theme.cloutPurple)
-                Text("+\(Int(game.state.clout * 2))% forever")
-                    .font(.system(size: 8.5, weight: .semibold))
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.horizontal, 11)
-        .padding(.vertical, 6)
-        .luxCard(radius: 14, highlighted: game.state.clout > 0, accent: Theme.cloutPurple)
-    }
-
-    private var hypeWavePill: some View {
-        let total = game.hustles.count
-        let ready = game.hustlesAtNextViralTier
-        let tier = game.viralTier
-        return HStack(spacing: 7) {
-            ZStack {
-                Circle().stroke(Theme.hypeOrange.opacity(0.18), lineWidth: 3.5)
-                Circle()
-                    .trim(from: 0, to: CGFloat(ready) / CGFloat(total))
-                    .stroke(Theme.hypeOrange, style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                    .glow(Theme.hypeOrange, radius: 3)
-                Text("🌊").font(.system(size: 9))
-            }
-            .frame(width: 26, height: 26)
-            .animation(.spring(response: 0.5), value: ready)
-
-            VStack(alignment: .leading, spacing: 0) {
-                Text("HYPE ×\(Int(pow(2, Double(game.effectiveViralTier))))")
-                    .font(.system(size: 11, weight: .heavy, design: .rounded))
-                    .foregroundStyle(Theme.hypeOrange)
-                Text("\(ready)/\(total) at \(VerificationTier.name(for: tier + 1))")
-                    .font(.system(size: 8.5, weight: .semibold))
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.horizontal, 11)
-        .padding(.vertical, 6)
-        .luxCard(radius: 14, highlighted: tier > 0 || game.viralBuffActive, accent: Theme.hypeOrange)
-    }
-
-    private var buffBadges: some View {
+    private var buffRow: some View {
         HStack(spacing: 8) {
-            if game.milleBuffActive {
-                buffBadge("💠 MILLE FLEX ×2", color: game.theme.accent)
-            }
-            if game.viralBuffActive {
-                buffBadge("🟡 EARLY HYPE WAVE ×2", color: Theme.hypeOrange)
-            }
+            if game.milleBuffActive { buffPill("MILLE ×2") }
+            if game.viralBuffActive { buffPill("EARLY HYPE ×2") }
         }
-        .scaleEffect(buffPulse ? 1.04 : 1)
+        .scaleEffect(buffBounce ? 1.05 : 1)
         .onAppear {
-            withAnimation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true)) {
-                buffPulse = true
-            }
+            withAnimation(.easeInOut(duration: 0.55).repeatForever(autoreverses: true)) { buffBounce = true }
         }
     }
 
-    private func buffBadge(_ text: String, color: Color) -> some View {
+    private func buffPill(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 9, weight: .heavy, design: .rounded))
-            .foregroundStyle(color)
-            .padding(.horizontal, 9)
-            .padding(.vertical, 4)
-            .background(Capsule().fill(color.opacity(0.14)))
-            .overlay(Capsule().strokeBorder(color.opacity(0.45), lineWidth: 1))
-            .glow(color, radius: 5)
+            .font(Theme.cartoonFont(10))
+            .foregroundStyle(game.theme.accent)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(Capsule().fill(game.theme.accent.opacity(0.2)))
+            .overlay(Capsule().strokeBorder(Theme.comicBorder, lineWidth: 2))
     }
 
     private var offlineBanner: some View {
         HStack {
-            Text("💤 The plug kept working: \(money(game.offlineEarnings)) while you were gone.")
-                .font(.system(size: 10, weight: .semibold, design: .rounded))
+            GameImage(name: "icon_sparkle", size: 28)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Your plug kept working!")
+                    .font(Theme.cartoonFont(10))
+                Text("+\(money(game.offlineEarnings)) while you were gone")
+                    .font(Theme.cartoonFont(10, weight: .bold))
+                    .foregroundStyle(Theme.coinGreen)
+            }
             Spacer()
-            Button("OK") { game.offlineEarnings = 0 }
-                .font(.system(size: 10, weight: .bold))
+            Button("Collect") { game.offlineEarnings = 0 }
+                .font(Theme.cartoonFont(11))
+                .foregroundStyle(Theme.coinGreen)
                 .buttonStyle(.borderless)
-                .foregroundStyle(Theme.moneyGreen)
         }
-        .padding(10)
-        .luxCard(radius: 12, highlighted: true, accent: Theme.moneyGreen)
+        .padding(12)
+        .gameCard(highlighted: true, accent: Theme.coinGreen)
     }
 }

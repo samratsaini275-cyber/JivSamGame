@@ -23,9 +23,9 @@ struct CloutEmpireApp: App {
             ContentView()
                 .environmentObject(game)
                 .preferredColorScheme(.dark)
-                // Phone-shaped by default, stretches responsively; views stay iOS-portable.
-                .frame(minWidth: 390, idealWidth: 430, maxWidth: 560,
-                       minHeight: 700, idealHeight: 820)
+                // Phone-shaped mobile layout; stretches on wider windows.
+                .frame(minWidth: 390, idealWidth: 390, maxWidth: 480,
+                       minHeight: 780, idealHeight: 844)
         }
         #if os(macOS)
         .windowResizability(.contentSize)

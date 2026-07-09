@@ -20,7 +20,7 @@ private func sigFigs(_ v: Double) -> String {
 /// Compact follower-style count for units owned: 27 → "2.7K followers" flavor.
 func followerCount(_ units: Int) -> String {
     let followers = Double(units) * 400 // each fake post buys ~400 fake followers
-    if followers >= 1e6 { return String(format: "%.1fM", followers / 1e6) }
-    if followers >= 1e3 { return String(format: "%.1fK", followers / 1e3) }
-    return String(format: "%.0f", followers)
+    if followers >= 1e6 { return String(format: "%.1fM followers", followers / 1e6) }
+    if followers >= 1e3 { return String(format: "%.1fK followers", followers / 1e3) }
+    return String(format: "%.0f followers", followers)
 }

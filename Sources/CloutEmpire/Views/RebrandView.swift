@@ -1,96 +1,81 @@
 import SwiftUI
 
-/// The prestige screen: a dark takeover. Burn the label, keep the Clout.
 struct RebrandView: View {
     @EnvironmentObject var game: Game
     @Environment(\.dismiss) private var dismiss
+    var embedded: Bool = false
 
-    var body: some View {
-        ZStack {
-            Theme.backdrop(game.theme)
-
-            VStack(spacing: 20) {
-                VStack(spacing: 4) {
-                    Text("REBRAND")
-                        .font(.system(size: 24, weight: .black, design: .rounded))
-                        .tracking(6)
-                        .metallic(game.theme)
-                    Text("Kill the label. Keep the Clout.")
-                        .font(.system(size: 11, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.secondary)
-                }
-
-                VStack(spacing: 2) {
-                    Text("+\(Int(game.cloutOnRebrand))")
-                        .font(.system(size: 64, weight: .black, design: .rounded))
-                        .foregroundStyle(Theme.cloutPurple)
-                        .glow(Theme.cloutPurple, radius: 16)
-                        .monospacedDigit()
-                    Text("CLOUT ON RELAUNCH")
-                        .kicker()
-                }
-
-                VStack(spacing: 8) {
-                    statRow("Lifetime revenue", money(game.state.lifetimeCash))
-                    statRow("Current Clout", "✨ \(Int(game.state.clout))")
-                    if game.cloutGainRateBonus > 0 {
-                        statRow("Flex bonus (Daytona + grail drip)",
-                                "+\(String(format: "%.1f", game.cloutGainRateBonus * 100))%")
-                    }
-                    Divider().overlay(Color.white.opacity(0.1))
-                    statRow("New permanent income bonus",
-                            "+\(Int((game.state.clout + game.cloutOnRebrand) * 2))%")
-                        .font(.system(size: 12, weight: .heavy, design: .rounded))
-                }
-                .padding(14)
-                .luxCard()
-
-                Text("Every business, your Cash, staff, and Rex's rented gear — gone. Your wardrobe, handle, and Clout walk out untouched.")
-                    .font(.system(size: 9.5))
-                    .foregroundStyle(.tertiary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 8)
-
-                Button {
-                    game.rebrand()
-                    dismiss()
-                } label: {
-                    Text(game.cloutOnRebrand > 0
-                         ? "BURN IT ALL DOWN"
-                         : "NOT ENOUGH LIFETIME REVENUE YET")
-                        .font(.system(size: 13, weight: .black, design: .rounded))
-                        .tracking(1.5)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 13)
-                        .background(
-                            Capsule().fill(
-                                game.cloutOnRebrand > 0
-                                ? AnyShapeStyle(LinearGradient(colors: [Theme.cloutPurple, Color(red: 0.85, green: 0.2, blue: 0.35)],
-                                                               startPoint: .leading, endPoint: .trailing))
-                                : AnyShapeStyle(Color.white.opacity(0.07))))
-                        .foregroundStyle(game.cloutOnRebrand > 0 ? .white : .secondary)
-                }
-                .buttonStyle(PressableButtonStyle(tint: Theme.cloutPurple))
-                .disabled(game.cloutOnRebrand <= 0)
-                .glow(game.cloutOnRebrand > 0 ? Theme.cloutPurple : .clear, radius: 10)
-
-                Button("Keep grinding") { dismiss() }
-                    .buttonStyle(.borderless)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.secondary)
-            }
-            .padding(26)
-        }
-        .frame(width: 350, height: 560)
-        .preferredColorScheme(.dark)
+    private var rebrandColorway: Colorway {
+        Colorway(id: "rebrand", name: "", accent: Theme.cloutPink,
+                 accentDeep: Color(red: 0.75, green: 0.15, blue: 0.55))
     }
 
-    private func statRow(_ label: String, _ value: String) -> some View {
-        HStack {
-            Text(label).foregroundStyle(.secondary)
-            Spacer()
-            Text(value).monospacedDigit().foregroundStyle(.primary)
+    var body: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 18) {
+                VStack(spacing: 6) {
+                    Text("REBRAND").gameTitle(game.theme)
+                    Text("Kill the label. Keep the Clout.")
+                        .font(Theme.cartoonFont(12, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.5))
+                }
+                .padding(.top, embedded ? 8 : 0)
+
+                VStack(spacing: 4) {
+                    GameImage(name: "icon_clout", size: 56)
+                    Text("+\(Int(game.cloutOnRebrand))")
+                        .font(Theme.cartoonFont(52, weight: .black))
+                        .foregroundStyle(Theme.cloutPink)
+                        .glow(Theme.cloutPink, radius: 12)
+                        .monospacedDigit()
+                    Text("CLOUT ON RELAUNCH").kicker()
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .gameCard(highlighted: game.cloutOnRebrand > 0, accent: Theme.cloutPink)
+
+                VStack(spacing: 10) {
+                    statRow("Lifetime revenue", money(game.state.lifetimeCash))
+                    statRow("Current Clout", "\(Int(game.state.clout))")
+                    if game.cloutGainRateBonus > 0 {
+                        statRow("Flex bonus", "+\(String(format: "%.1f", game.cloutGainRateBonus * 100))%")
+                    }
+                    Divider().overlay(Theme.comicBorder)
+                    statRow("New income bonus", "+\(Int((game.state.clout + game.cloutOnRebrand) * 2))%", bold: true)
+                }
+                .padding(14)
+                .gameCard()
+
+                Text("Every hustle, cash, staff, and Rex's gear — gone. Your fit, handle, and Clout stay.")
+                    .font(Theme.cartoonFont(10, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.4))
+                    .multilineTextAlignment(.center)
+
+                CartoonButton(
+                    title: game.cloutOnRebrand > 0 ? "BURN IT ALL DOWN" : "NOT ENOUGH CLOUT YET",
+                    color: Theme.cloutPink,
+                    colorway: game.cloutOnRebrand > 0 ? rebrandColorway : nil,
+                    disabled: game.cloutOnRebrand <= 0
+                ) {
+                    game.rebrand()
+                    if !embedded { dismiss() }
+                }
+            }
+            .padding(Theme.screenPadding)
+            .padding(.bottom, 20)
         }
-        .font(.system(size: 11, weight: .semibold, design: .rounded))
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func statRow(_ label: String, _ value: String, bold: Bool = false) -> some View {
+        HStack {
+            Text(label)
+                .font(Theme.cartoonFont(12, weight: .medium))
+                .foregroundStyle(.white.opacity(0.5))
+            Spacer()
+            Text(value)
+                .font(Theme.cartoonFont(12, weight: bold ? .heavy : .semibold))
+                .monospacedDigit()
+        }
     }
 }

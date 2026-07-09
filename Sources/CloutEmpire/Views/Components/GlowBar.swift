@@ -1,33 +1,30 @@
 import SwiftUI
 
-/// Capsule progress bar with gradient fill, glow bloom, and a top shine line.
 struct GlowBar: View {
-    var progress: Double // 0...1
+    var progress: Double
     var color: Color
     var height: CGFloat = 7
 
     var body: some View {
         GeometryReader { geo in
-            let width = max(0, min(1, progress)) * geo.size.width
+            let clamped = max(0, min(1, progress))
+            let width = clamped * geo.size.width
             ZStack(alignment: .leading) {
-                Capsule().fill(Color.white.opacity(0.07))
-                if width > height {
+                Capsule().fill(Color.black.opacity(0.35))
+                if width > 2 {
                     Capsule()
-                        .fill(LinearGradient(colors: [color.opacity(0.85), color],
-                                             startPoint: .leading, endPoint: .trailing))
+                        .fill(LinearGradient(colors: [color, color.opacity(0.75)], startPoint: .leading, endPoint: .trailing))
                         .frame(width: width)
-                        .overlay(alignment: .top) {
-                            // shine line
+                        .overlay(alignment: .topLeading) {
                             Capsule()
                                 .fill(Color.white.opacity(0.35))
-                                .frame(width: max(0, width - 6), height: 1.5)
-                                .offset(y: 1.5)
+                                .frame(width: max(0, width - 6), height: height * 0.35)
+                                .offset(x: 3, y: 1)
                         }
-                        .glow(color, radius: 4)
                 }
             }
         }
         .frame(height: height)
-        .animation(.linear(duration: 0.1), value: progress)
+        .animation(.easeOut(duration: 0.1), value: progress)
     }
 }

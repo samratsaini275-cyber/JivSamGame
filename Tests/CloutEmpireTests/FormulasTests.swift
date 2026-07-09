@@ -165,11 +165,25 @@ final class FormulasTests: XCTestCase {
 
     func testLeaderboardRanksByCloutThenLifetimeCash() {
         let entries = [
-            LeaderboardEntry(id: "a", handle: "a", portrait: "🧢", clout: 10, lifetimeCash: 1),
-            LeaderboardEntry(id: "b", handle: "b", portrait: "👔", clout: 50, lifetimeCash: 1),
-            LeaderboardEntry(id: "c", handle: "c", portrait: "🥷", clout: 10, lifetimeCash: 99),
+            LeaderboardEntry(id: "a", handle: "a", portraitImage: "look_hoodie", clout: 10, lifetimeCash: 1),
+            LeaderboardEntry(id: "b", handle: "b", portraitImage: "look_bizcaz", clout: 50, lifetimeCash: 1),
+            LeaderboardEntry(id: "c", handle: "c", portraitImage: "look_street", clout: 10, lifetimeCash: 99),
         ]
         XCTAssertEqual(LeaderboardEntry.rank(entries).map(\.id), ["b", "c", "a"])
+    }
+
+    func testMaxBuyAddsAllAffordableUnits() {
+        var state = GameState.newGame()
+        state.cash = 1_000
+        state.hustles[0].unitsOwned = 1
+        let game = Game(state: state)
+        game.buyMode = .max
+
+        let count = game.buyCount(for: 0)
+        XCTAssertGreaterThan(count, 1, "fixture should afford multiple units on Max")
+
+        game.buy(0)
+        XCTAssertEqual(game.state.hustles[0].unitsOwned, 1 + count)
     }
 
     // MARK: Rebrand state transition

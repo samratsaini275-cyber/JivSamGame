@@ -27,7 +27,7 @@ final class ParticleField: ObservableObject {
     private(set) var particles: [Particle] = []
     private var lastStep: TimeInterval = 0
 
-    func spawnCashPop(_ text: String, at point: CGPoint, color: Color = Theme.moneyGreen) {
+    func spawnCashPop(_ text: String, at point: CGPoint, color: Color = Theme.coinGreen) {
         let now = Date.timeIntervalSinceReferenceDate
         particles.append(Particle(
             kind: .cashPop(text), position: point,

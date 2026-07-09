@@ -1,8 +1,5 @@
 import Foundation
 
-/// The player's own character — pure identity, no stats, no builds.
-/// Unlike Rex's rented gear, the Persona's wardrobe survives Rebrand:
-/// you burn the account, not the closet.
 enum PersonaSlot: String, Codable, CaseIterable {
     case clothes = "Clothes"
     case jewelry = "Jewelry"
@@ -12,10 +9,11 @@ enum PersonaSlot: String, Codable, CaseIterable {
 struct PersonaItem: Identifiable {
     let id: String
     let slot: PersonaSlot
-    let tier: Int // 1 Low, 2 Mid, 3 High, 4 Grail
+    let tier: Int
     let name: String
-    let emoji: String
     let cost: Double
+
+    var imageName: String { "persona_\(id)" }
 
     static let tierNames = ["", "Low", "Mid", "High", "Grail"]
     var tierName: String { PersonaItem.tierNames[tier] }
@@ -23,38 +21,31 @@ struct PersonaItem: Identifiable {
 }
 
 extension PersonaItem {
-    /// Watch tier reuses Rex's table on purpose — same visual tech, same pricing
-    /// logic. The difference is purpose (cosmetic identity), not structure.
     static let all: [PersonaItem] = [
-        // Clothes
         PersonaItem(id: "thrifted", slot: .clothes, tier: 1,
-                    name: "Thrifted \"Aesthetic\" Fit", emoji: "🧥", cost: 250),
+                    name: "Thrifted \"Aesthetic\" Fit", cost: 250),
         PersonaItem(id: "streetdrop", slot: .clothes, tier: 2,
-                    name: "Streetwear Drop", emoji: "👟", cost: 5_000),
+                    name: "Streetwear Drop", cost: 5_000),
         PersonaItem(id: "designer", slot: .clothes, tier: 3,
-                    name: "Designer Fit", emoji: "🕴️", cost: 150_000),
+                    name: "Designer Fit", cost: 150_000),
         PersonaItem(id: "couture", slot: .clothes, tier: 4,
-                    name: "Custom Couture, One-of-One", emoji: "🦚", cost: 8_000_000),
-
-        // Jewelry
+                    name: "Custom Couture, One-of-One", cost: 8_000_000),
         PersonaItem(id: "fakechain", slot: .jewelry, tier: 1,
-                    name: "Fake Gold Chain", emoji: "⛓️", cost: 350),
+                    name: "Fake Gold Chain", cost: 350),
         PersonaItem(id: "realchain", slot: .jewelry, tier: 2,
-                    name: "Real Gold Chain", emoji: "📿", cost: 8_000),
+                    name: "Real Gold Chain", cost: 8_000),
         PersonaItem(id: "grill", slot: .jewelry, tier: 3,
-                    name: "Diamond Grill", emoji: "😁", cost: 250_000),
+                    name: "Diamond Grill", cost: 250_000),
         PersonaItem(id: "iced", slot: .jewelry, tier: 4,
-                    name: "Iced-Out Everything", emoji: "🧊", cost: 12_000_000),
-
-        // Watches (Rex's table, cosmetic edition)
+                    name: "Iced-Out Everything", cost: 12_000_000),
         PersonaItem(id: "p_fauxlex", slot: .watch, tier: 1,
-                    name: "Fauxlex", emoji: "⌚", cost: 500),
+                    name: "Fauxlex", cost: 500),
         PersonaItem(id: "p_tagheuer", slot: .watch, tier: 2,
-                    name: "Actual Tag Heuer", emoji: "⌚", cost: 12_000),
+                    name: "Actual Tag Heuer", cost: 12_000),
         PersonaItem(id: "p_daytona", slot: .watch, tier: 3,
-                    name: "Vintage Daytona", emoji: "🕰️", cost: 400_000),
+                    name: "Vintage Daytona", cost: 400_000),
         PersonaItem(id: "p_mille", slot: .watch, tier: 4,
-                    name: "Unconfirmed \"Richard Mille\"", emoji: "💠", cost: 18_000_000),
+                    name: "Unconfirmed \"Richard Mille\"", cost: 18_000_000),
     ]
 
     static func byID(_ id: String?) -> PersonaItem? {
@@ -67,17 +58,17 @@ extension PersonaItem {
     }
 }
 
-/// Free starter presets picked at persona creation. No stats — the character IS the player.
 struct BaseLook: Identifiable {
     let id: String
     let name: String
-    let emoji: String
+
+    var imageName: String { "look_\(id)" }
 
     static let all: [BaseLook] = [
-        BaseLook(id: "hoodie", name: "Hoodie & Hat", emoji: "🧢"),
-        BaseLook(id: "bizcaz", name: "Business Casual", emoji: "👔"),
-        BaseLook(id: "street", name: "Streetwear", emoji: "🥷"),
-        BaseLook(id: "gym", name: "Gym Mirror", emoji: "💪"),
+        BaseLook(id: "hoodie", name: "Hoodie & Hat"),
+        BaseLook(id: "bizcaz", name: "Business Casual"),
+        BaseLook(id: "street", name: "Streetwear"),
+        BaseLook(id: "gym", name: "Gym Mirror"),
     ]
 
     static func byID(_ id: String) -> BaseLook {
@@ -85,14 +76,10 @@ struct BaseLook: Identifiable {
     }
 }
 
-/// Leaderboard seam — the board itself is built later, but the ranking contract
-/// is decided now: primary sort is lifetime Clout (stable prestige), with the
-/// portrait + equipped gear rendered alongside the handle so the board is a
-/// social flex surface, not a raw number list. Cosmetics never touch income.
 struct LeaderboardEntry: Identifiable {
-    let id: String // the handle
+    let id: String
     let handle: String
-    let portrait: String
+    let portraitImage: String
     let clout: Double
     let lifetimeCash: Double
 
