@@ -1,0 +1,193 @@
+import XCTest
+@testable import CloutEmpire
+
+final class FormulasTests: XCTestCase {
+
+    // MARK: Cost curve (README §3: baseCost × 1.14^owned)
+
+    func testFirstUnitCostsBase() {
+        XCTAssertEqual(Formulas.unitCost(base: 4, owned: 0), 4)
+        XCTAssertEqual(Formulas.unitCost(base: 180_000_000, owned: 0), 180_000_000)
+    }
+
+    func testCostGrowsByFourteenPercent() {
+        XCTAssertEqual(Formulas.unitCost(base: 4, owned: 1), 4.56, accuracy: 0.001)
+        XCTAssertEqual(Formulas.unitCost(base: 60, owned: 10), 60 * pow(1.14, 10), accuracy: 0.001)
+    }
+
+    func testBulkCostMatchesSumOfUnitCosts() {
+        let summed = (0..<10).reduce(0.0) { $0 + Formulas.unitCost(base: 720, owned: 5 + $1) }
+        XCTAssertEqual(Formulas.bulkCost(base: 720, owned: 5, count: 10), summed, accuracy: 0.01)
+    }
+
+    func testMaxAffordableIsConsistentWithBulkCost() {
+        for cash in [0.0, 3.99, 4.0, 100, 12_345, 9_876_543] {
+            let n = Formulas.maxAffordable(base: 4, owned: 7, cash: cash)
+            XCTAssertLessThanOrEqual(Formulas.bulkCost(base: 4, owned: 7, count: n), cash + 1e-9)
+            XCTAssertGreaterThan(Formulas.bulkCost(base: 4, owned: 7, count: n + 1), cash)
+        }
+    }
+
+    // MARK: Milestones (README §4: 25/50/100/200/300/400)
+
+    func testMilestoneTiers() {
+        XCTAssertEqual(Formulas.milestoneTier(units: 0), 0)
+        XCTAssertEqual(Formulas.milestoneTier(units: 24), 0)
+        XCTAssertEqual(Formulas.milestoneTier(units: 25), 1)
+        XCTAssertEqual(Formulas.milestoneTier(units: 99), 2)
+        XCTAssertEqual(Formulas.milestoneTier(units: 400), 6)
+        XCTAssertEqual(Formulas.milestoneTier(units: 10_000), 6)
+    }
+
+    func testMilestonesDoubleIncomeAndHalveCycle() {
+        XCTAssertEqual(Formulas.incomeMultiplier(tier: 3), 8)
+        XCTAssertEqual(Formulas.cycleTime(base: 1, tier: 6), 1.0 / 64, accuracy: 1e-9)
+    }
+
+    func testNextThreshold() {
+        XCTAssertEqual(Formulas.nextThreshold(units: 0), 25)
+        XCTAssertEqual(Formulas.nextThreshold(units: 25), 50)
+        XCTAssertNil(Formulas.nextThreshold(units: 400))
+    }
+
+    // MARK: Viral Moment (README §5: min tier across all hustles)
+
+    func testViralTierIsMinAcrossAllHustles() {
+        XCTAssertEqual(Formulas.viralTier(unitCounts: Array(repeating: 25, count: 8)), 1)
+        XCTAssertEqual(Formulas.viralTier(unitCounts: [400, 25, 25, 25, 25, 25, 25, 25]), 1)
+        XCTAssertEqual(Formulas.viralTier(unitCounts: [400, 0, 25, 25, 25, 25, 25, 25]), 0)
+        XCTAssertEqual(Formulas.viralMultiplier(unitCounts: Array(repeating: 50, count: 8)), 4)
+    }
+
+    // MARK: Clout (README §7: sqrt(lifetime/divisor) − held, +2% each)
+
+    func testCloutGainUsesSquareRootCurve() {
+        let lifetime = Formulas.cloutDivisor * 100 // sqrt = 10
+        XCTAssertEqual(Formulas.cloutGain(lifetimeCash: lifetime, currentClout: 0), 10)
+        XCTAssertEqual(Formulas.cloutGain(lifetimeCash: lifetime, currentClout: 4), 6)
+        XCTAssertEqual(Formulas.cloutGain(lifetimeCash: lifetime, currentClout: 50), 0, "never negative")
+    }
+
+    func testCloutMultiplier() {
+        XCTAssertEqual(Formulas.cloutMultiplier(clout: 0), 1)
+        XCTAssertEqual(Formulas.cloutMultiplier(clout: 50), 2, accuracy: 1e-9, "50 clout = 2x, per README")
+    }
+
+    // MARK: Rex's flex items
+
+    func testWristIncomeMultipliers() {
+        XCTAssertEqual(Formulas.wristIncomeMultiplier(itemID: "fauxlex", hustleTier: 0), 1.05)
+        XCTAssertEqual(Formulas.wristIncomeMultiplier(itemID: "tagheuer", hustleTier: 0), 1,
+                       "Tag Heuer only boosts verified (tier 1+) hustles")
+        XCTAssertEqual(Formulas.wristIncomeMultiplier(itemID: "tagheuer", hustleTier: 2), 1.15)
+        XCTAssertEqual(Formulas.wristIncomeMultiplier(itemID: nil, hustleTier: 3), 1)
+        XCTAssertEqual(Formulas.wristIncomeMultiplier(itemID: "daytona", hustleTier: 3), 1,
+                       "Daytona's boost is clout gain rate, not income")
+    }
+
+    func testGarageCycleMultipliers() {
+        XCTAssertEqual(Formulas.garageCycleMultiplier(itemID: "civic", hustleTier: 0), 0.95)
+        XCTAssertEqual(Formulas.garageCycleMultiplier(itemID: "charger", hustleTier: 0), 1)
+        XCTAssertEqual(Formulas.garageCycleMultiplier(itemID: "charger", hustleTier: 1), 0.90)
+        XCTAssertEqual(Formulas.garageCycleMultiplier(itemID: nil, hustleTier: 1), 1)
+    }
+
+    func testDaytonaBoostsCloutGainRate() {
+        let lifetime = Formulas.cloutDivisor * 10_000 // sqrt = 100
+        XCTAssertEqual(Formulas.cloutGain(lifetimeCash: lifetime, currentClout: 0), 100)
+        XCTAssertEqual(Formulas.cloutGain(lifetimeCash: lifetime, currentClout: 0, gainRateBonus: 0.04), 104)
+    }
+
+    func testItemTableMatchesSpec() {
+        XCTAssertEqual(RexItem.all.count, 8)
+        XCTAssertEqual(RexItem.forSlot(.wrist).map(\.tier), [1, 2, 3, 4])
+        XCTAssertEqual(RexItem.forSlot(.garage).map(\.tier), [1, 2, 3, 4])
+        XCTAssertEqual(RexItem.byID("fauxlex")?.cost, 500)
+        XCTAssertEqual(RexItem.byID("bugatti")?.cost, 40_000_000)
+    }
+
+    func testRebrandWipesItemsButKeepsDaytonaLegacy() {
+        var state = GameState.newGame()
+        state.ownedItems = ["fauxlex", "daytona", "lambo"]
+        state.equippedWrist = "daytona"
+        state.equippedGarage = "lambo"
+        state.daytonaPurchases = 2
+
+        state.rebrand(gaining: 10)
+
+        XCTAssertTrue(state.ownedItems.isEmpty, "Rex's gear was rented anyway")
+        XCTAssertNil(state.equippedWrist)
+        XCTAssertNil(state.equippedGarage)
+        XCTAssertEqual(state.daytonaPurchases, 2, "Daytona legacy survives Rebrand")
+    }
+
+    func testPreRexSaveStillDecodes() throws {
+        let legacyJSON = """
+        {"cash": 42.5, "lifetimeCash": 100, "clout": 3,
+         "hustles": [{"unitsOwned": 5, "ghostwriterHired": true, "cycleProgress": 0, "cycleRunning": false}]}
+        """
+        let state = try JSONDecoder().decode(GameState.self, from: Data(legacyJSON.utf8))
+        XCTAssertEqual(state.cash, 42.5)
+        XCTAssertTrue(state.ownedItems.isEmpty)
+        XCTAssertEqual(state.daytonaPurchases, 0)
+    }
+
+    // MARK: Persona (cosmetics — identity layer, survives Rebrand)
+
+    func testPersonaItemTable() {
+        XCTAssertEqual(PersonaItem.all.count, 12)
+        for slot in PersonaSlot.allCases {
+            XCTAssertEqual(PersonaItem.forSlot(slot).map(\.tier), [1, 2, 3, 4], "\(slot) has 4 tiers")
+        }
+        XCTAssertEqual(PersonaItem.all.filter(\.isGrail).count, 3)
+    }
+
+    func testPersonaSurvivesRebrand() {
+        var state = GameState.newGame()
+        state.handle = "hustlegod99"
+        state.baseLook = "street"
+        state.ownedCosmetics = ["couture", "p_fauxlex"]
+        state.equippedCosmetics = [PersonaSlot.clothes.rawValue: "couture"]
+
+        state.rebrand(gaining: 5)
+
+        XCTAssertEqual(state.handle, "hustlegod99", "you delete the account, not yourself")
+        XCTAssertEqual(state.ownedCosmetics, ["couture", "p_fauxlex"])
+        XCTAssertEqual(state.equippedCosmetics[PersonaSlot.clothes.rawValue], "couture")
+    }
+
+    func testGrailRebrandBonusIsHalfPercentEach() {
+        // 3 grails equipped = +1.5% on the clout curve, income untouched.
+        let bonus = 3 * Formulas.grailRebrandBonusPerItem
+        let lifetime = Formulas.cloutDivisor * 40_000 // sqrt = 200
+        XCTAssertEqual(Formulas.cloutGain(lifetimeCash: lifetime, currentClout: 0, gainRateBonus: bonus), 203)
+    }
+
+    func testLeaderboardRanksByCloutThenLifetimeCash() {
+        let entries = [
+            LeaderboardEntry(id: "a", handle: "a", portrait: "🧢", clout: 10, lifetimeCash: 1),
+            LeaderboardEntry(id: "b", handle: "b", portrait: "👔", clout: 50, lifetimeCash: 1),
+            LeaderboardEntry(id: "c", handle: "c", portrait: "🥷", clout: 10, lifetimeCash: 99),
+        ]
+        XCTAssertEqual(LeaderboardEntry.rank(entries).map(\.id), ["b", "c", "a"])
+    }
+
+    // MARK: Rebrand state transition
+
+    func testRebrandResetsRunButKeepsCloutAndLifetime() {
+        var state = GameState.newGame()
+        state.cash = 5_000
+        state.lifetimeCash = 1_000_000
+        state.hustles[2].unitsOwned = 50
+        state.hustles[2].ghostwriterHired = true
+
+        state.rebrand(gaining: 6)
+
+        XCTAssertEqual(state.clout, 6)
+        XCTAssertEqual(state.cash, 0)
+        XCTAssertEqual(state.lifetimeCash, 1_000_000)
+        XCTAssertEqual(state.hustles[2].unitsOwned, 0)
+        XCTAssertFalse(state.hustles[2].ghostwriterHired)
+        XCTAssertEqual(state.hustles[0].unitsOwned, 1, "fresh persona starts with one hustle unit")
+    }
+}
