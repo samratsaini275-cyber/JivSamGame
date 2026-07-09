@@ -13,15 +13,15 @@ struct RebrandView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 18) {
-                VStack(spacing: 6) {
+                VStack(spacing: 7) {
                     Text("REBRAND").gameTitle(game.theme)
                     Text("Kill the label. Keep the Clout.")
                         .font(Theme.cartoonFont(12, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(Theme.textMuted)
                 }
                 .padding(.top, embedded ? 8 : 0)
 
-                VStack(spacing: 4) {
+                VStack(spacing: 6) {
                     GameImage(name: "icon_clout", size: 56)
                     Text("+\(Int(game.cloutOnRebrand))")
                         .font(Theme.cartoonFont(52, weight: .black))
@@ -40,7 +40,7 @@ struct RebrandView: View {
                     if game.cloutGainRateBonus > 0 {
                         statRow("Flex bonus", "+\(String(format: "%.1f", game.cloutGainRateBonus * 100))%")
                     }
-                    Divider().overlay(Theme.comicBorder)
+                    Divider().overlay(.white.opacity(0.10))
                     statRow("New income bonus", "+\(Int((game.state.clout + game.cloutOnRebrand) * 2))%", bold: true)
                 }
                 .padding(14)
@@ -48,7 +48,7 @@ struct RebrandView: View {
 
                 Text("Every hustle, cash, staff, and Rex's gear — gone. Your fit, handle, and Clout stay.")
                     .font(Theme.cartoonFont(10, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.4))
+                    .foregroundStyle(Theme.textMuted)
                     .multilineTextAlignment(.center)
 
                 CartoonButton(
@@ -71,7 +71,7 @@ struct RebrandView: View {
         HStack {
             Text(label)
                 .font(Theme.cartoonFont(12, weight: .medium))
-                .foregroundStyle(.white.opacity(0.5))
+                .foregroundStyle(Theme.textMuted)
             Spacer()
             Text(value)
                 .font(Theme.cartoonFont(12, weight: bold ? .heavy : .semibold))

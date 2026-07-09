@@ -87,23 +87,40 @@ struct ContentView: View {
         VStack(spacing: 0) {
             HeaderView(onProfileTap: { tab = .profile })
 
-            GameSegmentedControl(
-                selection: Binding(get: { game.buyMode }, set: { game.buyMode = $0 }),
-                options: BuyMode.allCases,
-                colorway: game.theme
-            )
+            VStack(spacing: 10) {
+                HStack(alignment: .lastTextBaseline) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("PORTFOLIO")
+                            .font(Theme.cartoonFont(18, weight: .black))
+                            .foregroundStyle(.white)
+                        Text("\(game.hustles.filter { game.state.hustles[$0.id].unitsOwned > 0 }.count)/\(game.hustles.count) holdings acquired")
+                            .font(Theme.cartoonFont(10, weight: .medium))
+                            .foregroundStyle(Theme.textMuted)
+                    }
+                    Spacer()
+                    Text("ACQUIRE")
+                        .font(Theme.cartoonFont(9, weight: .bold))
+                        .foregroundStyle(Theme.champagne)
+                }
+
+                GameSegmentedControl(
+                    selection: Binding(get: { game.buyMode }, set: { game.buyMode = $0 }),
+                    options: BuyMode.allCases,
+                    colorway: game.theme
+                )
+            }
             .padding(.horizontal, Theme.screenPadding)
-            .padding(.vertical, 8)
+            .padding(.vertical, 10)
 
             ScrollView(showsIndicators: false) {
-                LazyVStack(spacing: 10) {
+                LazyVStack(spacing: 12) {
                     ForEach(game.hustles) { hustle in
                         HustleRowView(index: hustle.id)
                             .reportCardFrame(hustle.id)
                     }
                 }
                 .padding(.horizontal, Theme.screenPadding)
-                .padding(.bottom, 14)
+                .padding(.bottom, 16)
             }
         }
     }

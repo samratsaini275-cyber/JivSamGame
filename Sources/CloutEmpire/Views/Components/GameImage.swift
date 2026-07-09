@@ -1,7 +1,7 @@
 import SwiftUI
 import ImageIO
 
-/// Bundled cartoon asset from `Resources/Images/`.
+/// Bundled game asset from `Resources/Images/`.
 struct GameImage: View {
     let name: String
     var size: CGFloat = 44
@@ -35,7 +35,7 @@ struct GameImage: View {
     }
 }
 
-/// Cartoon icon tile — thick comic border + soft drop shadow.
+/// Framed production icon tile.
 struct GameIconTile: View {
     let name: String
     var size: CGFloat = 50
@@ -46,13 +46,27 @@ struct GameIconTile: View {
         GameImage(name: name, size: size * 0.62, dimmed: dimmed)
             .frame(width: size, height: size)
             .background(
-                RoundedRectangle(cornerRadius: size * 0.26, style: .continuous)
-                    .fill(dimmed ? Theme.surfaceRaised : tint.opacity(0.22))
+                RoundedRectangle(cornerRadius: min(8, size * 0.16), style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                dimmed ? Theme.surfaceRaised : tint.opacity(0.22),
+                                Theme.ink.opacity(0.65),
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
             )
             .overlay(
-                RoundedRectangle(cornerRadius: size * 0.26, style: .continuous)
-                    .strokeBorder(Theme.comicBorder, lineWidth: Theme.comicStroke)
+                RoundedRectangle(cornerRadius: min(8, size * 0.16), style: .continuous)
+                    .strokeBorder(dimmed ? .white.opacity(0.08) : tint.opacity(0.38), lineWidth: 1)
             )
-            .comicShadow(radius: 4, y: 3)
+            .overlay(alignment: .topLeading) {
+                RoundedRectangle(cornerRadius: min(8, size * 0.16), style: .continuous)
+                    .stroke(.white.opacity(0.10), lineWidth: 1)
+                    .padding(1)
+            }
+            .shadow(color: dimmed ? .clear : tint.opacity(0.18), radius: 10, y: 4)
     }
 }

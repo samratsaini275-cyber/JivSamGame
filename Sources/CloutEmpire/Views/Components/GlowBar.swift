@@ -10,21 +10,52 @@ struct GlowBar: View {
             let clamped = max(0, min(1, progress))
             let width = clamped * geo.size.width
             ZStack(alignment: .leading) {
-                Capsule().fill(Color.black.opacity(0.35))
+                RoundedRectangle(cornerRadius: min(7, height * 0.5), style: .continuous)
+                    .fill(Color.black.opacity(0.42))
                 if width > 2 {
-                    Capsule()
-                        .fill(LinearGradient(colors: [color, color.opacity(0.75)], startPoint: .leading, endPoint: .trailing))
+                    RoundedRectangle(cornerRadius: min(7, height * 0.5), style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    color.opacity(0.95),
+                                    color,
+                                    color.opacity(0.70),
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
                         .frame(width: width)
                         .overlay(alignment: .topLeading) {
-                            Capsule()
-                                .fill(Color.white.opacity(0.35))
+                            RoundedRectangle(cornerRadius: min(5, height * 0.35), style: .continuous)
+                                .fill(Color.white.opacity(0.24))
                                 .frame(width: max(0, width - 6), height: height * 0.35)
                                 .offset(x: 3, y: 1)
+                        }
+                        .overlay {
+                            DiagonalStripeOverlay()
+                                .clipShape(RoundedRectangle(cornerRadius: min(7, height * 0.5), style: .continuous))
+                                .opacity(0.18)
                         }
                 }
             }
         }
         .frame(height: height)
         .animation(.easeOut(duration: 0.1), value: progress)
+    }
+}
+
+private struct DiagonalStripeOverlay: View {
+    var body: some View {
+        Canvas { context, size in
+            var path = Path()
+            var x: CGFloat = -size.height
+            while x < size.width + size.height {
+                path.move(to: CGPoint(x: x, y: size.height))
+                path.addLine(to: CGPoint(x: x + size.height, y: 0))
+                x += 18
+            }
+            context.stroke(path, with: .color(.white), lineWidth: 5)
+        }
     }
 }

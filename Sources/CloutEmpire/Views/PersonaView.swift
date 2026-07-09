@@ -14,20 +14,20 @@ struct PersonaCreationView: View {
             Theme.backdrop(preview)
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 18) {
-                    Text("Launch your label").gameTitle(preview)
+                    Text("Launch Your Label").gameTitle(preview)
 
                     GameImage(name: BaseLook.byID(look).imageName, size: 88)
                         .clipShape(Circle())
-                        .overlay(Circle().strokeBorder(Theme.comicBorder, lineWidth: Theme.comicStroke))
+                        .overlay(Circle().strokeBorder(preview.accent.opacity(0.7), lineWidth: 2))
 
                     TextField("@yourbrand", text: $handle)
                         .multilineTextAlignment(.center)
-                        .font(Theme.cartoonFont(14, weight: .semibold))
+                        .font(Theme.cartoonFont(14, weight: .bold))
                         .padding(.vertical, 12)
                         .padding(.horizontal, 14)
-                        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Theme.surface))
-                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(Theme.comicBorder, lineWidth: Theme.comicStroke))
+                        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.ink.opacity(0.52)))
+                        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .strokeBorder(preview.accent.opacity(0.35), lineWidth: 1))
 
                     lookPicker
                     colorwayPicker
@@ -118,7 +118,7 @@ struct PersonaView: View {
         VStack(spacing: 8) {
             GameImage(name: game.portraitImage, size: 80)
                 .clipShape(Circle())
-                .overlay(Circle().strokeBorder(game.theme.accent.opacity(0.6), lineWidth: 3))
+                .overlay(Circle().strokeBorder(game.theme.accent.opacity(0.75), lineWidth: 2))
             Text("@\(game.state.handle)")
                 .font(Theme.cartoonFont(18, weight: .black))
                 .foregroundStyle(game.theme.gradient)
@@ -126,7 +126,7 @@ struct PersonaView: View {
                 GameImage(name: "icon_clout", size: 22)
                 Text("\(Int(game.state.clout)) lifetime Clout")
                     .font(Theme.cartoonFont(11, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .foregroundStyle(Theme.textMuted)
             }
             if game.equippedGrailCount > 0 {
                 Text("Grail drip: +\(String(format: "%.1f", Double(game.equippedGrailCount) * Formulas.grailRebrandBonusPerItem * 100))% on Rebrand")
@@ -134,7 +134,9 @@ struct PersonaView: View {
                     .foregroundStyle(Theme.cloutPink)
             }
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 16)
+        .frame(maxWidth: .infinity)
+        .gameCard(highlighted: true, accent: game.theme.accent)
     }
 
     private var colorwayRow: some View {
@@ -171,18 +173,18 @@ struct PersonaView: View {
         let equipped = game.isEquipped(item)
         let color = Theme.tierColor(item.tier)
 
-        return HStack(spacing: 10) {
-            GameIconTile(name: item.imageName, size: 46, tint: color)
-            VStack(alignment: .leading, spacing: 2) {
+        return HStack(spacing: 12) {
+            GameIconTile(name: item.imageName, size: 50, tint: color)
+            VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 5) {
-                    Text(item.name).font(Theme.cartoonFont(12))
+                    Text(item.name).font(Theme.cartoonFont(13, weight: .black))
                     Text(item.tierName.uppercased())
-                        .font(Theme.cartoonFont(8))
+                        .font(Theme.cartoonFont(8, weight: .bold))
                         .foregroundStyle(color)
                 }
                 Text(item.isGrail ? "+0.5% Clout on Rebrand · pure flex" : "Pure flex · zero income")
                     .font(Theme.cartoonFont(9, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.4))
+                    .foregroundStyle(Theme.textMuted)
             }
             Spacer(minLength: 0)
             personaAction(item, owned: owned, equipped: equipped, color: color)
@@ -194,10 +196,10 @@ struct PersonaView: View {
     @ViewBuilder
     private func personaAction(_ item: PersonaItem, owned: Bool, equipped: Bool, color: Color) -> some View {
         if equipped {
-            Text("WEARING").font(Theme.cartoonFont(9)).foregroundStyle(color).frame(width: 62)
+            Text("ACTIVE").font(Theme.cartoonFont(9, weight: .black)).foregroundStyle(color).frame(width: 62)
         } else if owned {
             Button("WEAR") { game.equipCosmetic(item) }
-                .font(Theme.cartoonFont(9))
+                .font(Theme.cartoonFont(9, weight: .bold))
                 .foregroundStyle(color)
                 .buttonStyle(PressableButtonStyle())
                 .frame(width: 62)

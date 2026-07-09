@@ -12,20 +12,20 @@ struct Colorway: Identifiable {
 
     static let all: [Colorway] = [
         Colorway(id: "gold", name: "24K",
-                 accent: Color(red: 1.0, green: 0.85, blue: 0.25),
-                 accentDeep: Color(red: 0.9, green: 0.55, blue: 0.05)),
-        Colorway(id: "volt", name: "Volt",
-                 accent: Color(red: 0.75, green: 1.0, blue: 0.2),
-                 accentDeep: Color(red: 0.35, green: 0.78, blue: 0.05)),
-        Colorway(id: "ice", name: "Ice",
-                 accent: Color(red: 0.45, green: 0.88, blue: 1.0),
-                 accentDeep: Color(red: 0.12, green: 0.55, blue: 0.95)),
-        Colorway(id: "crimson", name: "Crimson",
-                 accent: Color(red: 1.0, green: 0.38, blue: 0.45),
-                 accentDeep: Color(red: 0.82, green: 0.12, blue: 0.22)),
-        Colorway(id: "amethyst", name: "Amethyst",
-                 accent: Color(red: 0.75, green: 0.48, blue: 1.0),
-                 accentDeep: Color(red: 0.45, green: 0.18, blue: 0.88)),
+                 accent: Color(red: 1.0, green: 0.80, blue: 0.36),
+                 accentDeep: Color(red: 0.66, green: 0.39, blue: 0.11)),
+        Colorway(id: "volt", name: "Emerald",
+                 accent: Color(red: 0.42, green: 0.95, blue: 0.65),
+                 accentDeep: Color(red: 0.06, green: 0.44, blue: 0.28)),
+        Colorway(id: "ice", name: "Platinum",
+                 accent: Color(red: 0.68, green: 0.90, blue: 1.0),
+                 accentDeep: Color(red: 0.20, green: 0.48, blue: 0.70)),
+        Colorway(id: "crimson", name: "Bordeaux",
+                 accent: Color(red: 0.94, green: 0.33, blue: 0.39),
+                 accentDeep: Color(red: 0.42, green: 0.04, blue: 0.10)),
+        Colorway(id: "amethyst", name: "Violet",
+                 accent: Color(red: 0.73, green: 0.52, blue: 1.0),
+                 accentDeep: Color(red: 0.31, green: 0.15, blue: 0.55)),
     ]
 
     static func byID(_ id: String) -> Colorway {
@@ -38,31 +38,46 @@ extension Game {
 }
 
 enum Theme {
-    static let bg = Color(red: 0.14, green: 0.10, blue: 0.28)
-    static let surface = Color(red: 0.22, green: 0.18, blue: 0.38)
-    static let surfaceRaised = Color(red: 0.28, green: 0.24, blue: 0.46)
-    static let comicBorder = Color(red: 0.12, green: 0.08, blue: 0.22)
-    static let comicShadow = Color.black.opacity(0.45)
-    static let comicStroke: CGFloat = 3
+    static let bg = Color(red: 0.015, green: 0.016, blue: 0.019)
+    static let surface = Color(red: 0.055, green: 0.057, blue: 0.064)
+    static let surfaceRaised = Color(red: 0.098, green: 0.100, blue: 0.112)
+    static let panelTop = Color(red: 0.145, green: 0.140, blue: 0.126)
+    static let panelBottom = Color(red: 0.032, green: 0.033, blue: 0.039)
+    static let comicBorder = Color(red: 1.0, green: 0.82, blue: 0.42).opacity(0.18)
+    static let comicShadow = Color.black.opacity(0.55)
+    static let comicStroke: CGFloat = 1
 
-    static let coinGreen = Color(red: 0.3, green: 0.95, blue: 0.55)
-    static let cloutPink = Color(red: 0.92, green: 0.5, blue: 1.0)
-    static let hypeBlue = Color(red: 0.4, green: 0.78, blue: 1.0)
+    static let coinGreen = Color(red: 0.34, green: 0.92, blue: 0.52)
+    static let cloutPink = Color(red: 0.96, green: 0.42, blue: 0.58)
+    static let hypeBlue = Color(red: 0.38, green: 0.72, blue: 1.0)
+    static let luxeGold = Color(red: 1.0, green: 0.78, blue: 0.34)
+    static let champagne = Color(red: 1.0, green: 0.91, blue: 0.68)
+    static let ink = Color(red: 0.010, green: 0.011, blue: 0.014)
+    static let textMuted = Color.white.opacity(0.56)
 
-    static let screenPadding: CGFloat = 14
-    static let cardRadius: CGFloat = 18
+    static let screenPadding: CGFloat = 18
+    static let cardRadius: CGFloat = 8
 
     static func backdrop(_ colorway: Colorway) -> some View {
         ZStack {
-            bg
-            RadialGradient(
-                colors: [colorway.accent.opacity(0.22), .clear],
-                center: .top, startRadius: 0, endRadius: 360
+            LinearGradient(
+                colors: [
+                    Color(red: 0.035, green: 0.030, blue: 0.024),
+                    Color(red: 0.010, green: 0.011, blue: 0.014),
+                    Color(red: 0.034, green: 0.029, blue: 0.022),
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
             )
-            RadialGradient(
-                colors: [cloutPink.opacity(0.12), .clear],
-                center: .bottomTrailing, startRadius: 0, endRadius: 300
-            )
+            LuxuryBackdropPattern(colorway: colorway)
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [.black.opacity(0.25), .clear, luxeGold.opacity(0.10)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
         }
         .ignoresSafeArea()
     }
@@ -77,7 +92,41 @@ enum Theme {
     }
 
     static func cartoonFont(_ size: CGFloat, weight: Font.Weight = .heavy) -> Font {
-        .system(size: size, weight: weight, design: .rounded)
+        .system(size: size, weight: weight, design: .default)
+    }
+}
+
+struct LuxuryBackdropPattern: View {
+    var colorway: Colorway
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack {
+                ForEach(0..<5, id: \.self) { index in
+                    Rectangle()
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Theme.luxeGold.opacity(index.isMultiple(of: 2) ? 0.10 : 0.035),
+                                    colorway.accentDeep.opacity(0.035),
+                                ],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: geo.size.width * 1.6, height: index.isMultiple(of: 2) ? 74 : 34)
+                        .rotationEffect(.degrees(-16))
+                        .offset(x: -geo.size.width * 0.18, y: CGFloat(index) * geo.size.height * 0.22 - 80)
+                }
+                Rectangle()
+                    .stroke(Theme.luxeGold.opacity(0.08), lineWidth: 1)
+                    .rotationEffect(.degrees(-16))
+                    .frame(width: geo.size.width * 1.7, height: geo.size.height * 0.70)
+                    .offset(y: geo.size.height * 0.05)
+            }
+        }
+        .blendMode(.screen)
+        .opacity(0.80)
     }
 }
 
@@ -87,10 +136,10 @@ struct GameCard: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .comicCard(radius: Theme.cardRadius, fill: Theme.surface)
+            .proPanel(radius: Theme.cardRadius, fill: Theme.surface)
             .overlay(
                 RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous)
-                    .strokeBorder(highlighted ? accent : Theme.comicBorder, lineWidth: Theme.comicStroke)
+                    .strokeBorder(highlighted ? accent.opacity(0.70) : Theme.comicBorder, lineWidth: highlighted ? 1.5 : 1)
             )
     }
 }
@@ -112,10 +161,10 @@ struct StatBadge: View {
     var progress: Double? = nil
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 10) {
             if let progress {
                 ZStack {
-                    Circle().stroke(color.opacity(0.25), lineWidth: 3)
+                    Circle().stroke(color.opacity(0.22), lineWidth: 3)
                     Circle()
                         .trim(from: 0, to: CGFloat(min(1, max(0, progress))))
                         .stroke(color, style: StrokeStyle(lineWidth: 3, lineCap: .round))
@@ -128,16 +177,16 @@ struct StatBadge: View {
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(Theme.cartoonFont(11))
-                    .foregroundStyle(color)
+                    .font(Theme.cartoonFont(10, weight: .black))
+                    .foregroundStyle(.white)
                 Text(value)
-                    .font(Theme.cartoonFont(9, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.55))
+                    .font(Theme.cartoonFont(9, weight: .medium))
+                    .foregroundStyle(Theme.textMuted)
             }
             Spacer(minLength: 0)
         }
-        .padding(10)
-        .gameCard(highlighted: (progress ?? 0) > 0, accent: color)
+        .padding(12)
+        .gameCard(highlighted: (progress ?? 0) > 0, accent: color == Theme.cloutPink ? Theme.luxeGold : color)
     }
 }
 
@@ -147,27 +196,31 @@ struct GameSegmentedControl<Option: Hashable & Identifiable>: View where Option:
     var colorway: Colorway
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 6) {
             ForEach(options) { option in
                 Button {
                     withAnimation(.spring(response: 0.28, dampingFraction: 0.7)) { selection = option }
                 } label: {
                     Text(option.description)
-                        .font(Theme.cartoonFont(12))
+                        .font(Theme.cartoonFont(11, weight: .bold))
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 9)
+                        .padding(.vertical, 10)
                         .background {
-                            if selection == option { Capsule().fill(colorway.gradient) }
+                            if selection == option {
+                                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                    .fill(colorway.gradient)
+                                    .shadow(color: colorway.accent.opacity(0.28), radius: 10, y: 4)
+                            }
                         }
-                        .foregroundStyle(selection == option ? Theme.comicBorder : .white.opacity(0.45))
+                        .foregroundStyle(selection == option ? Theme.ink : Theme.textMuted)
                 }
                 .buttonStyle(PressableButtonStyle())
             }
         }
-        .padding(4)
-        .background(Capsule().fill(Theme.surfaceRaised))
-        .overlay(Capsule().strokeBorder(Theme.comicBorder, lineWidth: Theme.comicStroke))
-        .comicShadow(y: 4)
+        .padding(5)
+        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.ink.opacity(0.62)))
+        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(.white.opacity(0.10), lineWidth: 1))
+        .shadow(color: .black.opacity(0.28), radius: 16, y: 8)
     }
 }
 
@@ -186,12 +239,13 @@ struct GameTabBar: View {
                 tabButton(tab)
             }
         }
-        .padding(.horizontal, 6)
-        .padding(.top, 8)
-        .padding(.bottom, 10)
+        .padding(.horizontal, 12)
+        .padding(.top, 10)
+        .padding(.bottom, 12)
         .background {
-            Theme.surface
-            VStack { Rectangle().fill(Theme.comicBorder).frame(height: Theme.comicStroke); Spacer() }
+            Rectangle().fill(.ultraThinMaterial)
+            Rectangle().fill(Theme.ink.opacity(0.78))
+            VStack { Rectangle().fill(.white.opacity(0.10)).frame(height: 1); Spacer() }
         }
     }
 
@@ -204,7 +258,7 @@ struct GameTabBar: View {
         } label: {
             VStack(spacing: 3) {
                 ZStack {
-                    GameImage(name: tab.imageName, size: selected ? 30 : 26)
+                    GameImage(name: tab.imageName, size: selected ? 28 : 24)
                         .scaleEffect(selected ? 1.08 : 1)
                         .opacity(locked ? 0.35 : 1)
                     if locked {
@@ -213,18 +267,25 @@ struct GameTabBar: View {
                             .foregroundStyle(.white.opacity(0.9))
                             .shadow(color: .black.opacity(0.4), radius: 2, y: 1)
                     } else if tab == .rex, rexBadge {
-                        Circle().fill(.red).frame(width: 8, height: 8)
+                        Circle().fill(Theme.cloutPink).frame(width: 8, height: 8)
                             .offset(x: 14, y: -12)
                     }
                 }
                 Text(tab.label)
-                    .font(Theme.cartoonFont(9, weight: selected ? .heavy : .semibold))
+                    .font(Theme.cartoonFont(9, weight: selected ? .bold : .medium))
                     .foregroundStyle(
                         locked ? .white.opacity(0.25)
-                        : (selected ? colorway.accent : .white.opacity(0.45))
+                        : (selected ? colorway.accent : Theme.textMuted)
                     )
             }
             .frame(maxWidth: .infinity)
+            .padding(.vertical, 4)
+            .background {
+                if selected {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(colorway.accent.opacity(0.12))
+                }
+            }
         }
         .buttonStyle(PressableButtonStyle(bounce: !locked))
     }
@@ -271,13 +332,13 @@ extension View {
     }
 
     func kicker() -> some View {
-        font(Theme.cartoonFont(10))
-            .foregroundStyle(.white.opacity(0.45))
+        font(Theme.cartoonFont(10, weight: .bold))
+            .foregroundStyle(Theme.textMuted)
             .textCase(.uppercase)
     }
 
     func gameTitle(_ colorway: Colorway) -> some View {
-        font(Theme.cartoonFont(26, weight: .black))
+        font(Theme.cartoonFont(28, weight: .black))
         .foregroundStyle(colorway.gradient)
     }
 }

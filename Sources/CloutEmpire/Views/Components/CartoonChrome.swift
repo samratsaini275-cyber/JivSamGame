@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - Comic button (chunky 3D press)
+// MARK: - Studio chrome
 
 struct CartoonButton: View {
     let title: String
@@ -15,30 +15,30 @@ struct CartoonButton: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 2) {
+            VStack(spacing: subtitle == nil ? 0 : 2) {
                 Text(title)
-                    .font(Theme.cartoonFont(10))
+                    .font(Theme.cartoonFont(10, weight: .bold))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                 if let subtitle {
                     Text(subtitle)
-                        .font(Theme.cartoonFont(9, weight: .bold))
+                        .font(Theme.cartoonFont(9, weight: .medium))
                         .monospacedDigit()
                 }
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 10)
+            .padding(.horizontal, 8)
             .foregroundStyle(foreground)
             .background { face }
-            .clipShape(Capsule())
-            .overlay(Capsule().strokeBorder(Theme.comicBorder, lineWidth: Theme.comicStroke))
-            .background(alignment: .bottom) {
-                if !disabled && style == .primary {
-                    Capsule()
-                        .fill(color.opacity(0.45))
-                        .offset(y: 4)
-                }
+            .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(stroke, lineWidth: 1))
+            .overlay(alignment: .top) {
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .stroke(.white.opacity(disabled ? 0.04 : 0.16), lineWidth: 1)
+                    .frame(height: 1)
             }
+            .shadow(color: disabled ? .clear : color.opacity(style == .primary ? 0.22 : 0.10), radius: 14, y: 6)
         }
         .buttonStyle(CartoonPressStyle())
         .disabled(disabled)
@@ -48,22 +48,40 @@ struct CartoonButton: View {
         switch style {
         case .primary:
             if let colorway, !disabled {
-                Capsule().fill(colorway.gradient)
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [Theme.champagne, colorway.accent, colorway.accentDeep],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
             } else {
-                Capsule().fill(disabled ? Theme.surfaceRaised : color)
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .fill(disabled ? Theme.surfaceRaised : color)
             }
         case .secondary:
-            Capsule().fill(disabled ? Theme.surfaceRaised : color.opacity(0.28))
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .fill(disabled ? Theme.surfaceRaised : color.opacity(0.18))
         case .outline:
-            Capsule().fill(color.opacity(0.12))
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .fill(Theme.ink.opacity(0.35))
         }
     }
 
     private var foreground: Color {
         if disabled { return .white.opacity(0.35) }
         switch style {
-        case .primary: return Theme.comicBorder
+        case .primary: return Theme.ink
         case .secondary, .outline: return color
+        }
+    }
+
+    private var stroke: Color {
+        if disabled { return .white.opacity(0.06) }
+        switch style {
+        case .primary: return Theme.champagne.opacity(0.55)
+        case .secondary, .outline: return color.opacity(0.45)
         }
     }
 }
@@ -71,8 +89,9 @@ struct CartoonButton: View {
 struct CartoonPressStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .offset(y: configuration.isPressed ? 3 : 0)
-            .animation(.spring(response: 0.18, dampingFraction: 0.55), value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed ? 0.975 : 1)
+            .brightness(configuration.isPressed ? -0.06 : 0)
+            .animation(.spring(response: 0.16, dampingFraction: 0.75), value: configuration.isPressed)
     }
 }
 
@@ -82,15 +101,34 @@ extension View {
     }
 
     func comicCard(radius: CGFloat = Theme.cardRadius, fill: Color = Theme.surface) -> some View {
+        proPanel(radius: radius, fill: fill)
+    }
+
+    func proPanel(radius: CGFloat = Theme.cardRadius, fill: Color = Theme.surface) -> some View {
         self
             .background(
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .fill(fill)
-                    .comicShadow(y: 5)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Theme.panelTop.opacity(0.90),
+                                fill,
+                                Theme.panelBottom.opacity(0.98),
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .shadow(color: .black.opacity(0.44), radius: 22, y: 12)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .strokeBorder(Theme.comicBorder, lineWidth: Theme.comicStroke)
+                    .strokeBorder(Theme.luxeGold.opacity(0.16), lineWidth: 1)
             )
+            .overlay(alignment: .top) {
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .stroke(Theme.champagne.opacity(0.16), lineWidth: 1)
+                    .frame(height: 1)
+            }
     }
 }
