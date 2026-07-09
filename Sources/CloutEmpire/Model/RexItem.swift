@@ -67,6 +67,8 @@ extension RexItem {
 }
 
 enum Rex {
+    /// DMs unlock once any hustle hits milestone tier 2 (50+ units — "Sold-Out Drop").
+    static let unlockMoneyTier = 2
     static let unlockLifetimeCash: Double = 2_500
 
     static let greeting = "Yo. Been watching the brand. Put me on and I put YOU on. That's just math."

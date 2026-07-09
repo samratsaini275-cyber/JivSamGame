@@ -77,6 +77,9 @@ final class Game: ObservableObject {
         state.hustles.map { Formulas.milestoneTier(units: $0.unitsOwned) }.max() ?? 0
     }
 
+    /// Best milestone tier across all hustles (money tier for DM unlocks).
+    var maxMoneyTier: Int { maxHustleTier }
+
     /// The owned hustle with the fewest units — the Bugatti's beneficiary.
     var lowestOwnedHustleIndex: Int? {
         state.hustles.indices
@@ -203,7 +206,20 @@ final class Game: ObservableObject {
     // MARK: Rex
 
     var rexUnlocked: Bool {
-        state.lifetimeCash >= Rex.unlockLifetimeCash || state.clout > 0
+        sneakerResellsUnlocked || state.clout > 0
+    }
+
+    /// DMs tab unlocks after the player buys into Sneaker Resells (hustle 1).
+    var sneakerResellsUnlocked: Bool {
+        state.hustles[1].unitsOwned >= 1
+    }
+
+    var rexUnreadCount: Int {
+        guard rexUnlocked else { return 0 }
+        return RexDMThread.unlocked(for: self).filter { thread in
+            let msgs = RexChatBuilder.messages(for: thread, game: self)
+            return RexChatBuilder.pendingPitch(in: msgs, game: self) != nil
+        }.count
     }
 
     var equippedWristItem: RexItem? { RexItem.byID(state.equippedWrist) }
@@ -245,6 +261,37 @@ final class Game: ObservableObject {
 
     func markRexMet() {
         if !state.rexMet { state.rexMet = true }
+    }
+
+    func handleRexReply(_ reply: RexReply, pitchID: String) {
+        switch reply.action {
+        case .introAck:
+            state.rexIntroAcknowledged = true
+            state.rexIntroReply = reply.label
+        case .introCurious:
+            state.rexIntroAcknowledged = true
+            state.rexIntroReply = reply.label
+        case .buy(let item):
+            state.rexPitchReplies[pitchID] = reply.label
+            if buyItem(item) {
+                state.rexPitchFollowUp[pitchID] = Rex.purchaseBarks.randomElement()!
+            } else {
+                state.rexPitchFollowUp[pitchID] = Rex.brokeBark
+            }
+        case .equip(let item):
+            state.rexPitchReplies[pitchID] = reply.label
+            let prev = item.slot == .wrist
+                ? equippedWristItem?.tier ?? 0
+                : equippedGarageItem?.tier ?? 0
+            equip(item)
+            state.rexPitchFollowUp[pitchID] = item.tier < prev
+                ? Rex.downgradeBark
+                : Rex.idleBark(wrist: equippedWristItem, garage: equippedGarageItem)
+        case .dismiss(let id):
+            state.rexDismissedPitches.insert(id)
+            state.rexPitchReplies[id] = reply.label
+            state.rexPitchFollowUp[id] = "Fair. The flex will still be there when the bag catches up."
+        }
     }
 
     // MARK: Player actions

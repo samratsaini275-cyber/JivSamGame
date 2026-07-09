@@ -17,7 +17,7 @@ struct ContentView: View {
                 GameTabBar(
                     selection: $tab,
                     colorway: game.theme,
-                    rexBadge: !game.state.rexMet && game.rexUnlocked,
+                    rexBadge: game.rexUnreadCount > 0,
                     rexUnlocked: game.rexUnlocked
                 )
             }
@@ -39,7 +39,10 @@ struct ContentView: View {
             if !game.personaCreated { showingCreation = true }
         }
         .onChange(of: tab) { newTab in
-            if newTab == .rex { game.markRexMet() }
+            if newTab == .rex, game.rexUnlocked { game.markRexMet() }
+        }
+        .onChange(of: game.rexUnlocked) { unlocked in
+            if !unlocked, tab == .rex { tab = .empire }
         }
     }
 
@@ -47,10 +50,37 @@ struct ContentView: View {
     private var tabContent: some View {
         switch tab {
         case .empire: empireTab
-        case .rex: RexShopView(embedded: true).environmentObject(game)
+        case .rex:
+            if game.rexUnlocked {
+                RexChatView(embedded: true).environmentObject(game)
+            } else {
+                dmsLockedPlaceholder
+            }
         case .rebrand: RebrandView(embedded: true).environmentObject(game)
         case .profile: PersonaView(embedded: true).environmentObject(game)
         }
+    }
+
+    private var dmsLockedPlaceholder: some View {
+        VStack(spacing: 16) {
+            Spacer()
+            ZStack {
+                GameImage(name: "tab_rex", size: 72)
+                    .opacity(0.3)
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 28, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.85))
+            }
+            Text("DMs Locked")
+                .font(Theme.cartoonFont(18, weight: .heavy))
+            Text("Unlock Sneaker Resells to get on Rex's radar.")
+                .font(Theme.cartoonFont(12, weight: .medium))
+                .foregroundStyle(.white.opacity(0.45))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var empireTab: some View {

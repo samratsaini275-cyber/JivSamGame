@@ -180,13 +180,9 @@ struct GameTabBar: View {
     var rexBadge: Bool
     var rexUnlocked: Bool = true
 
-    private var tabs: [MainTab] {
-        rexUnlocked ? MainTab.allCases : MainTab.allCases.filter { $0 != .rex }
-    }
-
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(tabs) { tab in
+            ForEach(MainTab.allCases) { tab in
                 tabButton(tab)
             }
         }
@@ -201,24 +197,36 @@ struct GameTabBar: View {
 
     private func tabButton(_ tab: MainTab) -> some View {
         let selected = selection == tab
+        let locked = tab == .rex && !rexUnlocked
         return Button {
+            guard !locked else { return }
             withAnimation(.spring(response: 0.3, dampingFraction: 0.65)) { selection = tab }
         } label: {
             VStack(spacing: 3) {
-                ZStack(alignment: .topTrailing) {
+                ZStack {
                     GameImage(name: tab.imageName, size: selected ? 30 : 26)
                         .scaleEffect(selected ? 1.08 : 1)
-                    if tab == .rex, rexBadge {
-                        Circle().fill(.red).frame(width: 8, height: 8).offset(x: 4, y: -3)
+                        .opacity(locked ? 0.35 : 1)
+                    if locked {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(.white.opacity(0.9))
+                            .shadow(color: .black.opacity(0.4), radius: 2, y: 1)
+                    } else if tab == .rex, rexBadge {
+                        Circle().fill(.red).frame(width: 8, height: 8)
+                            .offset(x: 14, y: -12)
                     }
                 }
                 Text(tab.label)
                     .font(Theme.cartoonFont(9, weight: selected ? .heavy : .semibold))
-                    .foregroundStyle(selected ? colorway.accent : .white.opacity(0.45))
+                    .foregroundStyle(
+                        locked ? .white.opacity(0.25)
+                        : (selected ? colorway.accent : .white.opacity(0.45))
+                    )
             }
             .frame(maxWidth: .infinity)
         }
-        .buttonStyle(PressableButtonStyle(bounce: false))
+        .buttonStyle(PressableButtonStyle(bounce: !locked))
     }
 }
 
@@ -238,7 +246,7 @@ enum MainTab: String, CaseIterable, Identifiable {
     var label: String {
         switch self {
         case .empire: return "Empire"
-        case .rex: return "Rex"
+        case .rex: return "DMs"
         case .rebrand: return "Rebrand"
         case .profile: return "Fit"
         }

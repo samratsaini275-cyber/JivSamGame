@@ -2,6 +2,9 @@ import Foundation
 
 /// JSON save file in ~/Library/Application Support/CloutEmpire/save.json.
 enum Persistence {
+    /// Flip to `true` when you want saves again. While `false`, every launch is a fresh run.
+    static let enabled = false
+
     static var saveURL: URL {
         let dir = FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -11,7 +14,8 @@ enum Persistence {
     }
 
     static func load() -> GameState? {
-        guard let data = try? Data(contentsOf: saveURL),
+        guard enabled,
+              let data = try? Data(contentsOf: saveURL),
               var state = try? JSONDecoder().decode(GameState.self, from: data) else { return nil }
         // If the hustle list grew since this save, pad with fresh entries.
         while state.hustles.count < Hustle.all.count {
@@ -21,6 +25,7 @@ enum Persistence {
     }
 
     static func save(_ state: GameState) {
+        guard enabled else { return }
         guard let data = try? JSONEncoder().encode(state) else { return }
         try? data.write(to: saveURL, options: .atomic)
     }

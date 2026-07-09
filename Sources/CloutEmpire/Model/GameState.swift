@@ -28,6 +28,14 @@ struct GameState: Codable {
     var daytonaPurchases: Int = 0
     /// Player has opened Rex's DMs at least once (clears the "new DM" badge).
     var rexMet: Bool = false
+    /// Intro thread reply chosen.
+    var rexIntroAcknowledged: Bool = false
+    var rexIntroReply: String?
+    /// pitch id → player reply label shown in the thread.
+    var rexPitchReplies: [String: String] = [:]
+    var rexPitchFollowUp: [String: String] = [:]
+    /// Pitches the player passed on (still visible in history).
+    var rexDismissedPitches: Set<String> = []
     /// "Richard Mille" buff: ×2 income until this instant.
     var milleBuffUntil: Date?
     /// Borrowed Lambo proc: +1 Viral tier until this instant.
@@ -63,7 +71,11 @@ struct GameState: Codable {
         equippedGarage = nil
         milleBuffUntil = nil
         viralBuffUntil = nil
+        rexPitchReplies = [:]
+        rexPitchFollowUp = [:]
+        rexDismissedPitches = []
         // Persona (handle, look, cosmetics) is deliberately untouched:
+        // rexIntroAcknowledged survives — Rex remembers you.
         // the account gets deleted, the player doesn't.
     }
 
@@ -72,6 +84,7 @@ struct GameState: Codable {
     private enum CodingKeys: String, CodingKey {
         case cash, lifetimeCash, clout, hustles, lastSaved
         case ownedItems, equippedWrist, equippedGarage, daytonaPurchases, rexMet
+        case rexIntroAcknowledged, rexIntroReply, rexPitchReplies, rexPitchFollowUp, rexDismissedPitches
         case milleBuffUntil, viralBuffUntil
         case handle, baseLook, ownedCosmetics, equippedCosmetics, colorway
     }
@@ -90,6 +103,11 @@ struct GameState: Codable {
         equippedGarage = try c.decodeIfPresent(String.self, forKey: .equippedGarage)
         daytonaPurchases = try c.decodeIfPresent(Int.self, forKey: .daytonaPurchases) ?? 0
         rexMet = try c.decodeIfPresent(Bool.self, forKey: .rexMet) ?? false
+        rexIntroAcknowledged = try c.decodeIfPresent(Bool.self, forKey: .rexIntroAcknowledged) ?? false
+        rexIntroReply = try c.decodeIfPresent(String.self, forKey: .rexIntroReply)
+        rexPitchReplies = try c.decodeIfPresent([String: String].self, forKey: .rexPitchReplies) ?? [:]
+        rexPitchFollowUp = try c.decodeIfPresent([String: String].self, forKey: .rexPitchFollowUp) ?? [:]
+        rexDismissedPitches = try c.decodeIfPresent(Set<String>.self, forKey: .rexDismissedPitches) ?? []
         milleBuffUntil = try c.decodeIfPresent(Date.self, forKey: .milleBuffUntil)
         viralBuffUntil = try c.decodeIfPresent(Date.self, forKey: .viralBuffUntil)
         handle = try c.decodeIfPresent(String.self, forKey: .handle) ?? ""
