@@ -317,6 +317,83 @@ export const MISC = {
 } as const;
 
 // ---------------------------------------------------------------------------
-// Later-phase content (districts, fronts, heat, shipments) lands here too so
-// the whole skin stays in one file. Populated in Phases 2–5.
+// Front businesses (laundering) — §2. IDs persisted; stats live here because
+// fronts are new in this version (no legacy tuning to protect).
+// ---------------------------------------------------------------------------
+
+export interface FrontDef {
+  id: string;
+  name: string;
+  flavor: string;
+  emoji: string;
+  district: string;
+  /** Plot price. Clean cash — except the Laundromat, the scripted starter. */
+  price: number;
+  priceCurrency: "dirty" | "clean";
+  /** $/s of dirty cash washed at level 1. */
+  baseThroughput: number;
+  /** Fraction lost in the wash at level 1. */
+  baseCut: number;
+  /** Cut shrinks this much per level (floored at cutFloor). */
+  cutPerLevel: number;
+  cutFloor: number;
+  /** Throughput multiplies by this per level. */
+  throughputGrowth: number;
+  /** Level-2 upgrade price (clean); grows ×upgradeGrowth per level. */
+  upgradeBase: number;
+  upgradeGrowth: number;
+  /** Optional flavor-visible perk, wired in later phases. */
+  perk?: "velvet_income" | "less_shipment_heat";
+}
+
+export const FRONTS: FrontDef[] = [
+  { id: "laundromat", name: "Sunrise Laundromat", emoji: "🧺",
+    flavor: "We clean shirts. Mostly shirts. Some paper.",
+    district: "docks", price: 600, priceCurrency: "dirty",
+    baseThroughput: 14, baseCut: 0.35, cutPerLevel: 0.012, cutFloor: 0.2,
+    throughputGrowth: 1.55, upgradeBase: 1_400, upgradeGrowth: 1.85 },
+  { id: "barber", name: "Kowalski's Barber Shop", emoji: "💈",
+    flavor: "Two chairs, one till, zero questions.",
+    district: "warsaw", price: 30_000, priceCurrency: "clean",
+    baseThroughput: 140, baseCut: 0.32, cutPerLevel: 0.012, cutFloor: 0.18,
+    throughputGrowth: 1.55, upgradeBase: 45_000, upgradeGrowth: 1.85 },
+  { id: "velvet", name: "The Velvet Room", emoji: "🎷",
+    flavor: "Feathers, brass, a band that never sleeps — and a very busy till.",
+    district: "downtown", price: 900_000, priceCurrency: "clean",
+    baseThroughput: 1_100, baseCut: 0.28, cutPerLevel: 0.01, cutFloor: 0.16,
+    throughputGrowth: 1.55, upgradeBase: 1_300_000, upgradeGrowth: 1.85,
+    perk: "velvet_income" },
+  { id: "hotel", name: "The Grand Carthage Hotel", emoji: "🏨",
+    flavor: "Four stars in the paper. Five ledgers in the safe.",
+    district: "row", price: 75_000_000, priceCurrency: "clean",
+    baseThroughput: 11_000, baseCut: 0.25, cutPerLevel: 0.01, cutFloor: 0.14,
+    throughputGrowth: 1.55, upgradeBase: 100_000_000, upgradeGrowth: 1.85 },
+  { id: "importexport", name: "Meridian Import/Export Co.", emoji: "🚢",
+    flavor: "Everything is 'olive oil.' The manifests are works of art.",
+    district: "islands", price: 4_000_000_000, priceCurrency: "clean",
+    baseThroughput: 120_000, baseCut: 0.22, cutPerLevel: 0.008, cutFloor: 0.12,
+    throughputGrowth: 1.55, upgradeBase: 5_500_000_000, upgradeGrowth: 1.85,
+    perk: "less_shipment_heat" },
+];
+
+/** The Velvet Room's own legit take, per level, per second (clean). */
+export const VELVET_CLEAN_INCOME_PER_LEVEL = 45;
+
+export const LAUNDER = {
+  sectionTitle: "THE FRONTS",
+  sectionSub: "Dirty money goes in. Respectable money comes out. Some evaporates.",
+  washing: (rate: string) => `washing ${rate}/s`,
+  keeps: (pct: number) => `keeps ${pct}%`,
+  idle: "till is quiet — no dirty cash to wash",
+  buy: "BUY THE DEED",
+  upgrade: "EXPAND",
+  dirtyLabel: "DIRTY",
+  cleanLabel: "CLEAN",
+  dirtyHint: "Dirty cash runs the rackets: expansions, crews, bribes, Sal.",
+  cleanHint: "Clean cash buys deeds, front upgrades, lawyers and bail.",
+} as const;
+
+// ---------------------------------------------------------------------------
+// Later-phase content (districts, heat, shipments) lands here too so the
+// whole skin stays in one file. Populated in Phases 3–5.
 // ---------------------------------------------------------------------------

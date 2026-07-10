@@ -1098,6 +1098,99 @@ img { -webkit-user-drag: none; }
   font-variant-numeric: tabular-nums;
 }
 
+/* ============ Dual currency & fronts (Phase 2) ============ */
+
+.cash-row {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  gap: 14px;
+}
+.cash-col { text-align: center; min-width: 120px; }
+.cash-tag {
+  font-size: 8.5px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  color: var(--faint);
+  margin-bottom: 1px;
+}
+.cash-amount.dirty {
+  font-size: 30px;
+  background: linear-gradient(180deg, #d9e6c3 15%, var(--green) 85%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+.cash-amount.clean {
+  font-size: 30px;
+}
+.cash-col.dirty .cash-tag { color: rgba(124, 161, 99, 0.75); }
+.cash-col.clean .cash-tag { color: rgba(224, 182, 79, 0.75); }
+
+.fronts-section {
+  margin-bottom: 14px;
+  padding: 12px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(61, 122, 116, 0.09), rgba(61, 122, 116, 0.03));
+  border: 1px solid rgba(61, 122, 116, 0.28);
+}
+.fronts-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+.fronts-head .section-title.small { margin-bottom: 2px; color: #7fb8b1; }
+.wash-flow { display: flex; align-items: center; gap: 4px; font-size: 14px; }
+.wash-arrow { color: var(--faint); font-size: 11px; animation: washPulse 1.4s ease-in-out infinite; }
+@keyframes washPulse { 50% { opacity: 0.35; transform: translateX(2px); } }
+
+.front-list { display: flex; flex-direction: column; gap: 7px; }
+.front-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  background: rgba(10, 12, 17, 0.5);
+  border: 1px solid rgba(232, 220, 195, 0.07);
+}
+.front-row.locked { opacity: 0.9; }
+.front-row.locked.ready {
+  border-color: rgba(61, 122, 116, 0.55);
+  animation: readyGlow 1.6s ease-in-out infinite;
+}
+.front-emoji { font-size: 20px; width: 26px; text-align: center; }
+.front-emoji.dim { opacity: 0.55; filter: grayscale(0.4); }
+.front-info { flex: 1; min-width: 0; }
+.front-name {
+  font-size: 12.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.front-level {
+  font-size: 9px;
+  font-weight: 900;
+  color: #7fb8b1;
+  letter-spacing: 0.06em;
+  margin-left: 3px;
+}
+.front-flavor, .front-stats {
+  font-size: 10px;
+  color: var(--faint);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.front-stats { color: rgba(127, 184, 177, 0.85); font-weight: 600; }
+.btn-mini.clean:not(.disabled) {
+  background: linear-gradient(180deg, var(--accent), var(--accent-deep));
+  color: var(--ink);
+}
+
 /* ============ QA-pass additions ============ */
 
 /* Sound toggle in the header */

@@ -5,7 +5,7 @@ import { HUSTLES, baseLookByID } from "../engine/data";
 import { game as gameInstance } from "../engine/game";
 import { IconSound } from "./Icons";
 import { isMuted, setMuted } from "./sfx";
-import { GAME, LABELS, PRESS } from "../theme/content";
+import { GAME, LABELS, PRESS, LAUNDER } from "../theme/content";
 
 export function Header({ onProfileTap }: { onProfileTap: () => void }) {
   const game = useGame();
@@ -56,7 +56,16 @@ export function Header({ onProfileTap }: { onProfileTap: () => void }) {
       </div>
 
       <div className="cash-block">
-        <div className="cash-amount" ref={cashRef}>{money(game.state.cash)}</div>
+        <div className="cash-row">
+          <div className="cash-col dirty" title={LAUNDER.dirtyHint}>
+            <div className="cash-tag">💵 {LAUNDER.dirtyLabel}</div>
+            <div className="cash-amount dirty" ref={cashRef}>{money(game.state.cash)}</div>
+          </div>
+          <div className="cash-col clean" title={LAUNDER.cleanHint}>
+            <div className="cash-tag">🏦 {LAUNDER.cleanLabel}</div>
+            <div className="cash-amount clean">{money(game.state.cleanCash)}</div>
+          </div>
+        </div>
         <div className="cash-meta">
           <span className="persec">
             <span className="chip-emoji">💵</span>

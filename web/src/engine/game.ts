@@ -5,7 +5,7 @@ import {
   pick, PersonaSlot,
 } from "./data";
 import { GameState, newGame, loadState, saveState, applyRebrand } from "./state";
-import { FIXER } from "../theme/content";
+import { FIXER, FRONTS, FrontDef, VELVET_CLEAN_INCOME_PER_LEVEL } from "../theme/content";
 
 export type BuyMode = "x1" | "x10" | "x100" | "max";
 export const BUY_MODES: { id: BuyMode; label: string }[] = [
@@ -180,6 +180,92 @@ export class Game {
     return F.cloutGain(this.state.lifetimeCash, this.state.clout, this.cloutGainRateBonus);
   }
 
+  // MARK: Fronts & laundering (dirty → clean)
+
+  frontLevel(id: string): number {
+    return this.state.fronts[id] ?? 0;
+  }
+
+  /** Dirty $/s a front washes at a given level. */
+  frontThroughput(def: FrontDef, level = this.frontLevel(def.id)): number {
+    if (level <= 0) return 0;
+    return def.baseThroughput * Math.pow(def.throughputGrowth, level - 1);
+  }
+
+  /** Fraction lost in the wash at a given level. */
+  frontCut(def: FrontDef, level = this.frontLevel(def.id)): number {
+    if (level <= 0) return def.baseCut;
+    return Math.max(def.cutFloor, def.baseCut - def.cutPerLevel * (level - 1));
+  }
+
+  frontUpgradeCost(def: FrontDef, level = this.frontLevel(def.id)): number {
+    return def.upgradeBase * Math.pow(def.upgradeGrowth, Math.max(level - 1, 0));
+  }
+
+  /** Total dirty $/s the whole outfit can wash. */
+  get launderRate(): number {
+    return FRONTS.reduce((sum, f) => sum + this.frontThroughput(f), 0);
+  }
+
+  /** Weighted average keep-fraction across owned fronts (for display). */
+  get launderKeep(): number {
+    const owned = FRONTS.filter((f) => this.frontLevel(f.id) > 0);
+    if (owned.length === 0) return 0;
+    const totalThr = this.launderRate;
+    return owned.reduce(
+      (sum, f) => sum + (this.frontThroughput(f) / totalThr) * (1 - this.frontCut(f)),
+      0,
+    );
+  }
+
+  canAffordFront(def: FrontDef): boolean {
+    return def.priceCurrency === "dirty"
+      ? this.state.cash >= def.price
+      : this.state.cleanCash >= def.price;
+  }
+
+  buyFront(def: FrontDef): boolean {
+    if (this.frontLevel(def.id) > 0 || !this.canAffordFront(def)) return false;
+    if (def.priceCurrency === "dirty") this.state.cash -= def.price;
+    else this.state.cleanCash -= def.price;
+    this.state.fronts[def.id] = 1;
+    this.notify();
+    return true;
+  }
+
+  upgradeFront(def: FrontDef): boolean {
+    const level = this.frontLevel(def.id);
+    if (level <= 0) return false;
+    const cost = this.frontUpgradeCost(def, level);
+    if (this.state.cleanCash < cost) return false;
+    this.state.cleanCash -= cost;
+    this.state.fronts[def.id] = level + 1;
+    this.notify();
+    return true;
+  }
+
+  /** Run the wash for `dt` seconds. Factor for prison slowdown (phase 4). */
+  private launder(dt: number, speedFactor = 1): void {
+    for (const f of FRONTS) {
+      const level = this.frontLevel(f.id);
+      if (level <= 0) continue;
+      const capacity = this.frontThroughput(f, level) * dt * speedFactor;
+      const take = Math.min(this.state.cash, capacity);
+      if (take > 0) {
+        this.state.cash -= take;
+        this.depositClean(take * (1 - this.frontCut(f, level)));
+      }
+      if (f.perk === "velvet_income") {
+        this.depositClean(VELVET_CLEAN_INCOME_PER_LEVEL * level * dt * speedFactor);
+      }
+    }
+  }
+
+  private depositClean(amount: number): void {
+    this.state.cleanCash += amount;
+    this.state.lifetimeClean += amount;
+  }
+
   // MARK: Persona
 
   get personaCreated(): boolean {
@@ -215,9 +301,10 @@ export class Game {
     return this.state.equippedCosmetics[item.slot] === item.id;
   }
 
+  /** Wardrobe is a legitimate purchase — clean cash only. */
   buyCosmetic(item: PersonaItemDef): boolean {
-    if (this.ownsCosmetic(item) || this.state.cash < item.cost) return false;
-    this.state.cash -= item.cost;
+    if (this.ownsCosmetic(item) || this.state.cleanCash < item.cost) return false;
+    this.state.cleanCash -= item.cost;
     this.state.ownedCosmetics.push(item.id);
     this.equipCosmetic(item);
     return true;
@@ -432,6 +519,8 @@ export class Game {
       }
     }
 
+    this.launder(dt);
+
     this.ticksSinceSave++;
     if (this.ticksSinceSave >= SAVE_EVERY_TICKS) {
       this.ticksSinceSave = 0;
@@ -463,6 +552,8 @@ export class Game {
       this.deposit(earned);
       this.offlineEarnings = earned;
     }
+    // The fronts kept washing while you were away.
+    if (this.state.cash > 0) this.launder(elapsed);
   }
 
   private save(): void {

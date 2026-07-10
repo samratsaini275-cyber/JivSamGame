@@ -8,6 +8,7 @@ import { nextThreshold, unitCost } from "../engine/formulas";
 import { money, duration } from "./format";
 import { sfx } from "./sfx";
 import { LABELS, MISC, MYSTERY_CARD } from "../theme/content";
+import { FrontsSection } from "./Fronts";
 
 export function Empire() {
   const game = useGame();
@@ -36,6 +37,8 @@ export function Empire() {
           ))}
         </div>
       </div>
+
+      <FrontsSection />
 
       <div className="card-list">
         {HUSTLES.slice(0, visibleCount).map((h) => <HustleCard key={h.id} index={h.id} />)}

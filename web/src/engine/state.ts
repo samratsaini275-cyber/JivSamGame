@@ -9,10 +9,18 @@ export interface HustleState {
 }
 
 export interface GameState {
+  /** Save-format version. v1 (absent) = single-currency CloutEmpire saves. */
+  saveVersion: number;
+  /** DIRTY cash. Persisted key kept as `cash` so v1 saves migrate for free. */
   cash: number;
-  lifetimeCash: number; // survives Rebrand; drives the Clout formula
+  /** CLEAN cash — laundered money; the real progression currency. */
+  cleanCash: number;
+  lifetimeCash: number; // lifetime DIRTY earned; survives prestige, drives Respect formula
+  lifetimeClean: number; // lifetime CLEAN earned — the Family Fortune
   clout: number;
   hustles: HustleState[];
+  /** Front-business levels by front id; missing/0 = deed not bought. */
+  fronts: Record<string, number>;
   lastSaved: number | null; // epoch ms
 
   // Rex Calloway's flex economy (wiped on Rebrand except Daytona count)
@@ -45,9 +53,11 @@ function freshHustles(): HustleState[] {
 
 export function newGame(): GameState {
   const hustles = freshHustles();
-  hustles[0].unitsOwned = 1; // start already posting fake P&Ls
+  hustles[0].unitsOwned = 1; // start with the family still bubbling
   return {
-    cash: 0, lifetimeCash: 0, clout: 0, hustles, lastSaved: null,
+    saveVersion: 2,
+    cash: 0, cleanCash: 0, lifetimeCash: 0, lifetimeClean: 0,
+    clout: 0, hustles, fronts: {}, lastSaved: null,
     ownedItems: [], equippedWrist: null, equippedGarage: null,
     daytonaPurchases: 0, rexMet: false,
     rexIntroAcknowledged: false, rexIntroReply: null,
@@ -73,6 +83,19 @@ export function applyRebrand(state: GameState, gained: number): void {
   state.rexPitchReplies = {};
   state.rexPitchFollowUp = {};
   state.rexDismissedPitches = [];
+  // Clean cash and the fronts' deeds survive — they're legitimate businesses.
+}
+
+/** v1 (CloutEmpire) → v2 (Bootleg Empire): old cash becomes dirty cash. */
+function migrate(parsed: Partial<GameState>): Partial<GameState> {
+  const version = parsed.saveVersion ?? 1;
+  if (version < 2) {
+    parsed.saveVersion = 2;
+    parsed.cleanCash = parsed.cleanCash ?? 0;
+    parsed.lifetimeClean = parsed.lifetimeClean ?? 0;
+    parsed.fronts = parsed.fronts ?? {};
+  }
+  return parsed;
 }
 
 const SAVE_KEY = "clout-empire-save-v1";
@@ -81,7 +104,7 @@ export function loadState(): GameState | null {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<GameState>;
+    const parsed = migrate(JSON.parse(raw) as Partial<GameState>);
     const base = newGame();
     const merged: GameState = { ...base, ...parsed };
     // Defensive: hustle array must match the current roster length.
