@@ -56,7 +56,7 @@ Tests/CloutEmpireTests/       # Unit tests
 
 ## Design
 
-See `readme.md.rtf` for the full design document covering currencies, platforms, trends, and the MVP roadmap.
+The full design document (currencies, platforms, trends, MVP roadmap) lived in `readme.md.rtf`, removed in commit 319c80f — recover it from git history if needed.
 
 ## License
 

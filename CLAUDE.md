@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-"Drip Empire" (formerly Clout Empire) — a satirical AdVenture Capitalist-style idle game about faking a streetwear empire. SwiftPM macOS executable (macOS 13+), SwiftUI, no external dependencies. The window is phone-shaped (390×~800) and views are kept iOS-portable for a possible future Xcode target. The original design doc is `readme.md.rtf` (read with `textutil -convert txt -stdout readme.md.rtf`).
+"Drip Empire" (formerly Clout Empire) — a satirical AdVenture Capitalist-style idle game about faking a streetwear empire. SwiftPM macOS executable (macOS 13+), SwiftUI, no external dependencies. The window is phone-shaped (390×~800) and views are kept iOS-portable for a possible future Xcode target. The original design doc (`readme.md.rtf`, referenced by section number in code comments like "README §4") was removed in commit 319c80f; recover it from git history and read with `textutil -convert txt -stdout` if needed.
 
 ## Commands
 
