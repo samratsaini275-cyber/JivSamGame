@@ -1,5 +1,6 @@
 // Persisted game snapshot — port of Model/GameState.swift + Game/Persistence.swift.
 import { HUSTLES } from "./data";
+import { PLOTS } from "../theme/content";
 
 export interface HustleState {
   unitsOwned: number;
@@ -21,6 +22,8 @@ export interface GameState {
   hustles: HustleState[];
   /** Front-business levels by front id; missing/0 = deed not bought. */
   fronts: Record<string, number>;
+  /** District ids the family controls. Always includes "docks". */
+  districtsUnlocked: string[];
   lastSaved: number | null; // epoch ms
 
   // Rex Calloway's flex economy (wiped on Rebrand except Daytona count)
@@ -57,7 +60,7 @@ export function newGame(): GameState {
   return {
     saveVersion: 2,
     cash: 0, cleanCash: 0, lifetimeCash: 0, lifetimeClean: 0,
-    clout: 0, hustles, fronts: {}, lastSaved: null,
+    clout: 0, hustles, fronts: {}, districtsUnlocked: ["docks"], lastSaved: null,
     ownedItems: [], equippedWrist: null, equippedGarage: null,
     daytonaPurchases: 0, rexMet: false,
     rexIntroAcknowledged: false, rexIntroReply: null,
@@ -94,6 +97,21 @@ function migrate(parsed: Partial<GameState>): Partial<GameState> {
     parsed.cleanCash = parsed.cleanCash ?? 0;
     parsed.lifetimeClean = parsed.lifetimeClean ?? 0;
     parsed.fronts = parsed.fronts ?? {};
+    // v1 players already ran rackets across the city — grant districts that
+    // cover any racket they own so nothing they had gets locked away.
+    if (!parsed.districtsUnlocked) {
+      const owned = new Set<string>(["docks"]);
+      (parsed.hustles ?? []).forEach((h, i) => {
+        if (h.unitsOwned > 0) {
+          const plot = PLOTS.find((p) => p.kind === "racket" && p.ref === i);
+          if (plot) owned.add(plot.district);
+        }
+      });
+      parsed.districtsUnlocked = [...owned];
+    }
+  }
+  if (!parsed.districtsUnlocked?.includes("docks")) {
+    parsed.districtsUnlocked = ["docks", ...(parsed.districtsUnlocked ?? [])];
   }
   return parsed;
 }

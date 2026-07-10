@@ -1098,6 +1098,77 @@ img { -webkit-user-drag: none; }
   font-variant-numeric: tabular-nums;
 }
 
+/* ============ The city map (Phase 3) ============ */
+
+.map-screen {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+  display: flex;
+}
+.map-wrap { flex: 1; position: relative; min-height: 0; }
+.map-canvas {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+  cursor: grab;
+}
+.map-canvas:active { cursor: grabbing; }
+
+.sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: rgba(4, 5, 8, 0.45);
+  display: flex;
+  align-items: flex-end;
+  animation: fadeIn 0.2s ease;
+}
+.sheet {
+  width: 100%;
+  max-height: 68%;
+  overflow-y: auto;
+  border-radius: 20px 20px 0 0;
+  background: linear-gradient(180deg, #1c2130, #10131a 60%);
+  border-top: 1.5px solid rgba(224, 182, 79, 0.4);
+  box-shadow: 0 -18px 50px rgba(0, 0, 0, 0.6);
+  padding: 8px 14px calc(14px + env(safe-area-inset-bottom));
+  animation: sheetUp 0.28s cubic-bezier(0.25, 1.2, 0.5, 1);
+  scrollbar-width: none;
+}
+@keyframes sheetUp { from { transform: translateY(60%); opacity: 0.5; } }
+.sheet-grip {
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(232, 220, 195, 0.25);
+  margin: 2px auto 10px;
+}
+.sheet-body { display: flex; flex-direction: column; gap: 10px; }
+.sheet-title {
+  font-family: var(--font-display);
+  font-size: 17px;
+  letter-spacing: 0.05em;
+  color: var(--paper);
+}
+.sheet-flavor { font-size: 12px; color: var(--muted); font-style: italic; line-height: 1.45; }
+.sheet-note { font-size: 10.5px; color: var(--faint); }
+.sheet-stats {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.sheet-stats span {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(61, 122, 116, 0.14);
+  border: 1px solid rgba(61, 122, 116, 0.4);
+  color: #7fb8b1;
+}
+.sheet .hustle-card { border: none; background: none; box-shadow: none; padding: 4px 0; }
+
 /* ============ Dual currency & fronts (Phase 2) ============ */
 
 .cash-row {

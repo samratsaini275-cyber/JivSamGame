@@ -4,7 +4,7 @@ import { GameEvent, game } from "../engine/game";
 import { HUSTLES, tierName } from "../engine/data";
 import { money } from "./format";
 import { sfx } from "./sfx";
-import { PRESS, FAMILY } from "../theme/content";
+import { PRESS, FAMILY, MAP_COPY, districtByID } from "../theme/content";
 
 interface Pop { id: number; x: number; y: number; text: string }
 interface Confetto { id: number; x: number; y: number; dx: number; dy: number; color: string; spin: number }
@@ -64,6 +64,10 @@ export function EffectsLayer() {
         title = FAMILY.toastTitle;
         sub = FAMILY.toastSub(e.clout.toLocaleString());
         sfx.rebrand();
+      } else if (e.kind === "districtUnlocked") {
+        title = MAP_COPY.unlockToast(districtByID(e.districtID).name);
+        sub = MAP_COPY.unlockToastSub;
+        sfx.viral();
       }
 
       const burst: Confetto[] = Array.from({ length: e.kind === "milestone" ? 26 : 44 }, () => ({

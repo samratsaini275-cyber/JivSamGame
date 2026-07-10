@@ -8,13 +8,15 @@ import { RexScreen } from "./ui/RexChat";
 import { PersonaScreen, PersonaCreation } from "./ui/Persona";
 import { RebrandScreen } from "./ui/Rebrand";
 import { EffectsLayer } from "./ui/Effects";
-import { IconEmpire, IconChat, IconSpark, IconProfile, IconLock } from "./ui/Icons";
+import { IconEmpire, IconChat, IconSpark, IconProfile, IconLock, IconMap } from "./ui/Icons";
 import { money } from "./ui/format";
 import { LABELS, MISC } from "./theme/content";
+import { MapScreen } from "./map/MapScreen";
 
-type Tab = "empire" | "dms" | "rebrand" | "profile";
+type Tab = "map" | "empire" | "dms" | "rebrand" | "profile";
 
 const TABS: { id: Tab; label: string; Icon: (p: { size?: number }) => JSX.Element }[] = [
+  { id: "map", label: LABELS.tabs.map, Icon: IconMap },
   { id: "empire", label: LABELS.tabs.ledger, Icon: IconEmpire },
   { id: "dms", label: LABELS.tabs.fixer, Icon: IconChat },
   { id: "rebrand", label: LABELS.tabs.family, Icon: IconSpark },
@@ -23,7 +25,7 @@ const TABS: { id: Tab; label: string; Icon: (p: { size?: number }) => JSX.Elemen
 
 export function App() {
   const game = useGame();
-  const [tab, setTab] = useState<Tab>("empire");
+  const [tab, setTab] = useState<Tab>("map");
   const colorway = colorwayByID(game.state.colorway);
   const unread = rexUnreadCount(game);
 
@@ -38,11 +40,12 @@ export function App() {
     <div className="stage">
       <div className="stage-glow" aria-hidden />
       <div className="phone">
-        {tab === "empire" && <Header onProfileTap={() => setTab("profile")} />}
+        {(tab === "empire" || tab === "map") && <Header onProfileTap={() => setTab("profile")} />}
 
         <main className="phone-content">
+          {tab === "map" && <MapScreen />}
           {tab === "empire" && <Empire />}
-          {tab === "dms" && <RexScreen onGoEmpire={() => setTab("empire")} />}
+          {tab === "dms" && <RexScreen onGoEmpire={() => setTab("map")} />}
           {tab === "rebrand" && <RebrandScreen />}
           {tab === "profile" && <PersonaScreen />}
         </main>

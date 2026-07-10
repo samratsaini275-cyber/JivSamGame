@@ -56,6 +56,15 @@ export function IconProfile({ size }: { size?: number }) {
   );
 }
 
+export function IconMap({ size }: { size?: number }) {
+  return (
+    <Svg size={size}>
+      <path d="M9 4L3.5 6v14L9 18l6 2 5.5-2V4L15 6z" />
+      <path d="M9 4v14M15 6v14" />
+    </Svg>
+  );
+}
+
 export function IconSound({ muted, size = 16 }: { muted: boolean; size?: number }) {
   return (
     <Svg size={size}>

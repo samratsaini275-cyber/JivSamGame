@@ -7,7 +7,7 @@ import { HUSTLES, tierName } from "../engine/data";
 import { nextThreshold, unitCost } from "../engine/formulas";
 import { money, duration } from "./format";
 import { sfx } from "./sfx";
-import { LABELS, MISC, MYSTERY_CARD } from "../theme/content";
+import { LABELS, MISC, MYSTERY_CARD, DISTRICTS } from "../theme/content";
 import { FrontsSection } from "./Fronts";
 
 export function Empire() {
@@ -65,12 +65,13 @@ function HustleArt({ index }: { index: number }) {
   );
 }
 
-function HustleCard({ index }: { index: number }) {
+export function HustleCard({ index }: { index: number }) {
   const game = useGame();
   const def = HUSTLES[index];
   const s = game.state.hustles[index];
   const owned = s.unitsOwned > 0;
   const tier = game.tier(index);
+  const available = game.hustleAvailable(index);
 
   const count = game.buyCount(index);
   const cost = game.buyCost(index);
@@ -88,7 +89,8 @@ function HustleCard({ index }: { index: number }) {
 
   if (!owned) {
     const firstCost = unitCost(def.baseCost, 0);
-    const canUnlock = game.state.cash >= firstCost;
+    const canUnlock = available && game.state.cash >= firstCost;
+    const districtName = DISTRICTS.find((d) => d.id === game.hustleDistrict(index))?.name ?? "";
     return (
       <div className={`hustle-card locked ${canUnlock ? "ready" : ""}`} data-hustle-card={index}>
         <div className="hustle-art dim">
@@ -97,15 +99,17 @@ function HustleCard({ index }: { index: number }) {
         </div>
         <div className="hustle-body">
           <div className="hustle-name">{def.name}</div>
-          <div className="hustle-flavor">{def.flavor}</div>
+          <div className="hustle-flavor">
+            {available ? def.flavor : `Buy into ${districtName} to open this racket.`}
+          </div>
         </div>
         <button
           className={`btn-buy unlock ${canUnlock ? "" : "disabled"}`}
           disabled={!canUnlock}
           onClick={() => { game.buyOne(index); sfx.buy(); }}
         >
-          <span className="btn-buy-label">{LABELS.start}</span>
-          <span className="btn-buy-cost">{money(firstCost)}</span>
+          <span className="btn-buy-label">{available ? LABELS.start : "🔒"}</span>
+          <span className="btn-buy-cost">{available ? money(firstCost) : districtName}</span>
         </button>
       </div>
     );

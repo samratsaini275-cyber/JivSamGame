@@ -138,10 +138,10 @@ export const BIZ: BizContent[] = [
     flavor: "Twelve boats. Zero fishing licenses.", crew: "Fleet Commodore" },
   { name: "Racetrack Fix", emoji: "🐎",
     flavor: "The horses are fast. The results are faster.", crew: "Track Insider" },
-  { name: "The Velvet Room", emoji: "🎭",
-    flavor: "Feathers, brass, and a band that never sleeps.", crew: "Stage Manager" },
-  { name: "Grand Hotel Skim", emoji: "🏨",
-    flavor: "Every suite pays twice. Once at the front desk.", crew: "Concierge" },
+  { name: "Uptown Supper Club", emoji: "🥂",
+    flavor: "The soup course is soup. The 'tea' course isn't.", crew: "Maître d'" },
+  { name: "Country Club Cellar", emoji: "⛳",
+    flavor: "Eighteen holes, one very deep wine cellar.", crew: "Club Steward" },
   { name: "Mega-Distillery", emoji: "🏭",
     flavor: "Industrial-grade 'vinegar' by the tanker car.", crew: "Plant Overseer" },
   { name: "Harbor Freight Co.", emoji: "🚢",
@@ -394,6 +394,122 @@ export const LAUNDER = {
 } as const;
 
 // ---------------------------------------------------------------------------
-// Later-phase content (districts, heat, shipments) lands here too so the
-// whole skin stays in one file. Populated in Phases 3–5.
+// The city map — §3. World coordinates in a 2000×1400 space.
 // ---------------------------------------------------------------------------
+
+export interface DistrictDef {
+  id: string;
+  name: string;
+  blurb: string;
+  /** Clean-cash price to unlock (docks is free/start). */
+  price: number;
+  /** Respect level required (enforced from Phase 5). */
+  respectLevel: number;
+  /** Land rectangle in world coords. */
+  rect: { x: number; y: number; w: number; h: number };
+  /** Muted land tint (drawn over paper base). */
+  tint: string;
+}
+
+export const WORLD = { w: 2000, h: 1400 } as const;
+
+export const DISTRICTS: DistrictDef[] = [
+  { id: "docks", name: "The Docks", price: 0, respectLevel: 0,
+    blurb: "Salt air, crooked cranes, and everything falls off a truck eventually.",
+    rect: { x: 110, y: 860, w: 580, h: 420 }, tint: "#8f8672" },
+  { id: "warsaw", name: "Little Warsaw", price: 15_000, respectLevel: 3,
+    blurb: "Working folk, warm kitchens, basements with very thick doors.",
+    rect: { x: 110, y: 390, w: 580, h: 420 }, tint: "#948a70" },
+  { id: "downtown", name: "Downtown", price: 1_500_000, respectLevel: 6,
+    blurb: "Neon, brass, and City Hall — everything here has a price tag.",
+    rect: { x: 750, y: 340, w: 540, h: 540 }, tint: "#9a8e74" },
+  { id: "row", name: "Millionaire's Row", price: 100_000_000, respectLevel: 10,
+    blurb: "Old money, new friends. The Judge takes his tea at four.",
+    rect: { x: 1350, y: 150, w: 540, h: 430 }, tint: "#a29677" },
+  { id: "islands", name: "The Harbor Islands", price: 5_000_000_000, respectLevel: 14,
+    blurb: "Past the breakwater, past the law. The empire's blue-water edge.",
+    rect: { x: 1400, y: 950, w: 480, h: 360 }, tint: "#8a8168" },
+];
+
+export function districtByID(id: string): DistrictDef {
+  return DISTRICTS.find((d) => d.id === id) ?? DISTRICTS[0];
+}
+
+export type PlotKind = "racket" | "front" | "precinct" | "landmark";
+
+export interface PlotDef {
+  id: string;
+  kind: PlotKind;
+  /** racket → HUSTLES index; front → FrontDef id; else landmark id. */
+  ref: number | string;
+  district: string;
+  /** Building footprint center, world coords. */
+  x: number;
+  y: number;
+  /** Footprint scale (1 = standard 90×70 building). */
+  size?: number;
+}
+
+export const PLOTS: PlotDef[] = [
+  // The Docks
+  { id: "p_still", kind: "racket", ref: 0, district: "docks", x: 220, y: 1010 },
+  { id: "p_anchor", kind: "racket", ref: 1, district: "docks", x: 440, y: 1155 },
+  { id: "p_gin", kind: "racket", ref: 2, district: "docks", x: 615, y: 1010 },
+  { id: "p_smuggle", kind: "racket", ref: 4, district: "docks", x: 590, y: 1230, size: 1.1 },
+  { id: "p_laundromat", kind: "front", ref: "laundromat", district: "docks", x: 235, y: 1160 },
+  { id: "pr_docks", kind: "precinct", ref: "precinct_docks", district: "docks", x: 425, y: 1010, size: 0.9 },
+  // Little Warsaw
+  { id: "p_brewery", kind: "racket", ref: 3, district: "warsaw", x: 240, y: 520 },
+  { id: "p_warehouse", kind: "racket", ref: 5, district: "warsaw", x: 560, y: 500, size: 1.15 },
+  { id: "p_clock", kind: "racket", ref: 6, district: "warsaw", x: 300, y: 690 },
+  { id: "p_barber", kind: "front", ref: "barber", district: "warsaw", x: 520, y: 700, size: 0.9 },
+  { id: "pr_warsaw", kind: "precinct", ref: "precinct_warsaw", district: "warsaw", x: 420, y: 590, size: 0.9 },
+  // Downtown
+  { id: "p_casino", kind: "racket", ref: 7, district: "downtown", x: 880, y: 460 },
+  { id: "p_racetrack", kind: "racket", ref: 9, district: "downtown", x: 1150, y: 480, size: 1.2 },
+  { id: "p_supper", kind: "racket", ref: 10, district: "downtown", x: 870, y: 640 },
+  { id: "p_velvet", kind: "front", ref: "velvet", district: "downtown", x: 1050, y: 700, size: 1.25 },
+  { id: "lm_cityhall", kind: "landmark", ref: "cityhall", district: "downtown", x: 1010, y: 430, size: 1.2 },
+  { id: "pr_downtown", kind: "precinct", ref: "precinct_downtown", district: "downtown", x: 1190, y: 800 },
+  // Millionaire's Row
+  { id: "p_country", kind: "racket", ref: 11, district: "row", x: 1480, y: 270 },
+  { id: "p_railroad", kind: "racket", ref: 14, district: "row", x: 1760, y: 240, size: 1.15 },
+  { id: "p_hotel", kind: "front", ref: "hotel", district: "row", x: 1550, y: 450, size: 1.3 },
+  { id: "lm_judge", kind: "landmark", ref: "judge", district: "row", x: 1780, y: 430, size: 1.1 },
+  { id: "pr_row", kind: "precinct", ref: "precinct_row", district: "row", x: 1650, y: 320, size: 0.9 },
+  // The Harbor Islands
+  { id: "p_fleet", kind: "racket", ref: 8, district: "islands", x: 1500, y: 1040 },
+  { id: "p_distillery", kind: "racket", ref: 12, district: "islands", x: 1730, y: 1030, size: 1.2 },
+  { id: "p_freight", kind: "racket", ref: 13, district: "islands", x: 1500, y: 1210 },
+  { id: "p_syndicate", kind: "racket", ref: 15, district: "islands", x: 1780, y: 1220, size: 1.3 },
+  { id: "p_importexport", kind: "front", ref: "importexport", district: "islands", x: 1620, y: 1120 },
+];
+
+export const LANDMARKS: Record<string, { name: string; emoji: string; blurb: string }> = {
+  cityhall: { name: "City Hall", emoji: "🏛️",
+    blurb: "Marble halls, flexible morals. Late-game friends live here." },
+  judge: { name: "The Judge's Mansion", emoji: "⚖️",
+    blurb: "The Judge takes his tea at four. Lawyer favors, coming soon." },
+  precinct_docks: { name: "Precinct No. 1", emoji: "🚓",
+    blurb: "The desk sergeant enjoys long lunches. Noted." },
+  precinct_warsaw: { name: "Precinct No. 2", emoji: "🚓",
+    blurb: "The captain admires a well-pressed suit. Noted." },
+  precinct_downtown: { name: "Police Headquarters", emoji: "🚓",
+    blurb: "Marble lobby. Everyone watches everyone." },
+  precinct_row: { name: "Precinct No. 4", emoji: "🚓",
+    blurb: "Quiet streets. Expensive quiet." },
+};
+
+export const MAP_COPY = {
+  forSale: "FOR SALE",
+  locked: (name: string, respect: number) =>
+    `${name} — Reach Respect ${respect}`,
+  unlockCta: (price: string) => `BUY INTO THE WARD · ${price}`,
+  unlockToast: (name: string) => `${name.toUpperCase()} JOINS THE EMPIRE`,
+  unlockToastSub: "New plots just hit the market",
+  comingSoon: "COMING SOON",
+  precinctIdle: "Nothing to discuss with the law. Yet.",
+  landmarkIdle: "The doors are closed to you. For now.",
+} as const;
+
+// Heat & shipments content arrives with Phases 4–5.

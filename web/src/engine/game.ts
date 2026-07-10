@@ -5,7 +5,10 @@ import {
   pick, PersonaSlot,
 } from "./data";
 import { GameState, newGame, loadState, saveState, applyRebrand } from "./state";
-import { FIXER, FRONTS, FrontDef, VELVET_CLEAN_INCOME_PER_LEVEL } from "../theme/content";
+import {
+  FIXER, FRONTS, FrontDef, VELVET_CLEAN_INCOME_PER_LEVEL,
+  DISTRICTS, DistrictDef, PLOTS,
+} from "../theme/content";
 
 export type BuyMode = "x1" | "x10" | "x100" | "max";
 export const BUY_MODES: { id: BuyMode; label: string }[] = [
@@ -19,7 +22,8 @@ export type GameEvent =
   | { kind: "payout"; hustleIndex: number; amount: number }
   | { kind: "milestone"; hustleIndex: number; tier: number }
   | { kind: "hypeWave"; tier: number }
-  | { kind: "rebranded"; clout: number };
+  | { kind: "rebranded"; clout: number }
+  | { kind: "districtUnlocked"; districtID: string };
 
 type Listener = () => void;
 type EventListener = (e: GameEvent) => void;
@@ -178,6 +182,39 @@ export class Game {
 
   get cloutOnRebrand(): number {
     return F.cloutGain(this.state.lifetimeCash, this.state.clout, this.cloutGainRateBonus);
+  }
+
+  // MARK: Districts
+
+  districtUnlocked(id: string): boolean {
+    return this.state.districtsUnlocked.includes(id);
+  }
+
+  /** District a racket lives in ("docks" fallback for safety). */
+  hustleDistrict(index: number): string {
+    return PLOTS.find((p) => p.kind === "racket" && p.ref === index)?.district ?? "docks";
+  }
+
+  hustleAvailable(index: number): boolean {
+    return this.districtUnlocked(this.hustleDistrict(index));
+  }
+
+  canUnlockDistrict(def: DistrictDef): boolean {
+    return !this.districtUnlocked(def.id) && this.state.cleanCash >= def.price;
+  }
+
+  unlockDistrict(def: DistrictDef): boolean {
+    if (!this.canUnlockDistrict(def)) return false;
+    this.state.cleanCash -= def.price;
+    this.state.districtsUnlocked.push(def.id);
+    this.emit({ kind: "districtUnlocked", districtID: def.id });
+    this.save();
+    this.notify();
+    return true;
+  }
+
+  get nextLockedDistrict(): DistrictDef | null {
+    return DISTRICTS.find((d) => !this.districtUnlocked(d.id)) ?? null;
   }
 
   // MARK: Fronts & laundering (dirty → clean)
@@ -375,6 +412,7 @@ export class Game {
   // MARK: Player actions
 
   buy(index: number): void {
+    if (!this.hustleAvailable(index)) return;
     const count = this.buyCount(index);
     const cost = F.bulkCost(HUSTLES[index].baseCost, this.state.hustles[index].unitsOwned, count);
     if (count <= 0 || this.state.cash < cost) return;
