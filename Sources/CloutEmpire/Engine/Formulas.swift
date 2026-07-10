@@ -27,6 +27,10 @@ enum Formulas {
 
     static func maxAffordable(base: Double, owned: Int, cash: Double, growth: Double = costGrowth) -> Int {
         let first = unitCost(base: base, owned: owned, growth: growth)
+        // Infinite cash (e.g. from a bad dev input) would make the log below
+        // return inf and trap in Int(_:). Clamping preserves the math for
+        // every finite input; NaN falls out via the guard (NaN >= x is false).
+        let cash = min(cash, .greatestFiniteMagnitude)
         guard cash >= first else { return 0 }
         let r = growth
         let n = Int(floor(log(cash * (r - 1) / first + 1) / log(r)))

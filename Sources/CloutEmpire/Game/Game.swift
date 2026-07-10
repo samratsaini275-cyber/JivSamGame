@@ -815,8 +815,11 @@ final class Game: ObservableObject {
     // MARK: Dev
 
     func devAddCash(_ amount: Double) {
-        guard amount > 0 else { return }
-        state.cash += amount
+        // The dev text field parses with Double(_:), which accepts "inf" and
+        // overflowing literals — non-finite cash crashes the log() in
+        // Formulas.maxAffordable. Keep dev money finite and in float range.
+        guard amount > 0, amount.isFinite else { return }
+        state.cash = min(state.cash + amount, 1e300)
     }
 
     // MARK: Player actions
