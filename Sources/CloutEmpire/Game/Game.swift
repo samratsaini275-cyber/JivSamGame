@@ -65,6 +65,11 @@ final class Game: ObservableObject {
 
     var viralBuffActive: Bool { (state.viralBuffUntil ?? .distantPast) > Date() }
     var milleBuffActive: Bool { (state.milleBuffUntil ?? .distantPast) > Date() }
+    var cloutSurgeActive: Bool { (state.cloutSurgeUntil ?? .distantPast) > Date() }
+    var cloutSurgeRemaining: TimeInterval {
+        guard cloutSurgeActive, let until = state.cloutSurgeUntil else { return 0 }
+        return until.timeIntervalSinceNow
+    }
 
     /// How many hustles have reached the next viral tier — drives the header ring.
     var hustlesAtNextViralTier: Int {
@@ -108,10 +113,11 @@ final class Game: ObservableObject {
         return h.baseIncome * Double(s.unitsOwned)
             * Formulas.incomeMultiplier(tier: tier(of: index))
             * pow(2, Double(effectiveViralTier))
-            * Formulas.cloutMultiplier(clout: state.clout)
+            * Formulas.cloutMultiplier(clout: state.availableClout)
             * Formulas.wristIncomeMultiplier(itemID: state.equippedWrist, hustleTier: tier(of: index))
             * Formulas.perkIncomeMultiplier(equippedPerks: state.equippedPerks, hustleTier: tier(of: index))
             * (milleBuffActive ? 2 : 1)
+            * (cloutSurgeActive ? CloutStore.surgeIncomeMultiplier : 1)
     }
 
     /// Aggregate automated income — the header's "per second" subtitle.
@@ -122,22 +128,32 @@ final class Game: ObservableObject {
         }
     }
 
+    func costGrowth(for index: Int) -> Double {
+        let shards = state.cloutUpgrades(for: index).costCutShards
+        return Formulas.costGrowth(shards: shards)
+    }
+
     func buyCount(for index: Int) -> Int {
         let h = hustles[index]
         let owned = state.hustles[index].unitsOwned
         if let count = buyMode.count { return count }
-        return max(1, Formulas.maxAffordable(base: h.baseCost, owned: owned, cash: state.cash))
+        return max(1, Formulas.maxAffordable(base: h.baseCost, owned: owned, cash: state.cash, growth: costGrowth(for: index)))
     }
 
     func buyCost(for index: Int) -> Double {
-        Formulas.bulkCost(base: hustles[index].baseCost,
-                          owned: state.hustles[index].unitsOwned,
-                          count: buyCount(for: index))
+        var cost = Formulas.bulkCost(base: hustles[index].baseCost,
+                                     owned: state.hustles[index].unitsOwned,
+                                     count: buyCount(for: index),
+                                     growth: costGrowth(for: index))
+        if state.cloutUpgrades(for: index).publicistHired {
+            cost *= (1 - CloutStore.publicistCostCut)
+        }
+        return cost
     }
 
     var cloutOnRebrand: Double {
         Formulas.cloutGain(lifetimeCash: state.lifetimeCash,
-                           currentClout: state.clout,
+                           currentClout: state.totalClout,
                            gainRateBonus: cloutGainRateBonus)
     }
 
@@ -204,13 +220,13 @@ final class Game: ObservableObject {
 
     var leaderboardEntry: LeaderboardEntry {
         LeaderboardEntry(id: state.handle, handle: state.handle, portraitImage: portraitImage,
-                         clout: state.clout, lifetimeCash: state.lifetimeCash)
+                         clout: state.totalClout, lifetimeCash: state.lifetimeCash)
     }
 
     // MARK: Rex
 
     var rexUnlocked: Bool {
-        sneakerResellsUnlocked || state.clout > 0
+        sneakerResellsUnlocked || state.totalClout > 0
     }
 
     /// DMs tab unlocks after the player buys into Sneaker Resells (hustle 1).
@@ -256,11 +272,44 @@ final class Game: ObservableObject {
     }
 
     func dmTranscript(for dealer: DMDealer) -> [DMTranscriptEntry] {
-        state.dmThread(for: dealer).transcript
+        let thread = state.dmThread(for: dealer)
+        if isViewingComeback(dealer) { return thread.comebackTranscript }
+        return thread.transcript
     }
 
     func dmCurrentNode(for dealer: DMDealer) -> String? {
-        state.dmThread(for: dealer).currentNode
+        let thread = state.dmThread(for: dealer)
+        if isViewingComeback(dealer) { return thread.comebackCurrentNode }
+        return thread.currentNode
+    }
+
+    private func isViewingComeback(_ dealer: DMDealer) -> Bool {
+        let thread = state.dmThread(for: dealer)
+        if thread.comebackCurrentNode != nil { return true }
+        if thread.comebackThreadStarted && !thread.comebackTranscript.isEmpty { return true }
+        if state.dealerRelationship(for: dealer).comebackPending && !thread.comebackThreadStarted { return true }
+        return false
+    }
+
+    func hasUnreadComeback(_ dealer: DMDealer) -> Bool {
+        let rel = state.dealerRelationship(for: dealer)
+        let thread = state.dmThread(for: dealer)
+        guard rel.respectLevel >= 1, !rel.comebackThreadCompleted else { return false }
+        if rel.comebackPending && !thread.comebackThreadStarted { return true }
+        if shouldReopenComeback(dealer) { return true }
+        if let nodeID = thread.comebackCurrentNode, !thread.comebackThreadClosed {
+            return !DMScripts.choices(for: dealer, nodeID: nodeID, game: self).isEmpty
+        }
+        return false
+    }
+
+    func shouldReopenComeback(_ dealer: DMDealer) -> Bool {
+        let thread = state.dmThread(for: dealer)
+        guard thread.comebackThreadClosed else { return false }
+        guard !state.dealerRelationship(for: dealer).comebackThreadCompleted else { return false }
+        guard let last = thread.comebackLastClosedNode,
+              DMComebackScripts.reopenableNodes(for: dealer).contains(last) else { return false }
+        return true
     }
 
     func ownedRexItems(for slot: ItemSlot) -> [RexItem] {
@@ -299,10 +348,22 @@ final class Game: ObservableObject {
         return true
     }
 
-    /// Dealer respect flags shave 10% off that dealer's future offers.
-    func price(for item: RexItem) -> Double {
-        guard let dealer = item.dealer, state.dmThread(for: dealer).respectsPlayer else { return item.cost }
-        return (item.cost * 0.9).rounded(.down)
+    /// Dealer respect + referral discounts on premium opening offers.
+    func price(for item: RexItem, favorDiscount: Double? = nil) -> Double {
+        var cost = item.cost
+        if let dealer = item.dealer {
+            let rel = state.dealerRelationship(for: dealer)
+            if rel.respectLevel >= 1 || state.dmThread(for: dealer).respectsPlayer {
+                cost *= 0.9
+            }
+            if item.id == dealer.premiumItemID, rel.referredOpeningDiscount > 0 {
+                cost *= (1 - rel.referredOpeningDiscount)
+            }
+        }
+        if let favorDiscount {
+            cost *= (1 - favorDiscount)
+        }
+        return cost.rounded(.down)
     }
 
     /// Active perk boost labels for the HUD.
@@ -356,11 +417,52 @@ final class Game: ObservableObject {
     }
 
     func onDMThreadOpened(_ dealer: DMDealer) {
+        if shouldStartComeback(dealer) {
+            startComebackThread(dealer)
+            return
+        }
+        if shouldReopenComeback(dealer) {
+            reopenComebackThread(dealer)
+            return
+        }
         startDMThreadIfNeeded(dealer)
         guard shouldReopenDMOffer(dealer) else { return }
         state.updateDMThread(dealer) { thread in
             thread.threadClosed = false
             thread.currentNode = dealer.offerNodeID(for: state)
+        }
+    }
+
+    private func shouldStartComeback(_ dealer: DMDealer) -> Bool {
+        let rel = state.dealerRelationship(for: dealer)
+        let thread = state.dmThread(for: dealer)
+        guard rel.respectLevel >= 1, !rel.comebackThreadCompleted else { return false }
+        return rel.comebackPending && !thread.comebackThreadStarted
+    }
+
+    private func startComebackThread(_ dealer: DMDealer) {
+        state.updateDMThread(dealer) { thread in
+            thread.comebackThreadStarted = true
+            thread.comebackThreadClosed = false
+        }
+        state.updateDealerRelationship(dealer) { $0.comebackPending = false }
+        enterComebackNode(dealer, DMComebackScripts.startingNodeID(for: dealer))
+    }
+
+    private func reopenComebackThread(_ dealer: DMDealer) {
+        let thread = state.dmThread(for: dealer)
+        let prefix = DMComebackScripts.specs[dealer]?.prefix ?? dealer.scriptPrefix
+        let offerID = "\(prefix)_return_offer"
+        let nodeID: String
+        if let last = thread.comebackLastClosedNode,
+           DMComebackScripts.reopenableNodes(for: dealer).contains(last) {
+            nodeID = last.hasSuffix("_return_decline") ? offerID : last
+        } else {
+            nodeID = offerID
+        }
+        state.updateDMThread(dealer) { thread in
+            thread.comebackThreadClosed = false
+            thread.comebackCurrentNode = nodeID
         }
     }
 
@@ -392,12 +494,19 @@ final class Game: ObservableObject {
     }
 
     func selectDMChoice(_ dealer: DMDealer, _ choice: DMChoice) {
-        guard let nodeID = dmCurrentNode(for: dealer),
+        let comeback = isViewingComeback(dealer)
+        let nodeID = dmCurrentNode(for: dealer)
+        guard let nodeID,
               DMScripts.node(dealer, id: nodeID) != nil else { return }
         guard DMScripts.canSelect(choice, game: self) else { return }
 
-        appendDMTranscript(dealer, .player(choice.label))
-        enterDMNode(dealer, choice.nextNodeID)
+        if comeback {
+            appendComebackTranscript(dealer, .player(choice.label))
+            enterComebackNode(dealer, choice.nextNodeID)
+        } else {
+            appendDMTranscript(dealer, .player(choice.label))
+            enterDMNode(dealer, choice.nextNodeID)
+        }
     }
 
     // Legacy wrappers
@@ -406,11 +515,45 @@ final class Game: ObservableObject {
     func reopenVaultThread() { onVaultThreadOpened() }
     func selectVaultChoice(_ choice: DMChoice) { selectDMChoice(.vinnie, choice) }
 
+    private func enterComebackNode(_ dealer: DMDealer, _ nodeID: String) {
+        guard let node = DMScripts.node(dealer, id: nodeID), node.isComeback else { return }
+        let itemName = state.dealerRelationship(for: dealer).premiumItemID
+            .flatMap { RexItem.byID($0)?.name } ?? dealer.premiumItemName
+
+        for effect in node.effects {
+            applyDMEffect(effect, dealer: dealer, favorDiscount: nil)
+        }
+
+        for bubble in node.bubbles {
+            switch bubble {
+            case .text(let text):
+                let line = DMComebackScripts.interpolate(text, itemName: itemName)
+                appendComebackTranscript(dealer, .contact(line))
+            case .itemCard(let itemID, let caption):
+                appendComebackTranscript(dealer, .contactItem(itemID, caption: caption))
+            }
+        }
+
+        if node.closesThread {
+            state.updateDMThread(dealer) { thread in
+                thread.comebackThreadClosed = true
+                thread.comebackLastClosedNode = nodeID
+                thread.comebackCurrentNode = nil
+            }
+        } else {
+            state.updateDMThread(dealer) { $0.comebackCurrentNode = nodeID }
+        }
+    }
+
+    private func appendComebackTranscript(_ dealer: DMDealer, _ entry: DMTranscriptEntry) {
+        state.updateDMThread(dealer) { $0.comebackTranscript.append(entry) }
+    }
+
     private func enterDMNode(_ dealer: DMDealer, _ nodeID: String) {
         guard let node = DMScripts.node(dealer, id: nodeID) else { return }
 
         for effect in node.effects {
-            applyDMEffect(effect, dealer: dealer)
+            applyDMEffect(effect, dealer: dealer, favorDiscount: nil)
         }
 
         for bubble in node.bubbles {
@@ -440,14 +583,55 @@ final class Game: ObservableObject {
         state.updateDMThread(dealer) { $0.transcript.append(entry) }
     }
 
-    private func applyDMEffect(_ effect: DMEffect, dealer: DMDealer) {
+    private func applyDMEffect(_ effect: DMEffect, dealer: DMDealer, favorDiscount: Double?) {
         switch effect {
         case .buyAndEquip(let itemID):
             guard let item = RexItem.byID(itemID) else { return }
             _ = buyItem(item)
-        case .setRespectsPlayer:
-            state.updateDMThread(dealer) { $0.respectsPlayer = true }
+        case .buyAndEquipDiscounted(let itemID, let discount):
+            guard let item = RexItem.byID(itemID) else { return }
+            let cost = price(for: item, favorDiscount: discount)
+            guard !owns(item), state.cash >= cost else { return }
+            state.cash -= cost
+            state.ownedItems.insert(item.id)
+            if item.id == "daytona" { state.daytonaPurchases += 1 }
+            equip(item)
+        case .setPremiumRespect(let itemID, let respectDealer):
+            let hustleTier = tier(of: respectDealer.hustleIndex)
+            state.updateDMThread(respectDealer) { $0.respectsPlayer = true }
+            state.updateDealerRelationship(respectDealer) { rel in
+                rel.respectLevel = max(rel.respectLevel, 1)
+                rel.premiumItemID = itemID
+                rel.lastPurchaseHustleTier = hustleTier
+            }
+        case .setReferralDiscount(let target, let fraction):
+            state.updateDealerRelationship(target) { rel in
+                rel.referredOpeningDiscount = max(rel.referredOpeningDiscount, fraction)
+            }
+        case .completeComeback:
+            state.updateDealerRelationship(dealer) { rel in
+                rel.respectLevel = 2
+                rel.comebackThreadCompleted = true
+                rel.hasSeenComebackIntro = true
+                rel.comebackPending = false
+            }
+        case .markComebackIntroSeen:
+            state.updateDealerRelationship(dealer) { rel in
+                rel.hasSeenComebackIntro = true
+                rel.comebackPending = false
+            }
         }
+    }
+
+    private func checkComebackTriggers(hustleIndex: Int, newTier: Int) {
+        guard let dealer = DMDealer.forHustle(hustleIndex) else { return }
+        let rel = state.dealerRelationship(for: dealer)
+        guard rel.respectLevel >= 1,
+              !rel.hasSeenComebackIntro,
+              !rel.comebackThreadCompleted,
+              newTier >= rel.lastPurchaseHustleTier + 2 else { return }
+        state.updateDealerRelationship(dealer) { $0.comebackPending = true }
+        lastEvent = GameEvent(kind: .newDM(dealer: dealer))
     }
 
     private func notifyDMAvailableIfNeeded(hustleIndex: Int, hadUnitsBefore: Bool) {
@@ -474,7 +658,8 @@ final class Game: ObservableObject {
         let count = buyCount(for: index)
         let cost = Formulas.bulkCost(base: hustles[index].baseCost,
                                      owned: state.hustles[index].unitsOwned,
-                                     count: count)
+                                     count: count,
+                                     growth: costGrowth(for: index))
         guard count > 0, state.cash >= cost else { return }
         let tierBefore = tier(of: index)
         let viralBefore = viralTier
@@ -500,6 +685,81 @@ final class Game: ObservableObject {
         }
 
         notifyDMAvailableIfNeeded(hustleIndex: index, hadUnitsBefore: hadUnits)
+        if tier(of: index) > tierBefore {
+            checkComebackTriggers(hustleIndex: index, newTier: tier(of: index))
+        }
+    }
+
+    // MARK: Clout Store
+
+    func cloutPurchaseCost(type: CloutPurchase, hustleIndex: Int? = nil) -> Int {
+        let fraction: Double = switch type {
+        case .publicist: CloutStore.publicistCostFraction
+        case .costCutShard: CloutStore.costCutShardFraction
+        case .oneTimeSurge: CloutStore.surgeCostFraction
+        }
+        return max(1, Int(floor(state.availableClout * fraction)))
+    }
+
+    func cloutPurchaseNeedsConfirmation(type: CloutPurchase, hustleIndex: Int? = nil) -> Bool {
+        let cost = cloutPurchaseCost(type: type, hustleIndex: hustleIndex)
+        let fraction = Double(cost) / max(state.availableClout, 1)
+        return fraction >= CloutStore.confirmationThreshold - 1e-9
+    }
+
+    func permanentIncomeLossPercent(forCloutCost cost: Int) -> Int {
+        Int((Double(cost) * Formulas.cloutBonusPerPoint * 100).rounded())
+    }
+
+    func canPurchaseClout(type: CloutPurchase, hustleIndex: Int? = nil) -> Bool {
+        let cost = cloutPurchaseCost(type: type, hustleIndex: hustleIndex)
+        guard cost > 0, state.availableClout >= Double(cost) else { return false }
+        switch type {
+        case .publicist:
+            guard let i = hustleIndex else { return false }
+            return !state.cloutUpgrades(for: i).publicistHired
+        case .costCutShard:
+            guard let i = hustleIndex else { return false }
+            return state.cloutUpgrades(for: i).costCutShards < CloutStore.maxCostCutShardsPerHustle
+        case .oneTimeSurge:
+            return true
+        }
+    }
+
+    @discardableResult
+    func purchaseClout(type: CloutPurchase, hustleIndex: Int? = nil) -> Bool {
+        guard canPurchaseClout(type: type, hustleIndex: hustleIndex) else { return false }
+        let cost = cloutPurchaseCost(type: type, hustleIndex: hustleIndex)
+        guard state.availableClout >= Double(cost) else { return false }
+
+        state.availableClout -= Double(cost)
+        state.spentClout += Double(cost)
+        state.cloutPurchaseLog.append(CloutStorePurchase(
+            type: type,
+            targetHustleID: hustleIndex.map { String($0) },
+            cloutSpent: cost,
+            timestamp: Date()
+        ))
+
+        switch type {
+        case .publicist:
+            guard let i = hustleIndex else { return false }
+            state.updateCloutUpgrades(for: i) { $0.publicistHired = true }
+        case .costCutShard:
+            guard let i = hustleIndex else { return false }
+            state.updateCloutUpgrades(for: i) { $0.costCutShards += 1 }
+        case .oneTimeSurge:
+            state.cloutSurgeUntil = Date().addingTimeInterval(CloutStore.surgeDuration)
+        }
+        return true
+    }
+
+    func hasPublicist(for index: Int) -> Bool {
+        state.cloutUpgrades(for: index).publicistHired
+    }
+
+    func costCutShards(for index: Int) -> Int {
+        state.cloutUpgrades(for: index).costCutShards
     }
 
     func post(_ index: Int) {

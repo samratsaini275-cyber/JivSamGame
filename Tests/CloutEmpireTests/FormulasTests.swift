@@ -130,6 +130,7 @@ final class FormulasTests: XCTestCase {
         """
         let state = try JSONDecoder().decode(GameState.self, from: Data(legacyJSON.utf8))
         XCTAssertEqual(state.cash, 42.5)
+        XCTAssertEqual(state.availableClout, 3)
         XCTAssertTrue(state.ownedItems.isEmpty)
         XCTAssertEqual(state.daytonaPurchases, 0)
     }
@@ -199,11 +200,81 @@ final class FormulasTests: XCTestCase {
 
         state.rebrand(gaining: 6)
 
-        XCTAssertEqual(state.clout, 6)
+        XCTAssertEqual(state.availableClout, 6)
         XCTAssertEqual(state.cash, 0)
         XCTAssertEqual(state.lifetimeCash, 1_000_000)
         XCTAssertEqual(state.hustles[2].unitsOwned, 0)
         XCTAssertFalse(state.hustles[2].ghostwriterHired)
         XCTAssertEqual(state.hustles[0].unitsOwned, 1, "fresh persona starts with one hustle unit")
+    }
+
+    func testCloutSpendingReducesIncomeMultiplier() {
+        var state = GameState.newGame()
+        state.availableClout = 100
+        let game = Game(state: state)
+        XCTAssertEqual(Formulas.cloutMultiplier(clout: game.state.availableClout), 3, accuracy: 1e-9)
+        _ = game.purchaseClout(type: .oneTimeSurge)
+        XCTAssertEqual(game.state.availableClout, 85)
+        XCTAssertEqual(Formulas.cloutMultiplier(clout: game.state.availableClout), 2.7, accuracy: 1e-9)
+    }
+
+    func testComebackDoesNotTriggerWithoutPremiumRespect() {
+        var state = GameState.newGame()
+        state.hustles[1].unitsOwned = 100
+        state.cash = 1_000_000_000
+        state.updateDealerRelationship(.vinnie) { rel in
+            rel.respectLevel = 0
+            rel.lastPurchaseHustleTier = 0
+        }
+        let game = Game(state: state)
+        game.buy(1)
+        XCTAssertFalse(game.state.dealerRelationship(for: .vinnie).comebackPending)
+    }
+
+    func testComebackTriggersAfterTwoTiersPastPurchase() {
+        var state = GameState.newGame()
+        state.hustles[1].unitsOwned = 49
+        state.cash = 1_000_000_000
+        state.updateDealerRelationship(.vinnie) { rel in
+            rel.respectLevel = 1
+            rel.lastPurchaseHustleTier = 0
+            rel.premiumItemID = "tagheuer"
+        }
+        let game = Game(state: state)
+        game.buy(1)
+        XCTAssertTrue(game.state.dealerRelationship(for: .vinnie).comebackPending)
+    }
+
+    func testReferralDiscountAppliesToPremiumPrice() {
+        var state = GameState.newGame()
+        state.updateDealerRelationship(.sloane) { $0.referredOpeningDiscount = 0.15 }
+        let game = Game(state: state)
+        guard let item = RexItem.byID("daytona") else {
+            XCTFail("missing daytona item")
+            return
+        }
+        let expected = (item.cost * 0.85).rounded(.down)
+        XCTAssertEqual(game.price(for: item), expected)
+    }
+
+    func testCloutUpgradesSurviveRebrand() {
+        var state = GameState.newGame()
+        state.updateCloutUpgrades(for: 2) { upgrades in
+            upgrades.publicistHired = true
+            upgrades.costCutShards = 2
+        }
+        state.rebrand(gaining: 5)
+        let upgrades = state.cloutUpgrades(for: 2)
+        XCTAssertTrue(upgrades.publicistHired)
+        XCTAssertEqual(upgrades.costCutShards, 2)
+    }
+
+    func testCostCutShardsCapAtTwo() {
+        var state = GameState.newGame()
+        state.availableClout = 1_000
+        let game = Game(state: state)
+        XCTAssertTrue(game.purchaseClout(type: .costCutShard, hustleIndex: 0))
+        XCTAssertTrue(game.purchaseClout(type: .costCutShard, hustleIndex: 0))
+        XCTAssertFalse(game.canPurchaseClout(type: .costCutShard, hustleIndex: 0))
     }
 }

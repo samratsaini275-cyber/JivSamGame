@@ -109,6 +109,10 @@ enum DMDealer: String, CaseIterable, Identifiable {
         DMScripts.nodes(for: self)
     }
 
+    var comebackNodes: [String: DMNode] {
+        DMComebackScripts.nodes(for: self)
+    }
+
     func startingNodeID(for state: GameState) -> String {
         let p = scriptPrefix
         return state.dmThread(for: self).introCompleted ? "\(p)_offer_1" : "\(p)_intro_1"
@@ -139,6 +143,7 @@ struct DMChoice: Identifiable {
     let label: String
     let nextNodeID: String
     var buyItemID: String? = nil
+    var favorDiscount: Double? = nil
 }
 
 struct DMNode {
@@ -147,11 +152,16 @@ struct DMNode {
     let choices: [DMChoice]
     let effects: [DMEffect]
     let closesThread: Bool
+    var isComeback: Bool = false
 }
 
 enum DMEffect: Equatable {
     case buyAndEquip(rexItemID: String)
-    case setRespectsPlayer
+    case buyAndEquipDiscounted(rexItemID: String, discount: Double)
+    case setPremiumRespect(itemID: String, dealer: DMDealer)
+    case setReferralDiscount(target: DMDealer, fraction: Double)
+    case completeComeback
+    case markComebackIntroSeen
 }
 
 struct DMTranscriptEntry: Identifiable, Codable, Equatable {
@@ -190,11 +200,19 @@ struct DMTranscriptEntry: Identifiable, Codable, Equatable {
 
 enum DMScripts {
     static func nodes(for dealer: DMDealer) -> [String: DMNode] {
-        allNodes[dealer] ?? [:]
+        var merged = allNodes[dealer] ?? [:]
+        for (id, node) in DMComebackScripts.nodes(for: dealer) {
+            merged[id] = node
+        }
+        return merged
     }
 
     static func node(_ dealer: DMDealer, id: String) -> DMNode? {
         nodes(for: dealer)[id]
+    }
+
+    static func isComebackNode(_ dealer: DMDealer, id: String) -> Bool {
+        node(dealer, id: id)?.isComeback ?? false
     }
 
     private static let allNodes: [DMDealer: [String: DMNode]] = [
@@ -459,13 +477,14 @@ enum DMScripts {
             .map { choice in
                 guard let itemID = choice.buyItemID,
                       let item = RexItem.byID(itemID) else { return choice }
-                let cost = game.price(for: item)
+                let cost = game.price(for: item, favorDiscount: choice.favorDiscount)
                 guard game.state.cash < cost else { return choice }
                 return DMChoice(
                     id: choice.id,
                     label: "\(choice.label) — need \(money(cost))",
                     nextNodeID: choice.nextNodeID,
-                    buyItemID: choice.buyItemID
+                    buyItemID: choice.buyItemID,
+                    favorDiscount: choice.favorDiscount
                 )
             }
     }
@@ -473,13 +492,13 @@ enum DMScripts {
     static func canSelect(_ choice: DMChoice, game: Game) -> Bool {
         guard let itemID = choice.buyItemID,
               let item = RexItem.byID(itemID) else { return true }
-        return game.state.cash >= game.price(for: item)
+        return game.state.cash >= game.price(for: item, favorDiscount: choice.favorDiscount)
     }
 
     static func affordTooltip(for choice: DMChoice, game: Game) -> String? {
         guard let itemID = choice.buyItemID,
               let item = RexItem.byID(itemID) else { return nil }
-        let cost = game.price(for: item)
+        let cost = game.price(for: item, favorDiscount: choice.favorDiscount)
         guard game.state.cash < cost else { return nil }
         return "Need \(money(cost)) cash — you have \(money(game.state.cash))"
     }
@@ -487,21 +506,28 @@ enum DMScripts {
 
 enum DMDialogueEngine {
     static func inboxPreview(dealer: DMDealer, state: GameState) -> String {
-        let transcript = state.dmThread(for: dealer).transcript
+        let thread = state.dmThread(for: dealer)
+        let transcript = thread.comebackThreadStarted ? thread.comebackTranscript : thread.transcript
         if let last = transcript.last {
             if last.isFromContact { return last.text }
             return "You: \(last.text)"
         }
+        if state.dealerRelationship(for: dealer).comebackPending { return "new message" }
         return dealer.preview
     }
 
     static func hasUnreadChoices(dealer: DMDealer, game: Game) -> Bool {
         guard game.isDMInboxVisible(dealer) else { return false }
+        if game.hasUnreadComeback(dealer) { return true }
         let thread = game.state.dmThread(for: dealer)
         if !thread.threadStarted { return true }
         if thread.threadClosed { return game.shouldReopenDMOffer(dealer) }
         guard let nodeID = thread.currentNode else { return false }
         return !DMScripts.choices(for: dealer, nodeID: nodeID, game: game).isEmpty
+    }
+
+    static func isInnerCircle(dealer: DMDealer, state: GameState) -> Bool {
+        state.dealerRelationship(for: dealer).isInnerCircle
     }
 }
 

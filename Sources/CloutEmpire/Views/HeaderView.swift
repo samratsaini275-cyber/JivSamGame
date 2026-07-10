@@ -15,8 +15,8 @@ struct HeaderView: View {
             HStack(spacing: 10) {
                 StatBadge(
                     imageName: "icon_clout",
-                    title: "\(Int(game.state.clout)) CLOUT",
-                    value: "+\(Int(game.state.clout * 2))% forever",
+                    title: "\(Int(game.state.availableClout)) CLOUT",
+                    value: "+\(Int(game.state.availableClout * 2))% income · \(Int(game.state.spentClout)) invested",
                     color: Theme.cloutPink
                 )
                 StatBadge(
@@ -28,7 +28,7 @@ struct HeaderView: View {
                 )
             }
 
-            if game.milleBuffActive || game.viralBuffActive
+            if game.milleBuffActive || game.viralBuffActive || game.cloutSurgeActive
                 || game.equippedWristItem != nil || game.equippedGarageItem != nil
                 || !game.state.equippedPerks.isEmpty { buffRow }
             if game.offlineEarnings > 0 { offlineBanner }
@@ -187,6 +187,9 @@ struct HeaderView: View {
             }
             if game.milleBuffActive { buffPill("MILLE ×2") }
             if game.viralBuffActive { buffPill("EARLY HYPE ×2") }
+            if game.cloutSurgeActive {
+                buffPill("SURGE ×2 · \(Int(game.cloutSurgeRemaining))s")
+            }
         }
         .scaleEffect(buffBounce ? 1.05 : 1)
         .onAppear {

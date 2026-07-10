@@ -8,6 +8,12 @@ struct DMThreadState: Codable, Equatable {
     var currentNode: String?
     var lastClosedNode: String?
     var transcript: [DMTranscriptEntry] = []
+
+    var comebackThreadStarted: Bool = false
+    var comebackThreadClosed: Bool = false
+    var comebackCurrentNode: String?
+    var comebackLastClosedNode: String?
+    var comebackTranscript: [DMTranscriptEntry] = []
 }
 
 extension GameState {
@@ -49,13 +55,21 @@ extension GameState {
 
     mutating func resetDMThreadsForRebrand() {
         for dealer in DMDealer.allCases {
-            var thread = dmThread(for: dealer)
+            let thread = dmThread(for: dealer)
             let intro = thread.introCompleted
             let respect = thread.respectsPlayer
-            thread = DMThreadState()
-            thread.introCompleted = intro
-            thread.respectsPlayer = respect
-            dmThreads[dealer.rawValue] = thread
+            let comebackStarted = thread.comebackThreadStarted
+            let rel = dealerRelationship(for: dealer)
+            var fresh = DMThreadState()
+            fresh.introCompleted = intro
+            fresh.respectsPlayer = respect
+            fresh.comebackThreadStarted = comebackStarted
+            dmThreads[dealer.rawValue] = fresh
+            updateDealerRelationship(dealer) { r in
+                r.hasSeenComebackIntro = rel.hasSeenComebackIntro
+                r.comebackThreadCompleted = rel.comebackThreadCompleted
+                r.comebackPending = rel.comebackPending
+            }
         }
     }
 }

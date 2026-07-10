@@ -1,38 +1,37 @@
 import Foundation
 
+/// Clout Store upgrades per hustle — survive Rebrand (hustle units reset, upgrades don't).
+struct HustleCloutUpgrades: Codable, Equatable {
+    var publicistHired: Bool = false
+    var costCutShards: Int = 0
+}
+
 /// Per-hustle mutable state, persisted between launches.
 struct HustleState: Codable {
     var unitsOwned: Int = 0
     var ghostwriterHired: Bool = false
-    var cycleProgress: Double = 0 // seconds elapsed in the current post cycle
-    var cycleRunning: Bool = false // manual hustles need a tap to start a cycle
+    var cycleProgress: Double = 0
+    var cycleRunning: Bool = false
 }
 
 /// Full Codable game snapshot.
 struct GameState: Codable {
     var cash: Double = 0
-    /// All-time earnings; persists across Rebrands and drives the Clout formula.
     var lifetimeCash: Double = 0
-    var clout: Double = 0
+    var availableClout: Double = 0
+    var spentClout: Double = 0
     var hustles: [HustleState] = [HustleState](repeating: HustleState(), count: Hustle.all.count)
+    var hustleCloutUpgrades: [String: HustleCloutUpgrades] = [:]
     var lastSaved: Date?
 
-    // MARK: Rex Calloway's flex economy
-
-    /// Dealer flex items bought via DMs — survives Rebrand with the player.
     var ownedItems: Set<String> = []
     var equippedWrist: String?
     var equippedGarage: String?
     var equippedPerks: Set<String> = []
-    /// Per-dealer DM thread state (key = DMDealer.rawValue).
     var dmThreads: [String: DMThreadState] = [:]
-    /// Daytona purchases — each is a permanent +2% Clout gain rate. Survives Rebrand;
-    /// re-buyable every run, which makes it the one flex that compounds.
+    var dealerRelationships: [String: DealerRelationship] = [:]
     var daytonaPurchases: Int = 0
-    /// Player has opened DMs at least once (clears the inbox badge).
     var rexMet: Bool = false
-
-    // MARK: Vinnie "The Vault" DM script
 
     var vaultThreadStarted: Bool = false
     var vaultThreadClosed: Bool = false
@@ -41,8 +40,6 @@ struct GameState: Codable {
     var vaultCurrentNode: String?
     var vaultLastClosedNode: String?
     var vaultTranscript: [VaultTranscriptEntry] = []
-
-    // MARK: Dre "Whip Game" DM script
 
     var whipUnlocked: Bool = false
     var whipThreadStarted: Bool = false
@@ -53,48 +50,53 @@ struct GameState: Codable {
     var whipLastClosedNode: String?
     var whipTranscript: [DMTranscriptEntry] = []
 
-    /// "Richard Mille" buff: ×2 income until this instant.
     var milleBuffUntil: Date?
-    /// Borrowed Lambo proc: +1 Viral tier until this instant.
     var viralBuffUntil: Date?
+    var cloutSurgeUntil: Date?
+    var cloutPurchaseLog: [CloutStorePurchase] = []
 
-    // MARK: The player's Persona (identity + leaderboard ID; all of it survives Rebrand)
-
-    /// Brand handle, doubles as leaderboard ID. Empty = persona not created yet.
     var handle: String = ""
     var baseLook: String = "hoodie"
-    /// Brand colorway id — tints the entire UI accent. "Your own aesthetic," literally.
     var colorway: String = "gold"
     var ownedCosmetics: Set<String> = []
-    /// PersonaSlot rawValue → PersonaItem id.
     var equippedCosmetics: [String: String] = [:]
+
+    var totalClout: Double { availableClout + spentClout }
+
+    func cloutUpgrades(for hustleIndex: Int) -> HustleCloutUpgrades {
+        hustleCloutUpgrades[String(hustleIndex)] ?? HustleCloutUpgrades()
+    }
+
+    mutating func updateCloutUpgrades(for hustleIndex: Int, _ mutate: (inout HustleCloutUpgrades) -> Void) {
+        let key = String(hustleIndex)
+        var upgrades = cloutUpgrades(for: hustleIndex)
+        mutate(&upgrades)
+        hustleCloutUpgrades[key] = upgrades
+    }
 
     static func newGame() -> GameState {
         var state = GameState()
-        state.hustles[0].unitsOwned = 1 // start already posting fake P&Ls
+        state.hustles[0].unitsOwned = 1
         return state
     }
 
-    /// Rebrand keeps clout, lifetime cash, fit/gear, persona, and Daytona legacy.
-    /// Hustles, cash, staff, and DM thread progress reset — dealers remember the vibe.
     mutating func rebrand(gaining gained: Double) {
-        clout += gained
+        availableClout += gained
         cash = 0
         var fresh = [HustleState](repeating: HustleState(), count: Hustle.all.count)
         fresh[0].unitsOwned = 1
         hustles = fresh
         milleBuffUntil = nil
         viralBuffUntil = nil
+        cloutSurgeUntil = nil
         resetDMThreadsForRebrand()
-        // ownedItems, equippedWrist/Garage/Perks, persona, daytonaPurchases survive.
     }
 
-    // MARK: Codable (custom decode so pre-Rex saves still load)
-
     private enum CodingKeys: String, CodingKey {
-        case cash, lifetimeCash, clout, hustles, lastSaved
+        case cash, lifetimeCash, availableClout, spentClout, clout, hustles, hustleCloutUpgrades, lastSaved
         case ownedItems, equippedWrist, equippedGarage, equippedPerks, daytonaPurchases, rexMet
-        case dmThreads
+        case dmThreads, dealerRelationships
+        case cloutSurgeUntil, cloutPurchaseLog
         case rexIntroAcknowledged, rexIntroReply, rexPitchReplies, rexPitchFollowUp, rexDismissedPitches
         case vaultThreadStarted, vaultThreadClosed, vaultIntroCompleted, vaultRespectsPlayer
         case vaultCurrentNode, vaultLastClosedNode, vaultTranscript
@@ -110,8 +112,15 @@ struct GameState: Codable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         cash = try c.decode(Double.self, forKey: .cash)
         lifetimeCash = try c.decode(Double.self, forKey: .lifetimeCash)
-        clout = try c.decode(Double.self, forKey: .clout)
+        if let available = try c.decodeIfPresent(Double.self, forKey: .availableClout) {
+            availableClout = available
+            spentClout = try c.decodeIfPresent(Double.self, forKey: .spentClout) ?? 0
+        } else {
+            availableClout = try c.decodeIfPresent(Double.self, forKey: .clout) ?? 0
+            spentClout = 0
+        }
         hustles = try c.decode([HustleState].self, forKey: .hustles)
+        hustleCloutUpgrades = try c.decodeIfPresent([String: HustleCloutUpgrades].self, forKey: .hustleCloutUpgrades) ?? [:]
         lastSaved = try c.decodeIfPresent(Date.self, forKey: .lastSaved)
         ownedItems = try c.decodeIfPresent(Set<String>.self, forKey: .ownedItems) ?? []
         equippedWrist = try c.decodeIfPresent(String.self, forKey: .equippedWrist)
@@ -137,6 +146,10 @@ struct GameState: Codable {
         whipTranscript = try c.decodeIfPresent([DMTranscriptEntry].self, forKey: .whipTranscript) ?? []
         dmThreads = try c.decodeIfPresent([String: DMThreadState].self, forKey: .dmThreads) ?? [:]
         migrateLegacyDMThreadsIfNeeded()
+        dealerRelationships = try c.decodeIfPresent([String: DealerRelationship].self, forKey: .dealerRelationships) ?? [:]
+        migrateDealerRelationshipsFromThreads()
+        cloutSurgeUntil = try c.decodeIfPresent(Date.self, forKey: .cloutSurgeUntil)
+        cloutPurchaseLog = try c.decodeIfPresent([CloutStorePurchase].self, forKey: .cloutPurchaseLog) ?? []
         milleBuffUntil = try c.decodeIfPresent(Date.self, forKey: .milleBuffUntil)
         viralBuffUntil = try c.decodeIfPresent(Date.self, forKey: .viralBuffUntil)
         handle = try c.decodeIfPresent(String.self, forKey: .handle) ?? ""
@@ -150,8 +163,10 @@ struct GameState: Codable {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(cash, forKey: .cash)
         try c.encode(lifetimeCash, forKey: .lifetimeCash)
-        try c.encode(clout, forKey: .clout)
+        try c.encode(availableClout, forKey: .availableClout)
+        try c.encode(spentClout, forKey: .spentClout)
         try c.encode(hustles, forKey: .hustles)
+        try c.encode(hustleCloutUpgrades, forKey: .hustleCloutUpgrades)
         try c.encodeIfPresent(lastSaved, forKey: .lastSaved)
         try c.encode(ownedItems, forKey: .ownedItems)
         try c.encodeIfPresent(equippedWrist, forKey: .equippedWrist)
@@ -175,6 +190,9 @@ struct GameState: Codable {
         try c.encodeIfPresent(whipLastClosedNode, forKey: .whipLastClosedNode)
         try c.encode(whipTranscript, forKey: .whipTranscript)
         try c.encode(dmThreads, forKey: .dmThreads)
+        try c.encode(dealerRelationships, forKey: .dealerRelationships)
+        try c.encodeIfPresent(cloutSurgeUntil, forKey: .cloutSurgeUntil)
+        try c.encode(cloutPurchaseLog, forKey: .cloutPurchaseLog)
         try c.encodeIfPresent(milleBuffUntil, forKey: .milleBuffUntil)
         try c.encodeIfPresent(viralBuffUntil, forKey: .viralBuffUntil)
         try c.encode(handle, forKey: .handle)

@@ -122,7 +122,8 @@ struct HustleRowView: View {
     }
 
     private func incomeText(cycle: Double) -> String {
-        if hState.ghostwriterHired {
+        let upgrades = game.state.cloutUpgrades(for: index)
+        if upgrades.publicistHired || hState.ghostwriterHired {
             return "\(money(game.incomePerCycle(of: index) / cycle))/s"
         }
         return money(game.incomePerCycle(of: index))

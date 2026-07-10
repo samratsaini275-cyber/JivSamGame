@@ -127,7 +127,7 @@ struct PersonaView: View {
                 .foregroundStyle(game.theme.gradient)
             HStack(spacing: 6) {
                 GameImage(name: "icon_clout", size: 22)
-                Text("\(Int(game.state.clout)) lifetime Clout")
+                Text("\(Int(game.state.totalClout)) lifetime Clout · \(Int(game.state.availableClout)) spendable")
                     .font(Theme.cartoonFont(11, weight: .semibold))
                     .foregroundStyle(Theme.textMuted)
             }

@@ -30,8 +30,8 @@ enum DMScriptBuilder {
 
         let cheapEffects: [DMEffect] = [.buyAndEquip(rexItemID: spec.cheap.itemID)]
         var expensiveEffects: [DMEffect] = [.buyAndEquip(rexItemID: spec.expensive.itemID)]
-        if spec.respectOnExpensive {
-            expensiveEffects.append(.setRespectsPlayer)
+        if spec.respectOnExpensive, let dealer = DMDealer.allCases.first(where: { $0.scriptPrefix == spec.prefix }) {
+            expensiveEffects.append(.setPremiumRespect(itemID: spec.expensive.itemID, dealer: dealer))
         }
 
         var cheapBubbles = spec.cheap.boughtLines

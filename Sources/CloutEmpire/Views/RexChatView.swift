@@ -65,10 +65,16 @@ struct RexChatView: View {
 
     private func inboxRow(_ dealer: DMDealer) -> some View {
         let unread = DMDialogueEngine.hasUnreadChoices(dealer: dealer, game: game)
+        let innerCircle = DMDialogueEngine.isInnerCircle(dealer: dealer, state: game.state)
         return HStack(spacing: 12) {
             ZStack(alignment: .bottomTrailing) {
                 GameIconTile(name: dealer.iconName, size: 52, tint: dealerAccent(dealer))
-                if dealer.verified {
+                if innerCircle {
+                    Image(systemName: "star.circle.fill")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.luxeGold)
+                        .offset(x: 4, y: 4)
+                } else if dealer.verified {
                     Image(systemName: "checkmark.seal.fill")
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.hypeBlue)
@@ -83,7 +89,14 @@ struct RexChatView: View {
                     Text(dealer.title)
                         .font(Theme.cartoonFont(13, weight: .heavy))
                         .foregroundStyle(.white)
-                    if dealer.verified {
+                    if innerCircle {
+                        Text("INNER")
+                            .font(Theme.cartoonFont(8, weight: .black))
+                            .foregroundStyle(Theme.luxeGold)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(Capsule().fill(Theme.luxeGold.opacity(0.15)))
+                    } else if dealer.verified {
                         Image(systemName: "checkmark.seal.fill")
                             .font(.system(size: 10))
                             .foregroundStyle(Theme.hypeBlue)
@@ -124,7 +137,7 @@ struct RexChatView: View {
     }
 
     private var footerNote: some View {
-        Text("DM threads reset on Rebrand. Your fit and dealer respect stay.")
+        Text("DM threads reset on Rebrand. Dealer respect, comeback arcs, and your fit stay.")
             .font(Theme.cartoonFont(9, weight: .medium))
             .foregroundStyle(.white.opacity(0.35))
             .multilineTextAlignment(.center)

@@ -9,26 +9,29 @@ enum Formulas {
     static let cloutDivisor: Double = 25_000
     static let cloutBonusPerPoint = 0.02
 
-    // MARK: Costs (baseCost × 1.14^owned, geometric sums for bulk buys)
+    // MARK: Costs (baseCost × growth^owned, geometric sums for bulk buys)
 
-    static func unitCost(base: Double, owned: Int) -> Double {
-        base * pow(costGrowth, Double(owned))
+    static func costGrowth(shards: Int) -> Double {
+        max(1.05, costGrowth - Double(shards) * CloutStore.costGrowthReductionPerShard)
     }
 
-    static func bulkCost(base: Double, owned: Int, count: Int) -> Double {
+    static func unitCost(base: Double, owned: Int, growth: Double = costGrowth) -> Double {
+        base * pow(growth, Double(owned))
+    }
+
+    static func bulkCost(base: Double, owned: Int, count: Int, growth: Double = costGrowth) -> Double {
         guard count > 0 else { return 0 }
-        let r = costGrowth
-        return unitCost(base: base, owned: owned) * (pow(r, Double(count)) - 1) / (r - 1)
+        let r = growth
+        return unitCost(base: base, owned: owned, growth: growth) * (pow(r, Double(count)) - 1) / (r - 1)
     }
 
-    static func maxAffordable(base: Double, owned: Int, cash: Double) -> Int {
-        let first = unitCost(base: base, owned: owned)
+    static func maxAffordable(base: Double, owned: Int, cash: Double, growth: Double = costGrowth) -> Int {
+        let first = unitCost(base: base, owned: owned, growth: growth)
         guard cash >= first else { return 0 }
-        let r = costGrowth
+        let r = growth
         let n = Int(floor(log(cash * (r - 1) / first + 1) / log(r)))
-        // Guard against floating-point edge cases at the boundary.
-        if bulkCost(base: base, owned: owned, count: n + 1) <= cash { return n + 1 }
-        if n > 0, bulkCost(base: base, owned: owned, count: n) > cash { return n - 1 }
+        if bulkCost(base: base, owned: owned, count: n + 1, growth: growth) <= cash { return n + 1 }
+        if n > 0, bulkCost(base: base, owned: owned, count: n, growth: growth) > cash { return n - 1 }
         return n
     }
 
