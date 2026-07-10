@@ -18,6 +18,19 @@ struct EventToast: View {
             toast(image: "icon_sparkle", title: "REBRANDED!",
                   subtitle: "+\(Int(clout)) Clout · long live the label",
                   color: Theme.cloutPink)
+        case .newDM(let dealer):
+            let color: Color = {
+                switch dealer.accentName {
+                case "cloutPink": return Theme.cloutPink
+                case "coinGreen": return Theme.coinGreen
+                case "luxeGold": return Theme.luxeGold
+                case "champagne": return Theme.champagne
+                default: return Theme.hypeBlue
+                }
+            }()
+            toast(image: "tab_rex", title: "NEW DM",
+                  subtitle: "\(dealer.badgeEmoji) \(dealer.title) · \(dealer.preview)",
+                  color: color)
         case .payout:
             EmptyView()
         }

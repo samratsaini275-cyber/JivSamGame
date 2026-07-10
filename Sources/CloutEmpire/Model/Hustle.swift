@@ -16,6 +16,8 @@ struct Hustle: Identifiable {
 }
 
 extension Hustle {
+    static let customHoodiesIndex = 2
+
     static let all: [Hustle] = [
         Hustle(id: 0, name: "Bootleg Tees",
                flavor: "Heat-pressed in the garage. The logo is \"inspired by.\"",

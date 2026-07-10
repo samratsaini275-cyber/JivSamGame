@@ -23,6 +23,7 @@ struct GameEvent: Equatable, Identifiable {
         case hypeWave(tier: Int)
         case payout(hustleIndex: Int, amount: Double)
         case rebranded(clout: Double)
+        case newDM(dealer: DMDealer)
     }
 
     let id = UUID()
@@ -46,6 +47,7 @@ final class Game: ObservableObject {
 
     init(state: GameState) {
         self.state = state
+        reconcileDMThreadStates()
         grantOfflineEarnings()
         start()
     }
@@ -96,6 +98,7 @@ final class Game: ObservableObject {
         }
         return Formulas.cycleTime(base: hustles[index].baseCycle, tier: cycleTier)
             * Formulas.garageCycleMultiplier(itemID: state.equippedGarage, hustleTier: tier(of: index))
+            * Formulas.perkCycleMultiplier(equippedPerks: state.equippedPerks, hustleTier: tier(of: index))
     }
 
     /// Full payout of one completed post cycle, all multipliers applied.
@@ -107,6 +110,7 @@ final class Game: ObservableObject {
             * pow(2, Double(effectiveViralTier))
             * Formulas.cloutMultiplier(clout: state.clout)
             * Formulas.wristIncomeMultiplier(itemID: state.equippedWrist, hustleTier: tier(of: index))
+            * Formulas.perkIncomeMultiplier(equippedPerks: state.equippedPerks, hustleTier: tier(of: index))
             * (milleBuffActive ? 2 : 1)
     }
 
@@ -214,14 +218,56 @@ final class Game: ObservableObject {
         state.hustles[1].unitsOwned >= 1
     }
 
-    var rexUnreadCount: Int {
-        guard rexUnlocked else { return 0 }
-        return RexDMThread.unlocked(for: self).filter { thread in
-            let msgs = RexChatBuilder.messages(for: thread, game: self)
-            return RexChatBuilder.pendingPitch(in: msgs, game: self) != nil
-        }.count
+    /// Dre unlocks when the player launches Custom Hoodies (hustle 2).
+    var customHoodiesUnlocked: Bool {
+        hustleUnlockedForDM(Hustle.customHoodiesIndex)
     }
 
+    func hustleUnlockedForDM(_ index: Int) -> Bool {
+        state.hustles[index].unitsOwned >= 1
+    }
+
+    var rexUnreadCount: Int {
+        visibleDMThreads().filter { DMDialogueEngine.hasUnreadChoices(dealer: $0, game: self) }.count
+    }
+
+    func visibleDMThreads() -> [DMDealer] {
+        guard rexUnlocked else { return [] }
+        return DMDealer.allCases.filter { hustleUnlockedForDM($0.hustleIndex) }
+    }
+
+    func isDMInboxVisible(_ dealer: DMDealer) -> Bool {
+        rexUnlocked && hustleUnlockedForDM(dealer.hustleIndex)
+    }
+
+    func hasRemainingDMOffers(_ dealer: DMDealer) -> Bool {
+        dealer.offerItemIDs.contains { id in
+            guard let item = RexItem.byID(id) else { return false }
+            return !owns(item)
+        }
+    }
+
+    func shouldReopenDMOffer(_ dealer: DMDealer) -> Bool {
+        let thread = state.dmThread(for: dealer)
+        guard thread.threadClosed, hasRemainingDMOffers(dealer) else { return false }
+        guard let lastClosed = thread.lastClosedNode,
+              dealer.reopenableClosedNodes.contains(lastClosed) else { return false }
+        return true
+    }
+
+    func dmTranscript(for dealer: DMDealer) -> [DMTranscriptEntry] {
+        state.dmThread(for: dealer).transcript
+    }
+
+    func dmCurrentNode(for dealer: DMDealer) -> String? {
+        state.dmThread(for: dealer).currentNode
+    }
+
+    func ownedRexItems(for slot: ItemSlot) -> [RexItem] {
+        RexItem.forSlot(slot).filter { owns($0) }
+    }
+
+    var hasFitItems: Bool { !state.ownedItems.isEmpty }
     var equippedWristItem: RexItem? { RexItem.byID(state.equippedWrist) }
     var equippedGarageItem: RexItem? { RexItem.byID(state.equippedGarage) }
 
@@ -235,14 +281,16 @@ final class Game: ObservableObject {
         switch item.slot {
         case .wrist: return state.equippedWrist == item.id
         case .garage: return state.equippedGarage == item.id
+        case .perk: return state.equippedPerks.contains(item.id)
         }
     }
 
     /// Buying auto-equips. Returns false if unaffordable (Rex: "Manifest harder.")
     @discardableResult
     func buyItem(_ item: RexItem) -> Bool {
-        guard !owns(item), state.cash >= item.cost else { return false }
-        state.cash -= item.cost
+        let cost = price(for: item)
+        guard !owns(item), state.cash >= cost else { return false }
+        state.cash -= cost
         state.ownedItems.insert(item.id)
         if item.id == "daytona" {
             state.daytonaPurchases += 1 // permanent, survives Rebrand
@@ -251,11 +299,55 @@ final class Game: ObservableObject {
         return true
     }
 
+    /// Dealer respect flags shave 10% off that dealer's future offers.
+    func price(for item: RexItem) -> Double {
+        guard let dealer = item.dealer, state.dmThread(for: dealer).respectsPlayer else { return item.cost }
+        return (item.cost * 0.9).rounded(.down)
+    }
+
+    /// Active perk boost labels for the HUD.
+    var activePerkBoostLabels: [String] {
+        state.equippedPerks.compactMap { RexItem.byID($0)?.boostText }
+    }
+
+    /// Short label for the active wrist boost shown in the HUD.
+    var activeWatchBoostLabel: String? {
+        guard let item = equippedWristItem else { return nil }
+        return "\(item.name) · \(item.boostText)"
+    }
+
+    /// Short label for the active garage boost shown in the HUD.
+    var activeGarageBoostLabel: String? {
+        guard let item = equippedGarageItem else { return nil }
+        return "\(item.name) · \(item.boostText)"
+    }
+
+    func canEquipPerk(_ item: RexItem) -> Bool {
+        guard item.slot == .perk, owns(item) else { return false }
+        return isEquipped(item) || state.equippedPerks.count < RexItem.maxEquippedPerks
+    }
+
+    func unequip(_ item: RexItem) {
+        guard owns(item) else { return }
+        switch item.slot {
+        case .wrist:
+            if state.equippedWrist == item.id { state.equippedWrist = nil }
+        case .garage:
+            if state.equippedGarage == item.id { state.equippedGarage = nil }
+        case .perk:
+            state.equippedPerks.remove(item.id)
+        }
+    }
+
     func equip(_ item: RexItem) {
         guard owns(item) else { return }
         switch item.slot {
         case .wrist: state.equippedWrist = item.id
         case .garage: state.equippedGarage = item.id
+        case .perk:
+            guard !state.equippedPerks.contains(item.id) else { return }
+            guard state.equippedPerks.count < RexItem.maxEquippedPerks else { return }
+            state.equippedPerks.insert(item.id)
         }
     }
 
@@ -263,35 +355,117 @@ final class Game: ObservableObject {
         if !state.rexMet { state.rexMet = true }
     }
 
-    func handleRexReply(_ reply: RexReply, pitchID: String) {
-        switch reply.action {
-        case .introAck:
-            state.rexIntroAcknowledged = true
-            state.rexIntroReply = reply.label
-        case .introCurious:
-            state.rexIntroAcknowledged = true
-            state.rexIntroReply = reply.label
-        case .buy(let item):
-            state.rexPitchReplies[pitchID] = reply.label
-            if buyItem(item) {
-                state.rexPitchFollowUp[pitchID] = Rex.purchaseBarks.randomElement()!
-            } else {
-                state.rexPitchFollowUp[pitchID] = Rex.brokeBark
-            }
-        case .equip(let item):
-            state.rexPitchReplies[pitchID] = reply.label
-            let prev = item.slot == .wrist
-                ? equippedWristItem?.tier ?? 0
-                : equippedGarageItem?.tier ?? 0
-            equip(item)
-            state.rexPitchFollowUp[pitchID] = item.tier < prev
-                ? Rex.downgradeBark
-                : Rex.idleBark(wrist: equippedWristItem, garage: equippedGarageItem)
-        case .dismiss(let id):
-            state.rexDismissedPitches.insert(id)
-            state.rexPitchReplies[id] = reply.label
-            state.rexPitchFollowUp[id] = "Fair. The flex will still be there when the bag catches up."
+    func onDMThreadOpened(_ dealer: DMDealer) {
+        startDMThreadIfNeeded(dealer)
+        guard shouldReopenDMOffer(dealer) else { return }
+        state.updateDMThread(dealer) { thread in
+            thread.threadClosed = false
+            thread.currentNode = dealer.offerNodeID(for: state)
         }
+    }
+
+    func startDMThreadIfNeeded(_ dealer: DMDealer) {
+        guard isDMInboxVisible(dealer) else { return }
+        let started = state.dmThread(for: dealer).threadStarted
+        guard !started else { return }
+        state.updateDMThread(dealer) { $0.threadStarted = true }
+        enterDMNode(dealer, dealer.startingNodeID(for: state))
+    }
+
+    func startAllDMThreadsIfNeeded() {
+        reconcileDMThreadStates()
+        for dealer in visibleDMThreads() {
+            startDMThreadIfNeeded(dealer)
+        }
+    }
+
+    /// Clears DM threads that started before their hustle was unlocked.
+    private func reconcileDMThreadStates() {
+        for dealer in DMDealer.allCases {
+            guard !hustleUnlockedForDM(dealer.hustleIndex) else { continue }
+            let thread = state.dmThread(for: dealer)
+            guard thread.threadStarted || !thread.transcript.isEmpty else { continue }
+            state.updateDMThread(dealer) { t in
+                t = DMThreadState()
+            }
+        }
+    }
+
+    func selectDMChoice(_ dealer: DMDealer, _ choice: DMChoice) {
+        guard let nodeID = dmCurrentNode(for: dealer),
+              DMScripts.node(dealer, id: nodeID) != nil else { return }
+        guard DMScripts.canSelect(choice, game: self) else { return }
+
+        appendDMTranscript(dealer, .player(choice.label))
+        enterDMNode(dealer, choice.nextNodeID)
+    }
+
+    // Legacy wrappers
+    func onVaultThreadOpened() { onDMThreadOpened(.vinnie) }
+    func startVaultThreadIfNeeded() { startDMThreadIfNeeded(.vinnie) }
+    func reopenVaultThread() { onVaultThreadOpened() }
+    func selectVaultChoice(_ choice: DMChoice) { selectDMChoice(.vinnie, choice) }
+
+    private func enterDMNode(_ dealer: DMDealer, _ nodeID: String) {
+        guard let node = DMScripts.node(dealer, id: nodeID) else { return }
+
+        for effect in node.effects {
+            applyDMEffect(effect, dealer: dealer)
+        }
+
+        for bubble in node.bubbles {
+            switch bubble {
+            case .text(let text):
+                appendDMTranscript(dealer, .contact(text))
+            case .itemCard(let itemID, let caption):
+                appendDMTranscript(dealer, .contactItem(itemID, caption: caption))
+            }
+        }
+
+        if node.closesThread {
+            state.updateDMThread(dealer) { thread in
+                thread.threadClosed = true
+                thread.lastClosedNode = nodeID
+                thread.currentNode = nil
+                if dealer.introCompletedNodeIDs.contains(nodeID) {
+                    thread.introCompleted = true
+                }
+            }
+        } else {
+            state.updateDMThread(dealer) { $0.currentNode = nodeID }
+        }
+    }
+
+    private func appendDMTranscript(_ dealer: DMDealer, _ entry: DMTranscriptEntry) {
+        state.updateDMThread(dealer) { $0.transcript.append(entry) }
+    }
+
+    private func applyDMEffect(_ effect: DMEffect, dealer: DMDealer) {
+        switch effect {
+        case .buyAndEquip(let itemID):
+            guard let item = RexItem.byID(itemID) else { return }
+            _ = buyItem(item)
+        case .setRespectsPlayer:
+            state.updateDMThread(dealer) { $0.respectsPlayer = true }
+        }
+    }
+
+    private func notifyDMAvailableIfNeeded(hustleIndex: Int, hadUnitsBefore: Bool) {
+        guard !hadUnitsBefore,
+              hustleUnlockedForDM(hustleIndex),
+              let dealer = DMDealer.forHustle(hustleIndex) else { return }
+        lastEvent = GameEvent(kind: .newDM(dealer: dealer))
+    }
+
+    func prepareDMInbox() {
+        reconcileDMThreadStates()
+    }
+
+    // MARK: Dev
+
+    func devAddCash(_ amount: Double) {
+        guard amount > 0 else { return }
+        state.cash += amount
     }
 
     // MARK: Player actions
@@ -304,6 +478,7 @@ final class Game: ObservableObject {
         guard count > 0, state.cash >= cost else { return }
         let tierBefore = tier(of: index)
         let viralBefore = viralTier
+        let hadUnits = state.hustles[index].unitsOwned >= 1
         state.cash -= cost
         state.hustles[index].unitsOwned += count
 
@@ -323,6 +498,8 @@ final class Game: ObservableObject {
         } else if tier(of: index) > tierBefore {
             lastEvent = GameEvent(kind: .milestone(hustleIndex: index, tier: tier(of: index)))
         }
+
+        notifyDMAvailableIfNeeded(hustleIndex: index, hadUnitsBefore: hadUnits)
     }
 
     func post(_ index: Int) {

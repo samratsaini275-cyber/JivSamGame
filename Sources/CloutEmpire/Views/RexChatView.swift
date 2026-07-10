@@ -2,200 +2,190 @@ import SwiftUI
 
 struct RexChatView: View {
     @EnvironmentObject var game: Game
-    @Environment(\.dismiss) private var dismiss
     var embedded: Bool = false
 
-    @State private var selectedThread: RexDMThread?
+    @State private var activeDealer: DMDealer?
+    @State private var affordTooltip: String?
+    @State private var scrollToken = 0
 
     var body: some View {
         Group {
-            if let thread = selectedThread {
-                DMThreadView(thread: thread, onBack: { selectedThread = nil })
+            if let dealer = activeDealer {
+                dmThreadView(dealer)
             } else {
-                DMInboxView(onSelect: { selectedThread = $0 })
+                inboxView
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onAppear { game.markRexMet() }
+        .onAppear {
+            game.markRexMet()
+            game.prepareDMInbox()
+        }
     }
-}
 
-// MARK: - Inbox
+    // MARK: - Inbox
 
-private struct DMInboxView: View {
-    @EnvironmentObject var game: Game
-    let onSelect: (RexDMThread) -> Void
-
-    private var threads: [RexDMThread] { RexDMThread.unlocked(for: game) }
-
-    var body: some View {
+    private var inboxView: some View {
         VStack(spacing: 0) {
-            inboxHeader
-            if threads.isEmpty {
-                lockedPlaceholder
-            } else {
-                ScrollView(showsIndicators: false) {
-                    LazyVStack(spacing: 0) {
-                        ForEach(threads) { thread in
-                            inboxRow(thread)
-                            Divider().overlay(Theme.comicBorder.opacity(0.35))
-                        }
-                    }
-                }
-            }
-            footerNote
-        }
-    }
-
-    private var inboxHeader: some View {
-        HStack {
-            Text("DMs").kicker()
-            Spacer()
-            if game.rexUnreadCount > 0 {
-                Text("\(game.rexUnreadCount) new")
-                    .font(Theme.cartoonFont(10, weight: .bold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Capsule().fill(.red))
-            }
-        }
-        .padding(.horizontal, Theme.screenPadding)
-        .padding(.vertical, 12)
-        .background(Theme.surface)
-    }
-
-    private func inboxRow(_ thread: RexDMThread) -> some View {
-        let unread = threadHasUnread(thread)
-        return Button { onSelect(thread) } label: {
-            HStack(spacing: 12) {
-                ZStack(alignment: .bottomTrailing) {
-                    GameIconTile(name: "tab_rex", size: 52, tint: Theme.hypeBlue)
-                    if unread {
-                        Circle().fill(.red).frame(width: 10, height: 10).offset(x: 2, y: 2)
-                    }
-                }
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Text(thread.title)
-                            .font(Theme.cartoonFont(13, weight: .heavy))
-                            .foregroundStyle(.white)
-                        Spacer()
-                        Text("now")
-                            .font(Theme.cartoonFont(9, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.35))
-                    }
-                    Text(thread.preview)
-                        .font(Theme.cartoonFont(11, weight: unread ? .bold : .medium))
-                        .foregroundStyle(unread ? .white.opacity(0.85) : .white.opacity(0.45))
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
+            HStack {
+                Text("DMs").kicker()
+                Spacer()
+                if game.rexUnreadCount > 0 {
+                    Text("new")
+                        .font(Theme.cartoonFont(10, weight: .bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Capsule().fill(.red))
                 }
             }
             .padding(.horizontal, Theme.screenPadding)
             .padding(.vertical, 12)
-            .background(unread ? Theme.surfaceRaised.opacity(0.55) : Color.clear)
+            .background(Theme.surface)
+
+            if game.rexUnlocked {
+                ScrollView(showsIndicators: false) {
+                    LazyVStack(spacing: 0) {
+                        ForEach(game.visibleDMThreads()) { dealer in
+                            Button { activeDealer = dealer } label: {
+                                inboxRow(dealer)
+                            }
+                            .buttonStyle(PressableButtonStyle(bounce: false))
+                        }
+                    }
+                }
+                Spacer(minLength: 0)
+            } else {
+                emptyInbox
+            }
+
+            footerNote
         }
-        .buttonStyle(PressableButtonStyle(bounce: false))
     }
 
-    private func threadHasUnread(_ thread: RexDMThread) -> Bool {
-        let messages = RexChatBuilder.messages(for: thread, game: game)
-        return RexChatBuilder.pendingPitch(in: messages, game: game) != nil
+    private func inboxRow(_ dealer: DMDealer) -> some View {
+        let unread = DMDialogueEngine.hasUnreadChoices(dealer: dealer, game: game)
+        return HStack(spacing: 12) {
+            ZStack(alignment: .bottomTrailing) {
+                GameIconTile(name: dealer.iconName, size: 52, tint: dealerAccent(dealer))
+                if dealer.verified {
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Theme.hypeBlue)
+                        .offset(x: 4, y: 4)
+                }
+                if unread {
+                    Circle().fill(.red).frame(width: 10, height: 10).offset(x: 2, y: -2)
+                }
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 4) {
+                    Text(dealer.title)
+                        .font(Theme.cartoonFont(13, weight: .heavy))
+                        .foregroundStyle(.white)
+                    if dealer.verified {
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(.system(size: 10))
+                            .foregroundStyle(Theme.hypeBlue)
+                    } else {
+                        Text(dealer.badgeEmoji)
+                            .font(Theme.cartoonFont(10))
+                    }
+                    Spacer()
+                    Text(game.state.dmThread(for: dealer).threadStarted ? "now" : "new")
+                        .font(Theme.cartoonFont(9, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.35))
+                }
+                Text(DMDialogueEngine.inboxPreview(dealer: dealer, state: game.state))
+                    .font(Theme.cartoonFont(11, weight: unread ? .bold : .medium))
+                    .foregroundStyle(unread ? .white.opacity(0.85) : .white.opacity(0.45))
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+            }
+        }
+        .padding(.horizontal, Theme.screenPadding)
+        .padding(.vertical, 12)
+        .background(unread ? Theme.surfaceRaised.opacity(0.55) : Color.clear)
     }
 
-    private var lockedPlaceholder: some View {
+    private var emptyInbox: some View {
         VStack(spacing: 12) {
             Spacer()
             GameImage(name: "tab_rex", size: 64)
-            Text("No new DMs yet")
+            Text("No DMs yet")
                 .font(Theme.cartoonFont(14, weight: .heavy))
-            Text("Unlock Sneaker Resells to get on Rex's radar.")
+            Text("Unlock Sneaker Resells to hear from Vinnie.")
                 .font(Theme.cartoonFont(12, weight: .medium))
                 .foregroundStyle(.white.opacity(0.45))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             Spacer()
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var footerNote: some View {
-        VStack(spacing: 4) {
-            if game.state.daytonaPurchases > 0 {
-                Text("Daytona legacy: +\(Int(Double(game.state.daytonaPurchases) * Formulas.daytonaGainRatePerPurchase * 100))% Clout — forever.")
-                    .font(Theme.cartoonFont(10, weight: .semibold))
-                    .foregroundStyle(Theme.cloutPink)
-            }
-            Text("Gear wipes on Rebrand. Rex's DMs don't.")
-                .font(Theme.cartoonFont(9, weight: .medium))
-                .foregroundStyle(.white.opacity(0.35))
-        }
-        .multilineTextAlignment(.center)
-        .padding(Theme.screenPadding)
-        .background(Theme.surface)
-    }
-}
-
-// MARK: - Thread
-
-private struct DMThreadView: View {
-    @EnvironmentObject var game: Game
-    let thread: RexDMThread
-    let onBack: () -> Void
-
-    @State private var scrollToken = 0
-
-    private var messages: [RexChatMessage] {
-        RexChatBuilder.messages(for: thread, game: game)
+        Text("DM threads reset on Rebrand. Your fit and dealer respect stay.")
+            .font(Theme.cartoonFont(9, weight: .medium))
+            .foregroundStyle(.white.opacity(0.35))
+            .multilineTextAlignment(.center)
+            .padding(Theme.screenPadding)
+            .background(Theme.surface)
     }
 
-    private var pendingPitchID: String? {
-        RexChatBuilder.pendingPitch(in: messages, game: game)
-    }
+    // MARK: - Thread
 
-    private var replies: [RexReply] {
-        guard let pitchID = pendingPitchID else { return [] }
-        return RexChatBuilder.replies(for: pitchID, thread: thread, game: game)
-    }
-
-    var body: some View {
+    private func dmThreadView(_ dealer: DMDealer) -> some View {
         VStack(spacing: 0) {
-            threadHeader
+            threadHeader(dealer)
             ScrollViewReader { proxy in
                 ScrollView(showsIndicators: false) {
                     LazyVStack(spacing: 10) {
-                        ForEach(messages) { msg in
-                            chatBubble(msg)
-                                .id(msg.id)
+                        ForEach(game.dmTranscript(for: dealer)) { entry in
+                            transcriptBubble(entry)
+                                .id(entry.id)
                         }
                     }
                     .padding(.horizontal, Theme.screenPadding)
                     .padding(.vertical, 12)
                 }
-                .onChange(of: game.state.rexPitchReplies.count) { _ in scrollToken += 1 }
-                .onChange(of: scrollToken) { _ in scrollToBottom(proxy) }
-                .onAppear { scrollToBottom(proxy) }
+                .onChange(of: game.dmTranscript(for: dealer).count) { _ in scrollToken += 1 }
+                .onChange(of: scrollToken) { _ in scrollToBottom(proxy, dealer: dealer) }
+                .onAppear { scrollToBottom(proxy, dealer: dealer) }
             }
-            if !replies.isEmpty {
-                replyBar
+            if let tooltip = affordTooltip {
+                Text(tooltip)
+                    .font(Theme.cartoonFont(10, weight: .semibold))
+                    .foregroundStyle(Theme.cloutPink)
+                    .padding(.horizontal, Theme.screenPadding)
+                    .padding(.bottom, 4)
+            }
+            if !currentChoices(dealer).isEmpty {
+                replyBar(dealer)
             }
         }
+        .onAppear { game.onDMThreadOpened(dealer) }
     }
 
-    private var threadHeader: some View {
+    private func threadHeader(_ dealer: DMDealer) -> some View {
         HStack(spacing: 10) {
-            Button(action: onBack) {
+            Button { activeDealer = nil } label: {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(.white.opacity(0.7))
             }
             .buttonStyle(PressableButtonStyle(bounce: false))
 
-            GameIconTile(name: "tab_rex", size: 40, tint: Theme.hypeBlue)
+            GameIconTile(name: dealer.iconName, size: 40, tint: dealerAccent(dealer))
             VStack(alignment: .leading, spacing: 2) {
-                Text(thread.title)
-                    .font(Theme.cartoonFont(13, weight: .heavy))
+                HStack(spacing: 4) {
+                    Text(dealer.title)
+                        .font(Theme.cartoonFont(13, weight: .heavy))
+                    if dealer.verified {
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(.system(size: 10))
+                            .foregroundStyle(Theme.hypeBlue)
+                    }
+                }
                 Text("Active now")
                     .font(Theme.cartoonFont(9, weight: .semibold))
                     .foregroundStyle(Theme.coinGreen)
@@ -210,47 +200,85 @@ private struct DMThreadView: View {
         }
     }
 
+    private func currentChoices(_ dealer: DMDealer) -> [DMChoice] {
+        guard let nodeID = game.dmCurrentNode(for: dealer) else { return [] }
+        return DMScripts.choices(for: dealer, nodeID: nodeID, game: game)
+    }
+
     @ViewBuilder
-    private func chatBubble(_ msg: RexChatMessage) -> some View {
+    private func transcriptBubble(_ entry: DMTranscriptEntry) -> some View {
+        switch entry.kind {
+        case .contactText, .vinnieText:
+            contactBubble(text: entry.text, itemID: nil)
+        case .contactItem, .vinnieItem:
+            contactBubble(text: entry.text, itemID: entry.itemID)
+        case .playerText:
+            playerBubble(entry.text)
+        }
+    }
+
+    private func contactBubble(text: String, itemID: String?) -> some View {
         HStack {
-            if msg.sender == .player { Spacer(minLength: 48) }
-            VStack(alignment: msg.sender == .rex ? .leading : .trailing, spacing: 4) {
-                if msg.sender == .rex, let itemID = msg.itemID,
-                   let item = RexItem.byID(itemID) {
-                    HStack(spacing: 6) {
-                        GameIconTile(name: item.imageName, size: 36, tint: Theme.tierColor(item.tier))
-                        Text(item.name)
-                            .font(Theme.cartoonFont(10, weight: .bold))
-                            .foregroundStyle(Theme.tierColor(item.tier))
+            VStack(alignment: .leading, spacing: 6) {
+                if let itemID, let item = RexItem.byID(itemID) {
+                    HStack(spacing: 8) {
+                        GameIconTile(name: item.imageName, size: 44, tint: Theme.tierColor(item.tier))
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(item.name)
+                                .font(Theme.cartoonFont(11, weight: .heavy))
+                                .foregroundStyle(Theme.tierColor(item.tier))
+                            Text(item.boostText)
+                                .font(Theme.cartoonFont(9, weight: .semibold))
+                                .foregroundStyle(.white.opacity(0.5))
+                        }
                     }
+                    .padding(10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(Theme.surface.opacity(0.6))
+                    )
                 }
-                Text(msg.text)
+                Text(text)
                     .font(Theme.cartoonFont(12, weight: .medium))
-                    .foregroundStyle(msg.sender == .rex ? .white : .black)
-                    .multilineTextAlignment(msg.sender == .rex ? .leading : .trailing)
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.leading)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
                     .background {
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .fill(bubbleFill(msg.sender))
+                            .fill(Theme.surfaceRaised)
                     }
                     .overlay {
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
                             .strokeBorder(Theme.comicBorder.opacity(0.5), lineWidth: 2)
                     }
             }
-            if msg.sender == .rex { Spacer(minLength: 48) }
+            Spacer(minLength: 48)
         }
     }
 
-    private func bubbleFill(_ sender: RexChatMessage.Sender) -> Color {
-        switch sender {
-        case .rex: return Theme.surfaceRaised
-        case .player: return game.theme.accent
+    private func playerBubble(_ text: String) -> some View {
+        HStack {
+            Spacer(minLength: 48)
+            Text(text)
+                .font(Theme.cartoonFont(12, weight: .medium))
+                .foregroundStyle(.black)
+                .multilineTextAlignment(.trailing)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(game.theme.accent)
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .strokeBorder(Theme.comicBorder.opacity(0.5), lineWidth: 2)
+                }
+            Spacer(minLength: 0)
         }
     }
 
-    private var replyBar: some View {
+    private func replyBar(_ dealer: DMDealer) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Reply")
                 .font(Theme.cartoonFont(9, weight: .bold))
@@ -259,17 +287,8 @@ private struct DMThreadView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    ForEach(replies) { reply in
-                        Button(reply.label) { select(reply) }
-                            .font(Theme.cartoonFont(11, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 10)
-                            .background {
-                                Capsule().fill(game.theme.accentDeep.opacity(0.85))
-                            }
-                            .overlay(Capsule().strokeBorder(Theme.comicBorder, lineWidth: 2))
-                            .buttonStyle(PressableButtonStyle())
+                    ForEach(currentChoices(dealer)) { choice in
+                        choiceButton(dealer, choice)
                     }
                 }
                 .padding(.horizontal, Theme.screenPadding)
@@ -279,20 +298,50 @@ private struct DMThreadView: View {
         .background(Theme.surface)
     }
 
-    private func select(_ reply: RexReply) {
-        guard let pitchID = pendingPitchID else { return }
-        game.handleRexReply(reply, pitchID: pitchID)
-        scrollToken += 1
+    private func choiceButton(_ dealer: DMDealer, _ choice: DMChoice) -> some View {
+        let enabled = DMScripts.canSelect(choice, game: game)
+        return Button {
+            if enabled {
+                affordTooltip = nil
+                game.selectDMChoice(dealer, choice)
+                scrollToken += 1
+            } else {
+                affordTooltip = DMScripts.affordTooltip(for: choice, game: game)
+            }
+        } label: {
+            Text(choice.label)
+                .font(Theme.cartoonFont(11, weight: .semibold))
+                .foregroundStyle(enabled ? .white : .white.opacity(0.45))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background {
+                    Capsule().fill(
+                        enabled
+                            ? game.theme.accentDeep.opacity(0.85)
+                            : Theme.surfaceRaised.opacity(0.8)
+                    )
+                }
+                .overlay(Capsule().strokeBorder(Theme.comicBorder, lineWidth: 2))
+        }
+        .buttonStyle(PressableButtonStyle())
     }
 
-    private func scrollToBottom(_ proxy: ScrollViewProxy) {
-        if let last = messages.last?.id {
+    private func scrollToBottom(_ proxy: ScrollViewProxy, dealer: DMDealer) {
+        if let last = game.dmTranscript(for: dealer).last?.id {
             withAnimation(.easeOut(duration: 0.2)) {
                 proxy.scrollTo(last, anchor: .bottom)
             }
         }
     }
+    private func dealerAccent(_ dealer: DMDealer) -> Color {
+        switch dealer.accentName {
+        case "cloutPink": return Theme.cloutPink
+        case "coinGreen": return Theme.coinGreen
+        case "luxeGold": return Theme.luxeGold
+        case "champagne": return Theme.champagne
+        default: return Theme.hypeBlue
+        }
+    }
 }
 
-// Sheet wrapper for legacy presentation
 typealias RexShopView = RexChatView

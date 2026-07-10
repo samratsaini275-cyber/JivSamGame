@@ -233,6 +233,10 @@ struct GameTabBar: View {
     var rexBadge: Bool
     var rexUnlocked: Bool = true
 
+    @State private var showDMsLockHint = false
+
+    private static let dmsLockMessage = "Unlocks when Sneaker Resells is unlocked"
+
     var body: some View {
         HStack(spacing: 0) {
             ForEach(MainTab.allCases) { tab in
@@ -247,13 +251,45 @@ struct GameTabBar: View {
             Rectangle().fill(Theme.ink.opacity(0.78))
             VStack { Rectangle().fill(.white.opacity(0.10)).frame(height: 1); Spacer() }
         }
+        .overlay(alignment: .top) {
+            if showDMsLockHint {
+                Text(Self.dmsLockMessage)
+                    .font(Theme.cartoonFont(10, weight: .bold))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background {
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Theme.ink.opacity(0.95))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .strokeBorder(Theme.luxeGold.opacity(0.45), lineWidth: 1)
+                            )
+                    }
+                    .padding(.horizontal, 20)
+                    .offset(y: -44)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
     }
 
     private func tabButton(_ tab: MainTab) -> some View {
         let selected = selection == tab
         let locked = tab == .rex && !rexUnlocked
         return Button {
-            guard !locked else { return }
+            if locked {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.72)) {
+                    showDMsLockHint = true
+                }
+                Task {
+                    try? await Task.sleep(nanoseconds: 2_500_000_000)
+                    await MainActor.run {
+                        withAnimation(.easeOut(duration: 0.2)) { showDMsLockHint = false }
+                    }
+                }
+                return
+            }
             withAnimation(.spring(response: 0.3, dampingFraction: 0.65)) { selection = tab }
         } label: {
             VStack(spacing: 3) {
@@ -288,6 +324,7 @@ struct GameTabBar: View {
             }
         }
         .buttonStyle(PressableButtonStyle(bounce: !locked))
+        .help(locked ? Self.dmsLockMessage : "")
     }
 }
 

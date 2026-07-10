@@ -4,9 +4,11 @@ struct HeaderView: View {
     @EnvironmentObject var game: Game
     var onProfileTap: () -> Void = {}
     @State private var buffBounce = false
+    @State private var devCashInput = ""
 
     var body: some View {
         VStack(spacing: 14) {
+            devCashBar
             topBar
             commandPanel
 
@@ -26,12 +28,67 @@ struct HeaderView: View {
                 )
             }
 
-            if game.milleBuffActive || game.viralBuffActive { buffRow }
+            if game.milleBuffActive || game.viralBuffActive
+                || game.equippedWristItem != nil || game.equippedGarageItem != nil
+                || !game.state.equippedPerks.isEmpty { buffRow }
             if game.offlineEarnings > 0 { offlineBanner }
         }
         .padding(.horizontal, Theme.screenPadding)
         .padding(.top, 14)
         .padding(.bottom, 6)
+    }
+
+    private var devCashBar: some View {
+        HStack(spacing: 8) {
+            Text("DEV")
+                .font(Theme.cartoonFont(9, weight: .black))
+                .foregroundStyle(.orange)
+
+            TextField("Amount", text: $devCashInput)
+                .textFieldStyle(.roundedBorder)
+                .frame(maxWidth: 140)
+                .onSubmit { applyDevCash() }
+
+            Button("Add $", action: applyDevCash)
+                .font(Theme.cartoonFont(10, weight: .bold))
+                .buttonStyle(PressableButtonStyle())
+
+            ForEach([1_000.0, 10_000, 100_000, 1_000_000], id: \.self) { amount in
+                Button(devCashLabel(amount)) { game.devAddCash(amount) }
+                    .font(Theme.cartoonFont(9, weight: .bold))
+                    .foregroundStyle(Theme.coinGreen)
+                    .buttonStyle(PressableButtonStyle(bounce: false))
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Theme.surfaceRaised.opacity(0.9))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(.orange.opacity(0.45), lineWidth: 1)
+        )
+    }
+
+    private func devCashLabel(_ amount: Double) -> String {
+        switch amount {
+        case 1_000_000: return "+1M"
+        case 100_000: return "+100K"
+        case 10_000: return "+10K"
+        default: return "+1K"
+        }
+    }
+
+    private func applyDevCash() {
+        let cleaned = devCashInput
+            .replacingOccurrences(of: ",", with: "")
+            .replacingOccurrences(of: "$", with: "")
+            .trimmingCharacters(in: .whitespaces)
+        guard let amount = Double(cleaned), amount > 0 else { return }
+        game.devAddCash(amount)
+        devCashInput = ""
     }
 
     private var topBar: some View {
@@ -119,6 +176,15 @@ struct HeaderView: View {
 
     private var buffRow: some View {
         HStack(spacing: 8) {
+            if let watch = game.equippedWristItem {
+                buffPill("⌚ \(watch.boostText.uppercased())")
+            }
+            if let garage = game.equippedGarageItem {
+                buffPill("🚗 \(garage.boostText.uppercased())")
+            }
+            ForEach(Array(game.activePerkBoostLabels.prefix(3)), id: \.self) { label in
+                buffPill("✨ \(label.uppercased())")
+            }
             if game.milleBuffActive { buffPill("MILLE ×2") }
             if game.viralBuffActive { buffPill("EARLY HYPE ×2") }
         }

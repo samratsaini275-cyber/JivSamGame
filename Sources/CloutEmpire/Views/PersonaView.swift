@@ -99,10 +99,13 @@ struct PersonaView: View {
             VStack(spacing: 14) {
                 profileHero
                 colorwayRow
-                ForEach(PersonaSlot.allCases, id: \.rawValue) { slot in
-                    slotSection(slot)
+                if !game.hasFitItems {
+                    emptyFitCard
                 }
-                Text("Your fit survives Rebrand — labels get burned, you don't.")
+                ForEach(ItemSlot.allCases, id: \.self) { slot in
+                    fitSection(slot)
+                }
+                Text("Dealer gear stays on Rebrand. DM threads reset — dealers remember the vibe.")
                     .font(Theme.cartoonFont(9, weight: .medium))
                     .foregroundStyle(.white.opacity(0.35))
                     .multilineTextAlignment(.center)
@@ -128,15 +131,35 @@ struct PersonaView: View {
                     .font(Theme.cartoonFont(11, weight: .semibold))
                     .foregroundStyle(Theme.textMuted)
             }
-            if game.equippedGrailCount > 0 {
-                Text("Grail drip: +\(String(format: "%.1f", Double(game.equippedGrailCount) * Formulas.grailRebrandBonusPerItem * 100))% on Rebrand")
+            if let watch = game.equippedWristItem {
+                Text("On wrist: \(watch.name)")
                     .font(Theme.cartoonFont(10, weight: .heavy))
-                    .foregroundStyle(Theme.cloutPink)
+                    .foregroundStyle(Theme.tierColor(watch.tier))
+            }
+            if let garage = game.equippedGarageItem {
+                Text("In garage: \(garage.name)")
+                    .font(Theme.cartoonFont(10, weight: .heavy))
+                    .foregroundStyle(Theme.tierColor(garage.tier))
             }
         }
         .padding(.vertical, 16)
         .frame(maxWidth: .infinity)
         .gameCard(highlighted: true, accent: game.theme.accent)
+    }
+
+    private var emptyFitCard: some View {
+        VStack(spacing: 10) {
+            GameImage(name: "tab_rex", size: 52)
+            Text("No flex yet")
+                .font(Theme.cartoonFont(15, weight: .black))
+            Text("Your dealers don't hand out free samples. Unlock hustles, open DMs, and buy in.")
+                .font(Theme.cartoonFont(11, weight: .medium))
+                .foregroundStyle(Theme.textMuted)
+                .multilineTextAlignment(.center)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity)
+        .gameCard()
     }
 
     private var colorwayRow: some View {
@@ -159,17 +182,32 @@ struct PersonaView: View {
         .gameCard()
     }
 
-    private func slotSection(_ slot: PersonaSlot) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(slot.rawValue).kicker()
-            ForEach(PersonaItem.forSlot(slot)) { item in
-                itemRow(item)
+    private func fitSection(_ slot: ItemSlot) -> some View {
+        let items = game.ownedRexItems(for: slot)
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(slot.fitLabel).kicker()
+                if slot == .perk {
+                    Text("\(game.state.equippedPerks.count)/\(RexItem.maxEquippedPerks) active")
+                        .font(Theme.cartoonFont(9, weight: .bold))
+                        .foregroundStyle(Theme.textMuted)
+                }
+                Spacer()
+            }
+            if items.isEmpty {
+                Text(slot.emptyHint)
+                    .font(Theme.cartoonFont(10, weight: .medium))
+                    .foregroundStyle(Theme.textMuted)
+                    .padding(.horizontal, 4)
+            } else {
+                ForEach(items) { item in
+                    fitItemRow(item)
+                }
             }
         }
     }
 
-    private func itemRow(_ item: PersonaItem) -> some View {
-        let owned = game.owns(item)
+    private func fitItemRow(_ item: RexItem) -> some View {
         let equipped = game.isEquipped(item)
         let color = Theme.tierColor(item.tier)
 
@@ -182,33 +220,58 @@ struct PersonaView: View {
                         .font(Theme.cartoonFont(8, weight: .bold))
                         .foregroundStyle(color)
                 }
-                Text(item.isGrail ? "+0.5% Clout on Rebrand · pure flex" : "Pure flex · zero income")
+                Text(item.boostText)
                     .font(Theme.cartoonFont(9, weight: .medium))
                     .foregroundStyle(Theme.textMuted)
+                if let dealer = item.dealer {
+                    Text("via \(dealer.title)")
+                        .font(Theme.cartoonFont(8, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.35))
+                }
             }
             Spacer(minLength: 0)
-            personaAction(item, owned: owned, equipped: equipped, color: color)
+            fitAction(item, equipped: equipped, color: color)
         }
         .padding(12)
         .gameCard(highlighted: equipped, accent: color)
     }
 
     @ViewBuilder
-    private func personaAction(_ item: PersonaItem, owned: Bool, equipped: Bool, color: Color) -> some View {
-        if equipped {
-            Text("ACTIVE").font(Theme.cartoonFont(9, weight: .black)).foregroundStyle(color).frame(width: 62)
-        } else if owned {
-            Button("WEAR") { game.equipCosmetic(item) }
-                .font(Theme.cartoonFont(9, weight: .bold))
-                .foregroundStyle(color)
-                .buttonStyle(PressableButtonStyle())
-                .frame(width: 62)
-        } else {
-            CartoonButton(title: "COP IT", subtitle: money(item.cost), color: color,
-                          disabled: game.state.cash < item.cost) {
-                game.buyCosmetic(item)
+    private func fitAction(_ item: RexItem, equipped: Bool, color: Color) -> some View {
+        switch item.slot {
+        case .perk:
+            if equipped {
+                Button("STASH") { game.unequip(item) }
+                    .font(Theme.cartoonFont(9, weight: .bold))
+                    .foregroundStyle(Theme.textMuted)
+                    .buttonStyle(PressableButtonStyle())
+                    .frame(width: 62)
+            } else if game.canEquipPerk(item) {
+                Button("WEAR") { game.equip(item) }
+                    .font(Theme.cartoonFont(9, weight: .bold))
+                    .foregroundStyle(color)
+                    .buttonStyle(PressableButtonStyle())
+                    .frame(width: 62)
+            } else {
+                Text("FULL")
+                    .font(Theme.cartoonFont(9, weight: .black))
+                    .foregroundStyle(.white.opacity(0.35))
+                    .frame(width: 62)
+                    .help("Only \(RexItem.maxEquippedPerks) bag perks can be active at once")
             }
-            .frame(width: 66)
+        default:
+            if equipped {
+                Text("ACTIVE")
+                    .font(Theme.cartoonFont(9, weight: .black))
+                    .foregroundStyle(color)
+                    .frame(width: 62)
+            } else {
+                Button("WEAR") { game.equip(item) }
+                    .font(Theme.cartoonFont(9, weight: .bold))
+                    .foregroundStyle(color)
+                    .buttonStyle(PressableButtonStyle())
+                    .frame(width: 62)
+            }
         }
     }
 }

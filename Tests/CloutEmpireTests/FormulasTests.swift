@@ -106,18 +106,20 @@ final class FormulasTests: XCTestCase {
         XCTAssertEqual(RexItem.byID("bugatti")?.cost, 40_000_000)
     }
 
-    func testRebrandWipesItemsButKeepsDaytonaLegacy() {
+    func testRebrandKeepsFitAndDaytonaLegacy() {
         var state = GameState.newGame()
         state.ownedItems = ["fauxlex", "daytona", "lambo"]
         state.equippedWrist = "daytona"
         state.equippedGarage = "lambo"
+        state.equippedPerks = ["heatpress", "cartbot"]
         state.daytonaPurchases = 2
 
         state.rebrand(gaining: 10)
 
-        XCTAssertTrue(state.ownedItems.isEmpty, "Rex's gear was rented anyway")
-        XCTAssertNil(state.equippedWrist)
-        XCTAssertNil(state.equippedGarage)
+        XCTAssertEqual(state.ownedItems, ["fauxlex", "daytona", "lambo"])
+        XCTAssertEqual(state.equippedWrist, "daytona")
+        XCTAssertEqual(state.equippedGarage, "lambo")
+        XCTAssertEqual(state.equippedPerks, ["heatpress", "cartbot"])
         XCTAssertEqual(state.daytonaPurchases, 2, "Daytona legacy survives Rebrand")
     }
 

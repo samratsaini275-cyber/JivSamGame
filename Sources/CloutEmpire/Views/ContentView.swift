@@ -73,7 +73,7 @@ struct ContentView: View {
             }
             Text("DMs Locked")
                 .font(Theme.cartoonFont(18, weight: .heavy))
-            Text("Unlock Sneaker Resells to get on Rex's radar.")
+            Text("Unlock Sneaker Resells to hear from Vinnie.")
                 .font(Theme.cartoonFont(12, weight: .medium))
                 .foregroundStyle(.white.opacity(0.45))
                 .multilineTextAlignment(.center)
@@ -165,6 +165,8 @@ struct ContentView: View {
                 colors: [Theme.cloutPink, game.theme.accent, .white],
                 count: 48
             )
+            show(event)
+        case .newDM:
             show(event)
         }
     }

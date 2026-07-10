@@ -46,7 +46,7 @@ struct RebrandView: View {
                 .padding(14)
                 .gameCard()
 
-                Text("Every hustle, cash, staff, and Rex's gear — gone. Your fit, handle, and Clout stay.")
+                Text("Every hustle, cash, and staff — gone. Your fit, handle, Clout, and dealer gear stay.")
                     .font(Theme.cartoonFont(10, weight: .medium))
                     .foregroundStyle(Theme.textMuted)
                     .multilineTextAlignment(.center)

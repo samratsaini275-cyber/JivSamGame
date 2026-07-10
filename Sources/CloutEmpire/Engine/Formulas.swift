@@ -94,6 +94,35 @@ enum Formulas {
         }
     }
 
+    static func perkIncomeMultiplier(equippedPerks: Set<String>, hustleTier: Int) -> Double {
+        var multiplier = 1.0
+        for id in equippedPerks {
+            switch id {
+            case "heatpress": multiplier *= 1.04
+            case "subletter": if hustleTier == 0 { multiplier *= 1.10 }
+            case "micro_roster": multiplier *= 1.05
+            case "talent_pkg": if hustleTier >= 2 { multiplier *= 1.12 }
+            case "foam_marble": if hustleTier >= 3 { multiplier *= 1.08 }
+            case "standing_pass": multiplier *= 1.06
+            default: break
+            }
+        }
+        return multiplier
+    }
+
+    static func perkCycleMultiplier(equippedPerks: Set<String>, hustleTier: Int) -> Double {
+        var multiplier = 1.0
+        for id in equippedPerks {
+            switch id {
+            case "cartbot": multiplier *= 0.96
+            case "queueskip": if hustleTier >= 1 { multiplier *= 0.92 }
+            case "rack_kit": multiplier *= 0.95
+            default: break
+            }
+        }
+        return multiplier
+    }
+
     static let lamboViralChance = 0.25
     static let lamboViralDuration: Double = 60
     static let milleBuffDuration: Double = 10
