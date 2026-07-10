@@ -95,18 +95,39 @@ struct RebrandView: View {
     }
 
     private var cloutStoreSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             Text("CLOUT STORE")
                 .font(Theme.cartoonFont(11, weight: .black))
                 .foregroundStyle(Theme.champagne)
+
+            Text("Spend available Clout on permanent hustle upgrades or a short income burst. Every point you spend leaves your passive +2%/point income bonus — that's the trade.")
+                .font(Theme.cartoonFont(10, weight: .medium))
+                .foregroundStyle(Theme.textMuted)
+                .fixedSize(horizontal: false, vertical: true)
+
+            upgradeExplainer(
+                title: "Publicist",
+                icon: "megaphone.fill",
+                body: "One per hustle, forever. Reframes that hustle's income as cash/sec on the main screen, and permanently cuts its next buy price by 10%. Survives Rebrand.",
+                costNote: "5% of available Clout"
+            )
+
+            upgradeExplainer(
+                title: "Cost-Cut Shard",
+                icon: "scissors",
+                body: "Slows how fast that hustle's unit price scales (1.14× → 1.12× per owned unit, per shard). Stack up to 2 shards per hustle. Survives Rebrand.",
+                costNote: "10% of available Clout each"
+            )
+
+            Divider().overlay(.white.opacity(0.08))
 
             surgeRow
 
             Divider().overlay(.white.opacity(0.08))
 
-            Text("Per hustle — spendable Clout only")
-                .font(Theme.cartoonFont(9, weight: .medium))
-                .foregroundStyle(Theme.textMuted)
+            Text("Pick a hustle")
+                .font(Theme.cartoonFont(10, weight: .bold))
+                .foregroundStyle(Theme.champagne.opacity(0.85))
 
             ForEach(game.hustles.indices, id: \.self) { index in
                 hustleCloutRow(index)
@@ -116,18 +137,50 @@ struct RebrandView: View {
         .gameCard(accent: Theme.cloutPink)
     }
 
+    private func upgradeExplainer(title: String, icon: String, body: String, costNote: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(Theme.cloutPink)
+                .frame(width: 28, height: 28)
+                .background(Circle().fill(Theme.cloutPink.opacity(0.12)))
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(title)
+                        .font(Theme.cartoonFont(11, weight: .heavy))
+                        .foregroundStyle(.white)
+                    Spacer()
+                    Text(costNote)
+                        .font(Theme.cartoonFont(8, weight: .bold))
+                        .foregroundStyle(Theme.champagne.opacity(0.7))
+                }
+                Text(body)
+                    .font(Theme.cartoonFont(9, weight: .medium))
+                    .foregroundStyle(Theme.textMuted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(10)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Theme.surface.opacity(0.45)))
+    }
+
     private var surgeRow: some View {
         let cost = game.cloutPurchaseCost(type: .oneTimeSurge)
         let canBuy = game.canPurchaseClout(type: .oneTimeSurge)
-        return HStack {
+        return HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("One-Time Surge")
                     .font(Theme.cartoonFont(12, weight: .heavy))
-                Text("2× income all hustles · 60s · \(cost) Clout (15%)")
+                Text("Temporary — 2× income on every hustle for 60 seconds. Does not survive Rebrand. Always costs 15% of whatever Clout you still have available right now.")
                     .font(Theme.cartoonFont(9, weight: .medium))
                     .foregroundStyle(Theme.textMuted)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text("Current price: \(cost) Clout")
+                    .font(Theme.cartoonFont(9, weight: .bold))
+                    .foregroundStyle(Theme.coinGreen.opacity(0.85))
             }
-            Spacer()
+            Spacer(minLength: 8)
             Button(canBuy ? "BUY" : "—") {
                 attemptPurchase(type: .oneTimeSurge)
             }
@@ -145,43 +198,69 @@ struct RebrandView: View {
         let hasPub = game.hasPublicist(for: index)
         let shards = game.costCutShards(for: index)
         let maxShards = CloutStore.maxCostCutShardsPerHustle
+        let growth = game.costGrowth(for: index)
+        let growthPct = Int((growth * 100).rounded())
 
-        return VStack(alignment: .leading, spacing: 8) {
+        return VStack(alignment: .leading, spacing: 10) {
             Text(hustle.name)
-                .font(Theme.cartoonFont(11, weight: .bold))
-                .foregroundStyle(.white.opacity(0.85))
+                .font(Theme.cartoonFont(12, weight: .heavy))
+                .foregroundStyle(.white)
 
-            HStack(spacing: 8) {
-                cloutMiniButton(
-                    title: hasPub ? "Publicist ✓" : "Publicist \(pubCost)",
-                    enabled: !hasPub && game.canPurchaseClout(type: .publicist, hustleIndex: index)
-                ) {
-                    attemptPurchase(type: .publicist, hustleIndex: index)
-                }
+            hustleUpgradeRow(
+                title: "Publicist",
+                detail: hasPub
+                    ? "Hired — income shows as /sec, buys are 10% cheaper here."
+                    : "Hire to show /sec income and shave 10% off future buys for this hustle only.",
+                status: hasPub ? "OWNED" : "\(pubCost) Clout",
+                enabled: !hasPub && game.canPurchaseClout(type: .publicist, hustleIndex: index)
+            ) {
+                attemptPurchase(type: .publicist, hustleIndex: index)
+            }
 
-                cloutMiniButton(
-                    title: shards >= maxShards ? "Shard ✓×\(maxShards)" : "Shard \(shardCost) (\(shards)/\(maxShards))",
-                    enabled: shards < maxShards && game.canPurchaseClout(type: .costCutShard, hustleIndex: index)
-                ) {
-                    attemptPurchase(type: .costCutShard, hustleIndex: index)
-                }
+            hustleUpgradeRow(
+                title: "Cost-Cut Shard",
+                detail: shards >= maxShards
+                    ? "Maxed — cost curve is \(growthPct)% per unit (2 shards applied)."
+                    : "Shard \(shards + 1)/\(maxShards): softens the 1.14× scaling to \(growthPct)% after purchase.",
+                status: shards >= maxShards ? "MAX" : "\(shardCost) Clout",
+                enabled: shards < maxShards && game.canPurchaseClout(type: .costCutShard, hustleIndex: index)
+            ) {
+                attemptPurchase(type: .costCutShard, hustleIndex: index)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 6)
+        .padding(.horizontal, 10)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Theme.surface.opacity(0.35)))
     }
 
-    private func cloutMiniButton(title: String, enabled: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
+    private func hustleUpgradeRow(
+        title: String,
+        detail: String,
+        status: String,
+        enabled: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(Theme.cartoonFont(10, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.9))
+                Text(detail)
+                    .font(Theme.cartoonFont(8, weight: .medium))
+                    .foregroundStyle(Theme.textMuted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 4)
+            Button(status, action: action)
                 .font(Theme.cartoonFont(9, weight: .bold))
-                .foregroundStyle(enabled ? .white : Theme.textMuted)
+                .foregroundStyle(enabled ? Theme.coinGreen : Theme.textMuted)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
-                .background(Capsule().fill(enabled ? Theme.surfaceRaised : Theme.surface.opacity(0.5)))
-                .overlay(Capsule().strokeBorder(Theme.comicBorder.opacity(enabled ? 0.6 : 0.25), lineWidth: 1))
+                .background(Capsule().fill(enabled ? Theme.coinGreen.opacity(0.12) : Theme.surface.opacity(0.5)))
+                .overlay(Capsule().strokeBorder(enabled ? Theme.coinGreen.opacity(0.35) : Theme.comicBorder.opacity(0.2), lineWidth: 1))
+                .buttonStyle(PressableButtonStyle(bounce: false))
+                .disabled(!enabled)
         }
-        .buttonStyle(PressableButtonStyle(bounce: false))
-        .disabled(!enabled)
     }
 
     private func attemptPurchase(type: CloutPurchase, hustleIndex: Int? = nil) {
