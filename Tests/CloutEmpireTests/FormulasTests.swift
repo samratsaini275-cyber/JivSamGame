@@ -277,4 +277,68 @@ final class FormulasTests: XCTestCase {
         XCTAssertTrue(game.purchaseClout(type: .costCutShard, hustleIndex: 0))
         XCTAssertFalse(game.canPurchaseClout(type: .costCutShard, hustleIndex: 0))
     }
+
+    // MARK: Flex (push-your-luck posting)
+
+    func testFlexExposureChanceScalesWithHeat() {
+        XCTAssertEqual(Formulas.flexExposureChance(baseRisk: 0.05, heat: 0, receiptsDelta: 0), 0.05)
+        XCTAssertEqual(Formulas.flexExposureChance(baseRisk: 0.12, heat: 50, receiptsDelta: 0), 0.32, accuracy: 1e-12)
+        XCTAssertEqual(Formulas.flexExposureChance(baseRisk: 0.20, heat: 100, receiptsDelta: 0), 0.60, accuracy: 1e-12)
+    }
+
+    func testFlexExposureChanceClamps() {
+        XCTAssertEqual(Formulas.flexExposureChance(baseRisk: 0.05, heat: 0, receiptsDelta: -0.5), Flex.minRisk)
+        XCTAssertEqual(Formulas.flexExposureChance(baseRisk: 0.20, heat: 1_000, receiptsDelta: 0.5), Flex.maxRisk)
+    }
+
+    func testFlexHypeStreak() {
+        XCTAssertEqual(Formulas.flexHype(current: 1.0, streakAlive: false, gain: 0.25), 1.25)
+        XCTAssertEqual(Formulas.flexHype(current: 2.5, streakAlive: true, gain: 1.0), 3.5)
+        XCTAssertEqual(Formulas.flexHype(current: 2.5, streakAlive: false, gain: 1.0), 2.0)
+        XCTAssertEqual(Formulas.flexHype(current: 3.8, streakAlive: true, gain: 1.0), Flex.hypeCap)
+    }
+
+    func testFlexStateResetsOnRebrandButLifetimeCountersSurvive() {
+        var state = GameState.newGame()
+        state.flexHeat = 60
+        state.hypeMultiplier = 3
+        state.hypeExpiresAt = Date().addingTimeInterval(30)
+        state.exposedUntil = Date().addingTimeInterval(30)
+        state.lifetimeFlexes = 12
+        state.lifetimeExposures = 3
+        state.repManagerCharges = 1
+        state.rebrand(gaining: 5)
+        XCTAssertEqual(state.flexHeat, 0)
+        XCTAssertEqual(state.hypeMultiplier, 1)
+        XCTAssertNil(state.hypeExpiresAt)
+        XCTAssertNil(state.exposedUntil)
+        XCTAssertEqual(state.lifetimeFlexes, 12)
+        XCTAssertEqual(state.lifetimeExposures, 3)
+        XCTAssertEqual(state.repManagerCharges, 1)
+    }
+
+    func testRepManagerHeldOneAtATime() {
+        var state = GameState.newGame()
+        state.availableClout = 1_000
+        state.hustles[0].ghostwriterHired = true // unlocks flexing
+        let game = Game(state: state)
+        XCTAssertTrue(game.purchaseClout(type: .reputationManager))
+        XCTAssertFalse(game.canPurchaseClout(type: .reputationManager))
+    }
+
+    func testFlexStateSurvivesSaveRoundTrip() throws {
+        var state = GameState.newGame()
+        state.flexHeat = 42
+        state.hypeMultiplier = 2.5
+        state.lifetimeFlexes = 7
+        state.lifetimeExposures = 2
+        state.repManagerCharges = 1
+        let data = try JSONEncoder().encode(state)
+        let decoded = try JSONDecoder().decode(GameState.self, from: data)
+        XCTAssertEqual(decoded.flexHeat, 42)
+        XCTAssertEqual(decoded.hypeMultiplier, 2.5)
+        XCTAssertEqual(decoded.lifetimeFlexes, 7)
+        XCTAssertEqual(decoded.lifetimeExposures, 2)
+        XCTAssertEqual(decoded.repManagerCharges, 1)
+    }
 }

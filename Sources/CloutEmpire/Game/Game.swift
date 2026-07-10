@@ -24,6 +24,10 @@ struct GameEvent: Equatable, Identifiable {
         case payout(hustleIndex: Int, amount: Double)
         case rebranded(clout: Double)
         case newDM(dealer: DMDealer)
+        case flexHit(hype: Double)
+        case flexExposed(line: String)
+        case flexSaved
+        case flexViral
     }
 
     let id = UUID()
@@ -48,6 +52,7 @@ final class Game: ObservableObject {
     init(state: GameState) {
         self.state = state
         reconcileDMThreadStates()
+        coolHeatWhileAway()
         grantOfflineEarnings()
         start()
     }
@@ -108,6 +113,12 @@ final class Game: ObservableObject {
 
     /// Full payout of one completed post cycle, all multipliers applied.
     func incomePerCycle(of index: Int) -> Double {
+        baseIncomePerCycle(of: index) * flexIncomeMultiplier
+    }
+
+    /// Payout without the Flex Hype/ratio modifier — offline earnings use this
+    /// so session-only flex states never leak into the away-time calc.
+    private func baseIncomePerCycle(of index: Int) -> Double {
         let h = hustles[index]
         let s = state.hustles[index]
         return h.baseIncome * Double(s.unitsOwned)
@@ -645,6 +656,160 @@ final class Game: ObservableObject {
         reconcileDMThreadStates()
     }
 
+    // MARK: Flex (push-your-luck posting)
+
+    /// Flexing unlocks once there's idle time to fill — first Ghostwriter or any Clout.
+    var flexUnlocked: Bool {
+        state.hustles.contains { $0.ghostwriterHired } || state.totalClout > 0
+    }
+
+    var hypeActive: Bool { (state.hypeExpiresAt ?? .distantPast) > Date() }
+    var currentHype: Double { hypeActive ? state.hypeMultiplier : 1 }
+    var hypeRemaining: TimeInterval { max(0, state.hypeExpiresAt?.timeIntervalSinceNow ?? 0) }
+
+    var isExposed: Bool { (state.exposedUntil ?? .distantPast) > Date() }
+    var exposureRemaining: TimeInterval { max(0, state.exposedUntil?.timeIntervalSinceNow ?? 0) }
+
+    /// Session-only income modifier from posting: Hype streak up, ratio'd down.
+    var flexIncomeMultiplier: Double {
+        currentHype * (isExposed ? Flex.exposureIncomeMultiplier : 1)
+    }
+
+    var flexCooldownRemaining: TimeInterval {
+        guard let last = state.lastFlexAt else { return 0 }
+        return max(0, Flex.cooldown - Date().timeIntervalSince(last))
+    }
+
+    /// Exposed players lay low — no posting until the ratio blows over.
+    var canFlexNow: Bool {
+        flexUnlocked && !isExposed && flexCooldownRemaining <= 0
+    }
+
+    /// Receipts: flexing gear you actually own cuts risk; zoomable fakes add it.
+    func flexRiskFactors(for flexTier: FlexTier) -> [FlexRiskFactor] {
+        var factors: [FlexRiskFactor] = []
+        switch flexTier {
+        case .humbleBrag:
+            if maxMoneyTier >= 2 {
+                factors.append(FlexRiskFactor(label: "Actual sold-out drops", delta: -0.05))
+            } else if maxMoneyTier == 0 {
+                factors.append(FlexRiskFactor(label: "The numbers don't exist yet", delta: 0.03))
+            }
+        case .photoshoot:
+            if let garage = equippedGarageItem {
+                if Flex.realRexItemIDs.contains(garage.id) {
+                    factors.append(FlexRiskFactor(label: "\(garage.name) — owned outright", delta: -0.08))
+                } else {
+                    factors.append(FlexRiskFactor(label: "\(garage.name) — rental paperwork in frame", delta: 0.03))
+                }
+            } else {
+                factors.append(FlexRiskFactor(label: "No whip — green-screened", delta: 0.04))
+            }
+            if let wrist = equippedWristItem {
+                if Flex.realRexItemIDs.contains(wrist.id) {
+                    factors.append(FlexRiskFactor(label: "\(wrist.name) — real receipts", delta: -0.04))
+                } else {
+                    factors.append(FlexRiskFactor(label: "\(wrist.name) — zoomable", delta: 0.03))
+                }
+            }
+        case .fullLarp:
+            if state.equippedGarage == "bugatti" {
+                factors.append(FlexRiskFactor(label: "Actual Bugatti — undeniable", delta: -0.06))
+            }
+            if equippedGrailCount > 0 {
+                factors.append(FlexRiskFactor(
+                    label: "\(equippedGrailCount) grail\(equippedGrailCount == 1 ? "" : "s") equipped",
+                    delta: -0.02 * Double(equippedGrailCount)))
+            }
+            if !state.ownedItems.contains(where: { Flex.realRexItemIDs.contains($0) }) {
+                factors.append(FlexRiskFactor(label: "Nothing you own is real", delta: 0.04))
+            }
+        }
+        return factors
+    }
+
+    func flexExposureChance(for flexTier: FlexTier) -> Double {
+        Formulas.flexExposureChance(
+            baseRisk: flexTier.baseRisk,
+            heat: state.flexHeat,
+            receiptsDelta: flexRiskFactors(for: flexTier).reduce(0) { $0 + $1.delta }
+        )
+    }
+
+    func postFlex(_ flexTier: FlexTier) {
+        guard canFlexNow else { return }
+        let chance = flexExposureChance(for: flexTier)
+        let streakAlive = hypeActive
+        state.lastFlexAt = Date()
+        state.lifetimeFlexes += 1
+        state.flexHeat = min(Flex.maxHeat, state.flexHeat + flexTier.heat)
+
+        if Double.random(in: 0..<1) < chance {
+            resolveExposure(flexTier)
+            return
+        }
+
+        state.hypeMultiplier = Formulas.flexHype(
+            current: state.hypeMultiplier, streakAlive: streakAlive, gain: flexTier.hypeGain)
+        state.hypeExpiresAt = Date().addingTimeInterval(Flex.hypeWindow)
+
+        // Jackpot: a Full Larp that lands while the Sus Meter is redlining
+        // actually goes viral — rides the same buff as the Borrowed Lambo.
+        if flexTier == .fullLarp, state.flexHeat >= Flex.jackpotHeatThreshold {
+            state.viralBuffUntil = Date().addingTimeInterval(Flex.jackpotViralDuration)
+            lastEvent = GameEvent(kind: .flexViral)
+        } else {
+            lastEvent = GameEvent(kind: .flexHit(hype: state.hypeMultiplier))
+        }
+    }
+
+    private func resolveExposure(_ flexTier: FlexTier) {
+        // A held Reputation Manager eats the exposure: post deleted, streak lives.
+        if state.repManagerCharges > 0 {
+            state.repManagerCharges -= 1
+            sendFlexDM(flexTier, lines: Flex.repManagerSaveLines)
+            lastEvent = GameEvent(kind: .flexSaved)
+            return
+        }
+        state.lifetimeExposures += 1
+        state.exposedUntil = Date().addingTimeInterval(Flex.exposureDuration)
+        state.flexHeat = 0 // the scandal blows over; failure resets the ladder
+        state.hypeMultiplier = 1
+        state.hypeExpiresAt = nil
+        sendFlexDM(flexTier, lines: Flex.clowningLines(tier: flexTier, exposureCount: state.lifetimeExposures))
+        lastEvent = GameEvent(kind: .flexExposed(line: Flex.exposureLine(exposureCount: state.lifetimeExposures)))
+    }
+
+    /// The dealer most implicated in the flex clowns you — whoever sold you the
+    /// gear in the shot, falling back to your biggest hustle's dealer.
+    private func flexDMDealer(for flexTier: FlexTier) -> DMDealer? {
+        var candidates: [DMDealer] = []
+        switch flexTier {
+        case .humbleBrag:
+            break
+        case .photoshoot:
+            if let garageDealer = equippedGarageItem?.dealer { candidates.append(garageDealer) }
+            candidates.append(.dre)
+            if let wristDealer = equippedWristItem?.dealer { candidates.append(wristDealer) }
+        case .fullLarp:
+            candidates.append(contentsOf: [.viktor, .sloane])
+        }
+        if let best = state.hustles.indices
+            .filter({ state.hustles[$0].unitsOwned > 0 })
+            .max(by: { tier(of: $0) < tier(of: $1) }),
+           let dealer = DMDealer.forHustle(best) {
+            candidates.append(dealer)
+        }
+        return candidates.first { isDMInboxVisible($0) && state.dmThread(for: $0).threadStarted }
+    }
+
+    private func sendFlexDM(_ flexTier: FlexTier, lines: [String]) {
+        guard !lines.isEmpty, let dealer = flexDMDealer(for: flexTier) else { return }
+        state.updateDMThread(dealer) { thread in
+            for line in lines { thread.transcript.append(.contact(line)) }
+        }
+    }
+
     // MARK: Dev
 
     func devAddCash(_ amount: Double) {
@@ -697,6 +862,7 @@ final class Game: ObservableObject {
         case .publicist: CloutStore.publicistCostFraction
         case .costCutShard: CloutStore.costCutShardFraction
         case .oneTimeSurge: CloutStore.surgeCostFraction
+        case .reputationManager: CloutStore.repManagerCostFraction
         }
         return max(1, Int(floor(state.availableClout * fraction)))
     }
@@ -723,6 +889,8 @@ final class Game: ObservableObject {
             return state.cloutUpgrades(for: i).costCutShards < CloutStore.maxCostCutShardsPerHustle
         case .oneTimeSurge:
             return true
+        case .reputationManager:
+            return flexUnlocked && state.repManagerCharges < CloutStore.maxRepManagerCharges
         }
     }
 
@@ -750,6 +918,8 @@ final class Game: ObservableObject {
             state.updateCloutUpgrades(for: i) { $0.costCutShards += 1 }
         case .oneTimeSurge:
             state.cloutSurgeUntil = Date().addingTimeInterval(CloutStore.surgeDuration)
+        case .reputationManager:
+            state.repManagerCharges += 1
         }
         return true
     }
@@ -796,6 +966,10 @@ final class Game: ObservableObject {
     }
 
     private func tick(dt: Double) {
+        if state.flexHeat > 0 {
+            state.flexHeat = max(0, state.flexHeat - dt * Flex.heatDecayPerSecond)
+        }
+
         for i in state.hustles.indices {
             let s = state.hustles[i]
             guard s.unitsOwned > 0 else { continue }
@@ -842,13 +1016,20 @@ final class Game: ObservableObject {
 
     // MARK: Persistence & offline earnings
 
+    /// The Sus Meter keeps cooling while the app is closed.
+    private func coolHeatWhileAway() {
+        guard state.flexHeat > 0, let last = state.lastSaved else { return }
+        let elapsed = max(0, Date().timeIntervalSince(last))
+        state.flexHeat = max(0, state.flexHeat - elapsed * Flex.heatDecayPerSecond)
+    }
+
     private func grantOfflineEarnings() {
         guard let last = state.lastSaved else { return }
         let elapsed = min(Date().timeIntervalSince(last), 24 * 3600)
         guard elapsed > 1 else { return }
         var earned = 0.0
         for i in state.hustles.indices where state.hustles[i].ghostwriterHired {
-            earned += elapsed / cycleTime(of: i) * incomePerCycle(of: i)
+            earned += elapsed / cycleTime(of: i) * baseIncomePerCycle(of: i)
         }
         if earned > 0 {
             deposit(earned)

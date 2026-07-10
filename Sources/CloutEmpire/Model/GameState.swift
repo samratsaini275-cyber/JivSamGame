@@ -55,6 +55,16 @@ struct GameState: Codable {
     var cloutSurgeUntil: Date?
     var cloutPurchaseLog: [CloutStorePurchase] = []
 
+    var flexHeat: Double = 0
+    var hypeMultiplier: Double = 1
+    var hypeExpiresAt: Date?
+    var exposedUntil: Date?
+    var lastFlexAt: Date?
+    var lifetimeFlexes: Int = 0
+    var lifetimeExposures: Int = 0
+    /// Reputation Manager charges (Clout Store) — eats the next exposure. Survives Rebrand.
+    var repManagerCharges: Int = 0
+
     var handle: String = ""
     var baseLook: String = "hoodie"
     var colorway: String = "gold"
@@ -89,6 +99,13 @@ struct GameState: Codable {
         milleBuffUntil = nil
         viralBuffUntil = nil
         cloutSurgeUntil = nil
+        // New account, clean slate — Heat, Hype, and any active ratio all die
+        // with the old persona. Lifetime counters and Rep Manager charges stay.
+        flexHeat = 0
+        hypeMultiplier = 1
+        hypeExpiresAt = nil
+        exposedUntil = nil
+        lastFlexAt = nil
         resetDMThreadsForRebrand()
     }
 
@@ -103,6 +120,8 @@ struct GameState: Codable {
         case whipUnlocked, whipThreadStarted, whipThreadClosed, whipIntroCompleted, whipRespectsPlayer
         case whipCurrentNode, whipLastClosedNode, whipTranscript
         case milleBuffUntil, viralBuffUntil
+        case flexHeat, hypeMultiplier, hypeExpiresAt, exposedUntil, lastFlexAt
+        case lifetimeFlexes, lifetimeExposures, repManagerCharges
         case handle, baseLook, ownedCosmetics, equippedCosmetics, colorway
     }
 
@@ -152,6 +171,14 @@ struct GameState: Codable {
         cloutPurchaseLog = try c.decodeIfPresent([CloutStorePurchase].self, forKey: .cloutPurchaseLog) ?? []
         milleBuffUntil = try c.decodeIfPresent(Date.self, forKey: .milleBuffUntil)
         viralBuffUntil = try c.decodeIfPresent(Date.self, forKey: .viralBuffUntil)
+        flexHeat = try c.decodeIfPresent(Double.self, forKey: .flexHeat) ?? 0
+        hypeMultiplier = try c.decodeIfPresent(Double.self, forKey: .hypeMultiplier) ?? 1
+        hypeExpiresAt = try c.decodeIfPresent(Date.self, forKey: .hypeExpiresAt)
+        exposedUntil = try c.decodeIfPresent(Date.self, forKey: .exposedUntil)
+        lastFlexAt = try c.decodeIfPresent(Date.self, forKey: .lastFlexAt)
+        lifetimeFlexes = try c.decodeIfPresent(Int.self, forKey: .lifetimeFlexes) ?? 0
+        lifetimeExposures = try c.decodeIfPresent(Int.self, forKey: .lifetimeExposures) ?? 0
+        repManagerCharges = try c.decodeIfPresent(Int.self, forKey: .repManagerCharges) ?? 0
         handle = try c.decodeIfPresent(String.self, forKey: .handle) ?? ""
         baseLook = try c.decodeIfPresent(String.self, forKey: .baseLook) ?? "hoodie"
         ownedCosmetics = try c.decodeIfPresent(Set<String>.self, forKey: .ownedCosmetics) ?? []
@@ -195,6 +222,14 @@ struct GameState: Codable {
         try c.encode(cloutPurchaseLog, forKey: .cloutPurchaseLog)
         try c.encodeIfPresent(milleBuffUntil, forKey: .milleBuffUntil)
         try c.encodeIfPresent(viralBuffUntil, forKey: .viralBuffUntil)
+        try c.encode(flexHeat, forKey: .flexHeat)
+        try c.encode(hypeMultiplier, forKey: .hypeMultiplier)
+        try c.encodeIfPresent(hypeExpiresAt, forKey: .hypeExpiresAt)
+        try c.encodeIfPresent(exposedUntil, forKey: .exposedUntil)
+        try c.encodeIfPresent(lastFlexAt, forKey: .lastFlexAt)
+        try c.encode(lifetimeFlexes, forKey: .lifetimeFlexes)
+        try c.encode(lifetimeExposures, forKey: .lifetimeExposures)
+        try c.encode(repManagerCharges, forKey: .repManagerCharges)
         try c.encode(handle, forKey: .handle)
         try c.encode(baseLook, forKey: .baseLook)
         try c.encode(ownedCosmetics, forKey: .ownedCosmetics)

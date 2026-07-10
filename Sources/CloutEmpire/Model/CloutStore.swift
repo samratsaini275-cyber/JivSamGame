@@ -4,6 +4,7 @@ enum CloutPurchase: String, Codable {
     case publicist
     case costCutShard
     case oneTimeSurge
+    case reputationManager
 }
 
 struct CloutStorePurchase: Codable, Equatable, Identifiable {
@@ -24,4 +25,7 @@ enum CloutStore {
     static let publicistCostCut = 0.10
     static let surgeDuration: Double = 60
     static let surgeIncomeMultiplier = 2.0
+    static let repManagerCostFraction = 0.08
+    /// One held at a time — it insures "your next exposure", not a stockpile.
+    static let maxRepManagerCharges = 1
 }

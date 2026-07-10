@@ -114,6 +114,7 @@ struct ContentView: View {
 
             ScrollView(showsIndicators: false) {
                 LazyVStack(spacing: 12) {
+                    FlexCard()
                     ForEach(game.hustles) { hustle in
                         HustleRowView(index: hustle.id)
                             .reportCardFrame(hustle.id)
@@ -167,6 +168,22 @@ struct ContentView: View {
             )
             show(event)
         case .newDM:
+            show(event)
+        case .flexHit:
+            particles.spawnConfetti(
+                at: CGPoint(x: 200, y: 150),
+                colors: [Theme.luxeGold, game.theme.accent, .white],
+                count: 24
+            )
+            show(event)
+        case .flexViral:
+            particles.spawnConfetti(
+                at: CGPoint(x: 200, y: 150),
+                colors: [Theme.hypeBlue, game.theme.accent, .white],
+                count: 40
+            )
+            show(event)
+        case .flexExposed, .flexSaved:
             show(event)
         }
     }

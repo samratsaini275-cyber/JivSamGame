@@ -31,6 +31,22 @@ struct EventToast: View {
             toast(image: "tab_rex", title: "NEW DM",
                   subtitle: "\(dealer.badgeEmoji) \(dealer.title) · \(dealer.preview)",
                   color: color)
+        case .flexHit(let hype):
+            toast(image: "icon_fire", title: "FLEX LANDED",
+                  subtitle: "Hype ×\(String(format: "%g", hype)) · flex again to stack it",
+                  color: Theme.luxeGold)
+        case .flexExposed(let line):
+            toast(image: "tab_rex", title: "EXPOSED 💀",
+                  subtitle: "\(line) Income halved — check your DMs.",
+                  color: Theme.cloutPink)
+        case .flexSaved:
+            toast(image: "icon_sparkle", title: "POST DELETED",
+                  subtitle: "Your Reputation Manager handled it. You owe them one.",
+                  color: Theme.champagne)
+        case .flexViral:
+            toast(image: "icon_hype", title: "ACTUALLY WENT VIRAL",
+                  subtitle: "The larp was too good · all income ×2 for 60s",
+                  color: Theme.hypeBlue)
         case .payout:
             EmptyView()
         }

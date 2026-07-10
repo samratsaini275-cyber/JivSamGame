@@ -131,6 +131,19 @@ enum Formulas {
     static let milleBuffDuration: Double = 10
     static let daytonaGainRatePerPurchase = 0.02
 
+    // MARK: Flex (push-your-luck posting)
+
+    /// Exposure chance for a flex: tier base + Heat scaling + receipts modifiers,
+    /// clamped so nothing is ever a sure thing in either direction.
+    static func flexExposureChance(baseRisk: Double, heat: Double, receiptsDelta: Double) -> Double {
+        min(Flex.maxRisk, max(Flex.minRisk, baseRisk + heat * Flex.riskPerHeat + receiptsDelta))
+    }
+
+    /// Hype multiplier after a successful flex — streak grows while alive, capped.
+    static func flexHype(current: Double, streakAlive: Bool, gain: Double) -> Double {
+        min(Flex.hypeCap, (streakAlive ? current : 1) + gain)
+    }
+
     // MARK: Persona cosmetics
 
     /// The one mechanical exception to "cosmetics are pure vanity": each equipped

@@ -125,6 +125,10 @@ struct RebrandView: View {
 
             Divider().overlay(.white.opacity(0.08))
 
+            repManagerRow
+
+            Divider().overlay(.white.opacity(0.08))
+
             Text("Pick a hustle")
                 .font(Theme.cartoonFont(10, weight: .bold))
                 .foregroundStyle(Theme.champagne.opacity(0.85))
@@ -183,6 +187,33 @@ struct RebrandView: View {
             Spacer(minLength: 8)
             Button(canBuy ? "BUY" : "—") {
                 attemptPurchase(type: .oneTimeSurge)
+            }
+            .font(Theme.cartoonFont(10, weight: .bold))
+            .foregroundStyle(canBuy ? Theme.coinGreen : Theme.textMuted)
+            .disabled(!canBuy)
+            .buttonStyle(PressableButtonStyle(bounce: false))
+        }
+    }
+
+    private var repManagerRow: some View {
+        let cost = game.cloutPurchaseCost(type: .reputationManager)
+        let owned = game.state.repManagerCharges > 0
+        let canBuy = game.canPurchaseClout(type: .reputationManager)
+        return HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Reputation Manager 🧯")
+                    .font(Theme.cartoonFont(12, weight: .heavy))
+                Text("On retainer until needed: your next exposed flex gets deleted before it spreads — no ratio, streak survives. One held at a time. Survives Rebrand.")
+                    .font(Theme.cartoonFont(9, weight: .medium))
+                    .foregroundStyle(Theme.textMuted)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(owned ? "On retainer" : "Current price: \(cost) Clout")
+                    .font(Theme.cartoonFont(9, weight: .bold))
+                    .foregroundStyle(Theme.coinGreen.opacity(0.85))
+            }
+            Spacer(minLength: 8)
+            Button(owned ? "HELD" : (canBuy ? "BUY" : "—")) {
+                attemptPurchase(type: .reputationManager)
             }
             .font(Theme.cartoonFont(10, weight: .bold))
             .foregroundStyle(canBuy ? Theme.coinGreen : Theme.textMuted)
