@@ -11,7 +11,8 @@ struct GlowBar: View {
             let width = clamped * geo.size.width
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: min(7, height * 0.5), style: .continuous)
-                    .fill(Color.black.opacity(0.42))
+                    .fill(Color.black.opacity(0.58))
+                    .overlay(RoundedRectangle(cornerRadius: min(7, height * 0.5), style: .continuous).strokeBorder(.white.opacity(0.12), lineWidth: 1))
                 if width > 2 {
                     RoundedRectangle(cornerRadius: min(7, height * 0.5), style: .continuous)
                         .fill(
@@ -35,8 +36,9 @@ struct GlowBar: View {
                         .overlay {
                             DiagonalStripeOverlay()
                                 .clipShape(RoundedRectangle(cornerRadius: min(7, height * 0.5), style: .continuous))
-                                .opacity(0.18)
+                                .opacity(0.30)
                         }
+                        .shadow(color: color.opacity(0.55), radius: 7, y: 0)
                 }
             }
         }

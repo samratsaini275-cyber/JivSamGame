@@ -43,30 +43,33 @@ struct GameIconTile: View {
     var tint: Color = .white
 
     var body: some View {
-        GameImage(name: name, size: size * 0.62, dimmed: dimmed)
+        GameImage(name: name, size: size * 0.70, dimmed: dimmed)
             .frame(width: size, height: size)
             .background(
-                RoundedRectangle(cornerRadius: min(8, size * 0.16), style: .continuous)
+                RoundedRectangle(cornerRadius: min(14, size * 0.22), style: .continuous)
                     .fill(
                         LinearGradient(
                             colors: [
-                                dimmed ? Theme.surfaceRaised : tint.opacity(0.22),
-                                Theme.ink.opacity(0.65),
+                                dimmed ? Theme.surfaceRaised : tint.opacity(0.42),
+                                Theme.arcadePurple.opacity(dimmed ? 0.12 : 0.36),
+                                Theme.ink.opacity(0.78),
                             ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+                            startPoint: .top,
+                            endPoint: .bottom
                         )
                     )
             )
             .overlay(
-                RoundedRectangle(cornerRadius: min(8, size * 0.16), style: .continuous)
-                    .strokeBorder(dimmed ? .white.opacity(0.08) : tint.opacity(0.38), lineWidth: 1)
+                RoundedRectangle(cornerRadius: min(14, size * 0.22), style: .continuous)
+                    .strokeBorder(dimmed ? .white.opacity(0.12) : tint.opacity(0.82), lineWidth: 2.5)
             )
             .overlay(alignment: .topLeading) {
-                RoundedRectangle(cornerRadius: min(8, size * 0.16), style: .continuous)
-                    .stroke(.white.opacity(0.10), lineWidth: 1)
-                    .padding(1)
+                Circle()
+                    .fill(.white.opacity(dimmed ? 0.05 : 0.20))
+                    .frame(width: size * 0.36, height: size * 0.36)
+                    .offset(x: size * 0.10, y: size * 0.08)
             }
-            .shadow(color: dimmed ? .clear : tint.opacity(0.18), radius: 10, y: 4)
+            .shadow(color: dimmed ? .clear : tint.opacity(0.36), radius: 14, y: 5)
+            .shadow(color: .black.opacity(0.45), radius: 10, y: 7)
     }
 }

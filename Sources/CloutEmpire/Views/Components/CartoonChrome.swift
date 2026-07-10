@@ -27,18 +27,27 @@ struct CartoonButton: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 10)
+            .padding(.vertical, 12)
             .padding(.horizontal, 8)
             .foregroundStyle(foreground)
             .background { face }
-            .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(stroke, lineWidth: 1))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(stroke, lineWidth: 2.5))
             .overlay(alignment: .top) {
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .stroke(.white.opacity(disabled ? 0.04 : 0.16), lineWidth: 1)
-                    .frame(height: 1)
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(.white.opacity(disabled ? 0.04 : 0.22))
+                    .frame(height: 5)
+                    .padding(.horizontal, 8)
+                    .padding(.top, 3)
             }
-            .shadow(color: disabled ? .clear : color.opacity(style == .primary ? 0.22 : 0.10), radius: 14, y: 6)
+            .background(alignment: .bottom) {
+                if !disabled {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(stroke.opacity(0.55))
+                        .offset(y: 5)
+                }
+            }
+            .shadow(color: disabled ? .clear : color.opacity(style == .primary ? 0.42 : 0.22), radius: 16, y: 7)
         }
         .buttonStyle(CartoonPressStyle())
         .disabled(disabled)
@@ -48,24 +57,24 @@ struct CartoonButton: View {
         switch style {
         case .primary:
             if let colorway, !disabled {
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(
                         LinearGradient(
-                            colors: [Theme.champagne, colorway.accent, colorway.accentDeep],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+                            colors: [Theme.champagne, colorway.accent, Theme.arcadeOrange],
+                            startPoint: .top,
+                            endPoint: .bottom
                         )
                     )
             } else {
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(disabled ? Theme.surfaceRaised : color)
             }
         case .secondary:
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(disabled ? Theme.surfaceRaised : color.opacity(0.18))
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(disabled ? Theme.surfaceRaised : color.opacity(0.32))
         case .outline:
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(Theme.ink.opacity(0.35))
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(LinearGradient(colors: [Theme.arcadePurple.opacity(0.28), Theme.ink.opacity(0.60)], startPoint: .top, endPoint: .bottom))
         }
     }
 
@@ -89,9 +98,10 @@ struct CartoonButton: View {
 struct CartoonPressStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(configuration.isPressed ? 0.975 : 1)
-            .brightness(configuration.isPressed ? -0.06 : 0)
-            .animation(.spring(response: 0.16, dampingFraction: 0.75), value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed ? 0.94 : 1)
+            .offset(y: configuration.isPressed ? 4 : 0)
+            .brightness(configuration.isPressed ? -0.08 : 0.03)
+            .animation(.spring(response: 0.16, dampingFraction: 0.58), value: configuration.isPressed)
     }
 }
 
@@ -111,24 +121,28 @@ extension View {
                     .fill(
                         LinearGradient(
                             colors: [
-                                Theme.panelTop.opacity(0.90),
+                                Theme.panelTop.opacity(0.96),
                                 fill,
+                                Theme.arcadePurple.opacity(0.20),
                                 Theme.panelBottom.opacity(0.98),
                             ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+                            startPoint: .top,
+                            endPoint: .bottom
                         )
                     )
-                    .shadow(color: .black.opacity(0.44), radius: 22, y: 12)
+                    .shadow(color: Theme.cloutPink.opacity(0.18), radius: 16, y: 7)
+                    .shadow(color: .black.opacity(0.48), radius: 20, y: 10)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .strokeBorder(Theme.luxeGold.opacity(0.16), lineWidth: 1)
+                    .strokeBorder(Theme.luxeGold.opacity(0.44), lineWidth: 2)
             )
             .overlay(alignment: .top) {
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .stroke(Theme.champagne.opacity(0.16), lineWidth: 1)
-                    .frame(height: 1)
+                    .fill(.white.opacity(0.12))
+                    .frame(height: 6)
+                    .padding(.horizontal, 10)
+                    .padding(.top, 3)
             }
     }
 }

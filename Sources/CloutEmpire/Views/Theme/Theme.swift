@@ -38,11 +38,11 @@ extension Game {
 }
 
 enum Theme {
-    static let bg = Color(red: 0.015, green: 0.016, blue: 0.019)
-    static let surface = Color(red: 0.055, green: 0.057, blue: 0.064)
-    static let surfaceRaised = Color(red: 0.098, green: 0.100, blue: 0.112)
-    static let panelTop = Color(red: 0.145, green: 0.140, blue: 0.126)
-    static let panelBottom = Color(red: 0.032, green: 0.033, blue: 0.039)
+    static let bg = Color(red: 0.025, green: 0.012, blue: 0.038)
+    static let surface = Color(red: 0.095, green: 0.052, blue: 0.122)
+    static let surfaceRaised = Color(red: 0.145, green: 0.075, blue: 0.175)
+    static let panelTop = Color(red: 0.235, green: 0.105, blue: 0.235)
+    static let panelBottom = Color(red: 0.050, green: 0.024, blue: 0.080)
     static let comicBorder = Color(red: 1.0, green: 0.82, blue: 0.42).opacity(0.18)
     static let comicShadow = Color.black.opacity(0.55)
     static let comicStroke: CGFloat = 1
@@ -50,6 +50,8 @@ enum Theme {
     static let coinGreen = Color(red: 0.34, green: 0.92, blue: 0.52)
     static let cloutPink = Color(red: 0.96, green: 0.42, blue: 0.58)
     static let hypeBlue = Color(red: 0.38, green: 0.72, blue: 1.0)
+    static let arcadePurple = Color(red: 0.58, green: 0.32, blue: 1.0)
+    static let arcadeOrange = Color(red: 1.0, green: 0.45, blue: 0.18)
     static let luxeGold = Color(red: 1.0, green: 0.78, blue: 0.34)
     static let champagne = Color(red: 1.0, green: 0.91, blue: 0.68)
     static let ink = Color(red: 0.010, green: 0.011, blue: 0.014)
@@ -62,18 +64,18 @@ enum Theme {
         ZStack {
             LinearGradient(
                 colors: [
-                    Color(red: 0.035, green: 0.030, blue: 0.024),
-                    Color(red: 0.010, green: 0.011, blue: 0.014),
-                    Color(red: 0.034, green: 0.029, blue: 0.022),
+                    Color(red: 0.13, green: 0.045, blue: 0.18),
+                    Color(red: 0.025, green: 0.012, blue: 0.045),
+                    Color(red: 0.12, green: 0.040, blue: 0.090),
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
-            LuxuryBackdropPattern(colorway: colorway)
+            ArcadeBackdropPattern(colorway: colorway)
             Rectangle()
                 .fill(
                     LinearGradient(
-                        colors: [.black.opacity(0.25), .clear, luxeGold.opacity(0.10)],
+                        colors: [.black.opacity(0.10), .clear, cloutPink.opacity(0.10)],
                         startPoint: .top,
                         endPoint: .bottom
                     )
@@ -96,37 +98,52 @@ enum Theme {
     }
 }
 
-struct LuxuryBackdropPattern: View {
+struct ArcadeBackdropPattern: View {
     var colorway: Colorway
+    @State private var drift: CGFloat = 0
 
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                ForEach(0..<5, id: \.self) { index in
-                    Rectangle()
+                ForEach(0..<6, id: \.self) { index in
+                    Capsule()
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    Theme.luxeGold.opacity(index.isMultiple(of: 2) ? 0.10 : 0.035),
-                                    colorway.accentDeep.opacity(0.035),
+                                    colorway.accent.opacity(index.isMultiple(of: 2) ? 0.28 : 0.08),
+                                    Theme.cloutPink.opacity(index.isMultiple(of: 2) ? 0.16 : 0.06),
                                 ],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
                         )
-                        .frame(width: geo.size.width * 1.6, height: index.isMultiple(of: 2) ? 74 : 34)
-                        .rotationEffect(.degrees(-16))
-                        .offset(x: -geo.size.width * 0.18, y: CGFloat(index) * geo.size.height * 0.22 - 80)
+                        .frame(width: geo.size.width * 1.35, height: index.isMultiple(of: 2) ? 42 : 16)
+                        .rotationEffect(.degrees(index.isMultiple(of: 2) ? -14 : 18))
+                        .offset(
+                            x: sin(drift + CGFloat(index)) * 22 - geo.size.width * 0.14,
+                            y: CGFloat(index) * geo.size.height * 0.18 - 60
+                        )
                 }
-                Rectangle()
-                    .stroke(Theme.luxeGold.opacity(0.08), lineWidth: 1)
-                    .rotationEffect(.degrees(-16))
-                    .frame(width: geo.size.width * 1.7, height: geo.size.height * 0.70)
-                    .offset(y: geo.size.height * 0.05)
+                ForEach(0..<18, id: \.self) { index in
+                    Image(systemName: index.isMultiple(of: 3) ? "sparkle" : "dollarsign")
+                        .font(.system(size: CGFloat(12 + (index % 4) * 5), weight: .black))
+                        .foregroundStyle(index.isMultiple(of: 2) ? Theme.luxeGold.opacity(0.18) : Theme.cloutPink.opacity(0.14))
+                        .rotationEffect(.degrees(Double(index * 21)))
+                        .offset(
+                            x: CGFloat((index * 67) % 380) - 190 + sin(drift * 0.7 + CGFloat(index)) * 10,
+                            y: CGFloat((index * 113) % 760) - 380 + cos(drift * 0.6 + CGFloat(index)) * 12
+                        )
+                }
+            }
+            .frame(width: geo.size.width, height: geo.size.height)
+            .onAppear {
+                withAnimation(.linear(duration: 9).repeatForever(autoreverses: true)) {
+                    drift = .pi * 2
+                }
             }
         }
         .blendMode(.screen)
-        .opacity(0.80)
+        .opacity(0.95)
     }
 }
 
@@ -139,7 +156,7 @@ struct GameCard: ViewModifier {
             .proPanel(radius: Theme.cardRadius, fill: Theme.surface)
             .overlay(
                 RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous)
-                    .strokeBorder(highlighted ? accent.opacity(0.70) : Theme.comicBorder, lineWidth: highlighted ? 1.5 : 1)
+                    .strokeBorder(highlighted ? accent.opacity(0.95) : Theme.luxeGold.opacity(0.35), lineWidth: highlighted ? 3 : 2)
             )
     }
 }
@@ -186,7 +203,12 @@ struct StatBadge: View {
             Spacer(minLength: 0)
         }
         .padding(12)
-        .gameCard(highlighted: (progress ?? 0) > 0, accent: color == Theme.cloutPink ? Theme.luxeGold : color)
+        .background {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(LinearGradient(colors: [color.opacity(0.28), Theme.surface.opacity(0.95)], startPoint: .topLeading, endPoint: .bottomTrailing))
+        }
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(color.opacity(0.70), lineWidth: 2))
+        .shadow(color: color.opacity(0.24), radius: 12, y: 6)
     }
 }
 
@@ -218,9 +240,9 @@ struct GameSegmentedControl<Option: Hashable & Identifiable>: View where Option:
             }
         }
         .padding(5)
-        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.ink.opacity(0.62)))
-        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(.white.opacity(0.10), lineWidth: 1))
-        .shadow(color: .black.opacity(0.28), radius: 16, y: 8)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Theme.ink.opacity(0.72)))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.luxeGold.opacity(0.42), lineWidth: 2))
+        .shadow(color: colorway.accent.opacity(0.22), radius: 14, y: 8)
     }
 }
 
@@ -243,13 +265,12 @@ struct GameTabBar: View {
                 tabButton(tab)
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.top, 10)
-        .padding(.bottom, 12)
+        .padding(.horizontal, 10)
+        .padding(.top, 9)
+        .padding(.bottom, 11)
         .background {
-            Rectangle().fill(.ultraThinMaterial)
-            Rectangle().fill(Theme.ink.opacity(0.78))
-            VStack { Rectangle().fill(.white.opacity(0.10)).frame(height: 1); Spacer() }
+            LinearGradient(colors: [Theme.arcadePurple.opacity(0.45), Theme.ink.opacity(0.94)], startPoint: .top, endPoint: .bottom)
+            VStack { Rectangle().fill(Theme.luxeGold.opacity(0.45)).frame(height: 2); Spacer() }
         }
         .overlay(alignment: .top) {
             if showDMsLockHint {
@@ -294,7 +315,11 @@ struct GameTabBar: View {
         } label: {
             VStack(spacing: 3) {
                 ZStack {
-                    GameImage(name: tab.imageName, size: selected ? 28 : 24)
+                    Circle()
+                        .fill(selected ? colorway.accent.opacity(0.28) : Theme.ink.opacity(0.40))
+                        .frame(width: 42, height: 34)
+                        .overlay(Circle().strokeBorder(selected ? colorway.accent : .white.opacity(0.12), lineWidth: selected ? 2 : 1))
+                    GameImage(name: tab.imageName, size: selected ? 29 : 23)
                         .scaleEffect(selected ? 1.08 : 1)
                         .opacity(locked ? 0.35 : 1)
                     if locked {
@@ -315,11 +340,12 @@ struct GameTabBar: View {
                     )
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 4)
+            .padding(.vertical, 5)
             .background {
                 if selected {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(colorway.accent.opacity(0.12))
+                    RoundedRectangle(cornerRadius: 13, style: .continuous)
+                        .fill(LinearGradient(colors: [colorway.accent.opacity(0.30), Theme.cloutPink.opacity(0.14)], startPoint: .top, endPoint: .bottom))
+                        .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).strokeBorder(colorway.accent.opacity(0.45), lineWidth: 1.5))
                 }
             }
         }

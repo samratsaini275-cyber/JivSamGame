@@ -90,17 +90,23 @@ struct ContentView: View {
             VStack(spacing: 10) {
                 HStack(alignment: .lastTextBaseline) {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("PORTFOLIO")
-                            .font(Theme.cartoonFont(18, weight: .black))
-                            .foregroundStyle(.white)
-                        Text("\(game.hustles.filter { game.state.hustles[$0.id].unitsOwned > 0 }.count)/\(game.hustles.count) holdings acquired")
+                        Text("MONEY MACHINES")
+                            .font(Theme.cartoonFont(20, weight: .black))
+                            .foregroundStyle(
+                                LinearGradient(colors: [.white, Theme.champagne], startPoint: .top, endPoint: .bottom)
+                            )
+                            .shadow(color: Theme.luxeGold.opacity(0.35), radius: 7, y: 2)
+                        Text("\(game.hustles.filter { game.state.hustles[$0.id].unitsOwned > 0 }.count)/\(game.hustles.count) money machines unlocked")
                             .font(Theme.cartoonFont(10, weight: .medium))
                             .foregroundStyle(Theme.textMuted)
                     }
                     Spacer()
-                    Text("ACQUIRE")
+                    Text("STACK BUY")
                         .font(Theme.cartoonFont(9, weight: .bold))
-                        .foregroundStyle(Theme.champagne)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .foregroundStyle(Theme.ink)
+                        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.champagne))
                 }
 
                 GameSegmentedControl(

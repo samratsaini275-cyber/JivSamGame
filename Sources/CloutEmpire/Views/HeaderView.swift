@@ -7,7 +7,7 @@ struct HeaderView: View {
     @State private var devCashInput = ""
 
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 12) {
             devCashBar
             topBar
             commandPanel
@@ -34,7 +34,7 @@ struct HeaderView: View {
             if game.offlineEarnings > 0 { offlineBanner }
         }
         .padding(.horizontal, Theme.screenPadding)
-        .padding(.top, 14)
+        .padding(.top, 12)
         .padding(.bottom, 6)
     }
 
@@ -113,63 +113,64 @@ struct HeaderView: View {
                 .buttonStyle(PressableButtonStyle())
             }
             Spacer()
-            VStack(alignment: .trailing, spacing: 1) {
-                Text("CLOUT EMPIRE")
-                    .font(Theme.cartoonFont(14, weight: .black))
-                    .foregroundStyle(
-                        LinearGradient(colors: [Theme.champagne, Theme.luxeGold], startPoint: .top, endPoint: .bottom)
-                    )
-                Text("PRIVATE TYCOON SUITE")
-                    .font(Theme.cartoonFont(8, weight: .bold))
-                    .foregroundStyle(Theme.textMuted)
-            }
+            Text("CLOUT EMPIRE")
+                .font(Theme.cartoonFont(18, weight: .black))
+                .foregroundStyle(
+                    LinearGradient(colors: [.white, Theme.champagne, Theme.cloutPink], startPoint: .top, endPoint: .bottom)
+                )
+                .shadow(color: Theme.cloutPink.opacity(0.50), radius: 8, y: 2)
         }
     }
 
     private var commandPanel: some View {
-        HStack(alignment: .center, spacing: 14) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("NET LIQUID CAPITAL")
-                    .font(Theme.cartoonFont(9, weight: .bold))
-                    .foregroundStyle(Theme.champagne.opacity(0.78))
+        VStack(spacing: 10) {
+            HStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("CASH STACK")
+                        .font(Theme.cartoonFont(9, weight: .black))
+                        .foregroundStyle(Theme.champagne.opacity(0.88))
                 AnimatedMoney(value: game.state.cash)
-                    .font(Theme.cartoonFont(40, weight: .black))
-                    .foregroundStyle(
-                        LinearGradient(colors: [.white, Theme.champagne], startPoint: .top, endPoint: .bottom)
-                    )
-                    .glow(Theme.luxeGold, radius: 5)
-                    .minimumScaleFactor(0.55)
-                    .lineLimit(1)
-                    .rolls(with: game.state.cash)
-                Text("\(money(game.state.lifetimeCash)) lifetime gross")
-                    .font(Theme.cartoonFont(10, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.46))
-                    .monospacedDigit()
-            }
-            Spacer(minLength: 0)
-            VStack(alignment: .trailing, spacing: 5) {
-                HStack(spacing: 6) {
-                    Image(systemName: "chart.line.uptrend.xyaxis")
-                        .font(.system(size: 11, weight: .bold))
-                    Text("+\(money(game.incomePerSecond))/sec")
-                        .font(Theme.cartoonFont(14, weight: .black))
+                        .font(Theme.cartoonFont(42, weight: .black))
+                        .foregroundStyle(
+                            LinearGradient(colors: [.white, Theme.champagne, Theme.luxeGold], startPoint: .top, endPoint: .bottom)
+                        )
+                        .glow(Theme.luxeGold, radius: 8)
+                        .minimumScaleFactor(0.50)
+                        .lineLimit(1)
+                        .rolls(with: game.state.cash)
+                }
+                Spacer(minLength: 0)
+                VStack(spacing: 4) {
+                    Text("AUTO")
+                        .font(Theme.cartoonFont(8, weight: .black))
+                        .foregroundStyle(.white.opacity(0.70))
+                    Text("+\(money(game.incomePerSecond))/s")
+                        .font(Theme.cartoonFont(13, weight: .black))
                         .monospacedDigit()
+                        .minimumScaleFactor(0.55)
+                        .lineLimit(1)
                 }
                 .foregroundStyle(Theme.coinGreen)
-                Text("passive yield")
-                    .font(Theme.cartoonFont(9, weight: .medium))
-                    .foregroundStyle(Theme.textMuted)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 9)
+                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Theme.coinGreen.opacity(0.16)))
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Theme.coinGreen.opacity(0.70), lineWidth: 2))
             }
-            .padding(12)
-            .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.ink.opacity(0.66)))
-            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Theme.coinGreen.opacity(0.28), lineWidth: 1))
+            HStack {
+                Text("\(money(game.state.lifetimeCash)) ALL-TIME FLEX")
+                Spacer()
+                Text("GET RICH QUICK")
+            }
+            .font(Theme.cartoonFont(9, weight: .black))
+            .foregroundStyle(.white.opacity(0.58))
         }
-        .padding(16)
+        .padding(15)
         .background(alignment: .trailing) {
-            Image(systemName: "dollarsign.circle.fill")
-                .font(.system(size: 96, weight: .black))
-                .foregroundStyle(Theme.luxeGold.opacity(0.055))
-                .offset(x: 12)
+            Image(systemName: "sparkles")
+                .font(.system(size: 92, weight: .black))
+                .foregroundStyle(Theme.luxeGold.opacity(0.10))
+                .rotationEffect(.degrees(-12))
+                .offset(x: 16, y: -2)
         }
         .gameCard(highlighted: true, accent: Theme.luxeGold)
     }

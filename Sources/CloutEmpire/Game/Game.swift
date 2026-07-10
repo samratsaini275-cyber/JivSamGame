@@ -50,6 +50,8 @@ final class Game: ObservableObject {
     private var ticksSinceSave = 0
 
     init(state: GameState) {
+        var state = state
+        state.normalizeHustleCount()
         self.state = state
         reconcileDMThreadStates()
         coolHeatWhileAway()

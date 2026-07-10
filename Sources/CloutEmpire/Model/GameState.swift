@@ -90,6 +90,15 @@ struct GameState: Codable {
         return state
     }
 
+    mutating func normalizeHustleCount() {
+        let target = Hustle.all.count
+        if hustles.count < target {
+            hustles.append(contentsOf: [HustleState](repeating: HustleState(), count: target - hustles.count))
+        } else if hustles.count > target {
+            hustles = Array(hustles.prefix(target))
+        }
+    }
+
     mutating func rebrand(gaining gained: Double) {
         availableClout += gained
         cash = 0

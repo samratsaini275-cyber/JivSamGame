@@ -27,7 +27,7 @@ struct HustleRowView: View {
     private var lockedRow: some View {
         let affordable = game.state.cash >= hustle.baseCost
         return HStack(spacing: 14) {
-            GameIconTile(name: hustle.imageName, size: 58, dimmed: true, tint: Theme.luxeGold)
+            GameIconTile(name: hustle.imageName, size: 68, dimmed: true, tint: Theme.luxeGold)
             VStack(alignment: .leading, spacing: 7) {
                 HStack(spacing: 8) {
                     Text(hustle.name)
@@ -35,20 +35,20 @@ struct HustleRowView: View {
                         .foregroundStyle(affordable ? .white : .white.opacity(0.50))
                         .lineLimit(1)
                     if affordable {
-                        statusChip("OPENING", color: Theme.luxeGold)
+                        statusChip("READY", color: Theme.luxeGold)
                     }
                 }
                 Text(hustle.flavor)
                     .font(Theme.cartoonFont(10, weight: .medium))
                     .foregroundStyle(Theme.textMuted)
                     .lineLimit(2)
-                Text("Initial launch cost \(money(hustle.baseCost))")
+                Text("Unlock for \(money(hustle.baseCost))")
                     .font(Theme.cartoonFont(9, weight: .bold))
                     .foregroundStyle(affordable ? Theme.champagne : .white.opacity(0.35))
             }
             Spacer(minLength: 0)
             CartoonButton(
-                title: "LAUNCH",
+                title: "UNLOCK",
                 subtitle: money(hustle.baseCost),
                 color: Theme.luxeGold,
                 colorway: affordable ? game.theme : nil,
@@ -56,7 +56,8 @@ struct HustleRowView: View {
             ) { game.buy(index) }
             .frame(width: 92)
         }
-        .padding(14)
+        .padding(13)
+        .overlay(alignment: .leading) { rarityStripe(affordable ? Theme.luxeGold : .white.opacity(0.20)) }
         .gameCard(highlighted: affordable, accent: Theme.luxeGold)
         .opacity(affordable ? 1 : 0.6)
     }
@@ -78,14 +79,14 @@ struct HustleRowView: View {
 
         return VStack(spacing: 12) {
             HStack(alignment: .center, spacing: 12) {
-                GameIconTile(name: hustle.imageName, size: 60, tint: Theme.luxeGold)
+                GameIconTile(name: hustle.imageName, size: 72, tint: tierTint)
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 7) {
                         Text(hustle.name)
-                            .font(Theme.cartoonFont(15, weight: .black))
+                            .font(Theme.cartoonFont(16, weight: .black))
                             .foregroundStyle(.white)
                             .lineLimit(1)
-                        statusChip("HOLDING \(units)", color: Theme.luxeGold)
+                        statusChip("×\(units)", color: tierTint)
                     }
                     Text("\(followerCount(units)) · \(VerificationTier.name(for: tier))")
                         .font(Theme.cartoonFont(10, weight: .medium))
@@ -97,28 +98,23 @@ struct HustleRowView: View {
                         .font(Theme.cartoonFont(14, weight: .black))
                         .foregroundStyle(Theme.coinGreen)
                         .monospacedDigit()
-                    Text(hState.ghostwriterHired ? "AUTO YIELD" : "MANUAL DROP")
+                    Text(hState.ghostwriterHired ? "AUTO CASH" : "TAP TO DROP")
                         .font(Theme.cartoonFont(8, weight: .bold))
                         .foregroundStyle(hState.ghostwriterHired ? Theme.coinGreen.opacity(0.75) : Theme.textMuted)
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 8)
                 .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Theme.ink.opacity(0.46)))
-                .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(Theme.coinGreen.opacity(0.18), lineWidth: 1))
+                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Theme.coinGreen.opacity(0.55), lineWidth: 2))
             }
 
             revenueLane(progress: barProgress, units: units, next: next, active: hState.cycleRunning || hState.ghostwriterHired)
 
             actionRow
         }
-        .padding(14)
-        .overlay(alignment: .leading) {
-            RoundedRectangle(cornerRadius: 2, style: .continuous)
-                .fill(LinearGradient(colors: [Theme.champagne, Theme.luxeGold], startPoint: .top, endPoint: .bottom))
-                .frame(width: 3)
-                .padding(.vertical, 12)
-        }
-        .gameCard(highlighted: pop, accent: pop ? Theme.coinGreen : Theme.luxeGold)
+        .padding(13)
+        .overlay(alignment: .leading) { rarityStripe(tierTint) }
+        .gameCard(highlighted: true, accent: pop ? Theme.coinGreen : tierTint)
     }
 
     private func incomeText(cycle: Double) -> String {
@@ -134,7 +130,7 @@ struct HustleRowView: View {
             CartoonButton(
                 title: buyLabel,
                 subtitle: money(game.buyCost(for: index)),
-                color: Theme.luxeGold,
+                color: tierTint,
                 colorway: game.theme,
                 disabled: game.state.cash < game.buyCost(for: index)
             ) { game.buy(index) }
@@ -171,14 +167,14 @@ struct HustleRowView: View {
             .foregroundStyle(color)
             .padding(.horizontal, 7)
             .padding(.vertical, 3)
-            .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(color.opacity(0.12)))
-            .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(color.opacity(0.32), lineWidth: 1))
+            .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(color.opacity(0.24)))
+            .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(color.opacity(0.70), lineWidth: 1.5))
     }
 
     private func revenueLane(progress: Double, units: Int, next: Int?, active: Bool) -> some View {
         VStack(spacing: 7) {
             HStack {
-                Text(active ? "PAYOUT CYCLE" : "NEXT PORTFOLIO TIER")
+                Text(active ? "PAYOUT TIMER" : "NEXT HYPE STAR")
                     .font(Theme.cartoonFont(8, weight: .black))
                     .foregroundStyle(Theme.champagne.opacity(0.70))
                 Spacer()
@@ -189,13 +185,13 @@ struct HustleRowView: View {
             }
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(Theme.ink.opacity(0.72))
-                    .frame(height: 26)
-                    .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(Theme.luxeGold.opacity(0.18), lineWidth: 1))
-                GlowBar(progress: progress, color: active ? Theme.coinGreen : Theme.luxeGold, height: 20)
+                    .fill(Theme.ink.opacity(0.78))
+                    .frame(height: 30)
+                    .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(tierTint.opacity(0.55), lineWidth: 2))
+                GlowBar(progress: progress, color: active ? Theme.coinGreen : tierTint, height: 24)
                     .padding(.horizontal, 3)
                 HStack {
-                    Text(active ? "CASHFLOW ONLINE" : "BUILDING MARKET HYPE")
+                    Text(active ? "CASH MACHINE" : "BUILDING HYPE")
                         .font(Theme.cartoonFont(10, weight: .black))
                         .foregroundStyle(active ? Theme.ink.opacity(0.86) : .white.opacity(0.78))
                     Spacer()
@@ -203,5 +199,20 @@ struct HustleRowView: View {
                 .padding(.horizontal, 12)
             }
         }
+    }
+
+    private var tierTint: Color {
+        let tier = game.tier(of: index)
+        if tier >= 4 { return Theme.cloutPink }
+        if tier >= 2 { return Theme.hypeBlue }
+        return Theme.luxeGold
+    }
+
+    private func rarityStripe(_ color: Color) -> some View {
+        RoundedRectangle(cornerRadius: 4, style: .continuous)
+            .fill(LinearGradient(colors: [color, color.opacity(0.45)], startPoint: .top, endPoint: .bottom))
+            .frame(width: 6)
+            .padding(.vertical, 10)
+            .shadow(color: color.opacity(0.55), radius: 8)
     }
 }
