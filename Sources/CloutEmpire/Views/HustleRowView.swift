@@ -3,7 +3,10 @@ import SwiftUI
 struct HustleRowView: View {
     @EnvironmentObject var game: Game
     let index: Int
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var pop = false
+    @State private var bobbing = false
 
     private var hustle: Hustle { game.hustles[index] }
     private var hState: HustleState { game.state.hustles[index] }
@@ -13,7 +16,7 @@ struct HustleRowView: View {
         Group {
             if owned { ownedRow } else { lockedRow }
         }
-        .scaleEffect(pop ? 1.04 : 1)
+        .scaleEffect(pop ? 1.03 : 1)
         .onChange(of: game.lastEvent) { event in
             guard case .payout(let i, _) = event?.kind, i == index else { return }
             withAnimation(.spring(response: 0.2, dampingFraction: 0.5)) { pop = true }
@@ -24,43 +27,68 @@ struct HustleRowView: View {
         }
     }
 
+    // MARK: Locked — merch in the window you can't have yet. Create want.
+
     private var lockedRow: some View {
-        let affordable = game.state.cash >= hustle.baseCost
-        return HStack(spacing: 14) {
-            GameIconTile(name: hustle.imageName, size: 68, dimmed: true, tint: Theme.luxeGold)
-            VStack(alignment: .leading, spacing: 7) {
-                HStack(spacing: 8) {
-                    Text(hustle.name)
-                        .font(Theme.cartoonFont(15, weight: .black))
-                        .foregroundStyle(affordable ? .white : .white.opacity(0.50))
-                        .lineLimit(1)
-                    if affordable {
-                        statusChip("READY", color: Theme.luxeGold)
-                    }
+        let progress = min(1, game.state.cash / hustle.baseCost)
+        let affordable = progress >= 1
+        let near = !affordable && progress >= 0.8
+
+        return HStack(spacing: 12) {
+            DisplayCase(imageName: hustle.imageName, size: 58, locked: true, spotlight: Theme.money)
+                .overlay(alignment: .bottomTrailing) {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(Theme.ink)
+                        .padding(4)
+                        .background(Circle().fill(Color.white.opacity(0.85)))
+                        .offset(x: 4, y: 4)
                 }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(hustle.name.uppercased())
+                    .font(Theme.display(15))
+                    .kerning(0.4)
+                    .foregroundStyle(.white.opacity(affordable ? 1 : 0.62))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 Text(hustle.flavor)
-                    .font(Theme.cartoonFont(10, weight: .medium))
+                    .font(Theme.mono(8.5))
                     .foregroundStyle(Theme.textMuted)
                     .lineLimit(2)
-                Text("Unlock for \(money(hustle.baseCost))")
-                    .font(Theme.cartoonFont(9, weight: .bold))
-                    .foregroundStyle(affordable ? Theme.champagne : .white.opacity(0.35))
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 6) {
+                    GlowBar(progress: progress, color: near || affordable ? Theme.money : Color(white: 0.5), height: 3)
+                        .frame(maxWidth: 72)
+                    Text(affordable ? "IN REACH" : "\(Int((progress * 100).rounded()))% THERE")
+                        .font(Theme.mono(8, weight: .bold))
+                        .kerning(0.6)
+                        .monospacedDigit()
+                        .foregroundStyle(affordable ? Theme.money : Theme.textFaint)
+                }
             }
             Spacer(minLength: 0)
             CartoonButton(
                 title: "UNLOCK",
                 subtitle: money(hustle.baseCost),
-                color: Theme.luxeGold,
-                colorway: affordable ? game.theme : nil,
-                disabled: !affordable
+                color: Theme.go,
+                disabled: !affordable,
+                progress: progress,
+                emphasized: true
             ) { game.buy(index) }
             .frame(width: 92)
         }
         .padding(13)
-        .overlay(alignment: .leading) { rarityStripe(affordable ? Theme.luxeGold : .white.opacity(0.20)) }
-        .gameCard(highlighted: affordable, accent: Theme.luxeGold)
-        .opacity(affordable ? 1 : 0.6)
+        .gameCard(highlighted: affordable, accent: Theme.go)
+        .overlay {
+            if near, !reduceMotion {
+                ShimmerSweep(period: 2.8)
+                    .clipShape(RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
+            }
+        }
     }
+
+    // MARK: Owned — spotlit product card
 
     private var ownedRow: some View {
         let tier = game.tier(of: index)
@@ -77,68 +105,87 @@ struct HustleRowView: View {
             return milestoneFrac
         }()
 
-        return VStack(spacing: 12) {
+        return VStack(spacing: 8) {
             HStack(alignment: .center, spacing: 12) {
-                GameIconTile(name: hustle.imageName, size: 72, tint: tierTint)
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(spacing: 7) {
-                        Text(hustle.name)
-                            .font(Theme.cartoonFont(16, weight: .black))
-                            .foregroundStyle(.white)
-                            .lineLimit(1)
-                        statusChip("×\(units)", color: tierTint)
+                DisplayCase(imageName: hustle.imageName, size: 58, spotlight: tierTint)
+                    .offset(y: bobbing ? -1.5 : 1.5)
+                    .overlay(alignment: .topTrailing) {
+                        Text("×\(units)")
+                            .font(Theme.mono(8.5, weight: .bold))
+                            .monospacedDigit()
+                            .foregroundStyle(Theme.textPrimary)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(Capsule().fill(Theme.ink.opacity(0.9)))
+                            .overlay(Capsule().strokeBorder(tierTint.opacity(0.5), lineWidth: 1))
+                            .offset(x: 6, y: -5)
                     }
-                    Text("\(followerCount(units)) · \(VerificationTier.name(for: tier))")
-                        .font(Theme.cartoonFont(10, weight: .medium))
-                        .foregroundStyle(Theme.textMuted)
+                    .onAppear { startBobbing(cycle: cycle) }
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(hustle.name.uppercased())
+                        .font(Theme.display(16))
+                        .kerning(0.4)
+                        .foregroundStyle(Theme.textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    Text("\(followerCount(units).uppercased()) · \(VerificationTier.name(for: tier).uppercased())")
+                        .font(Theme.mono(8.5))
+                        .kerning(0.4)
+                        .foregroundStyle(tier >= 2 ? tierTint.opacity(0.9) : Theme.textFaint)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
                 Spacer(minLength: 0)
-                VStack(alignment: .trailing, spacing: 3) {
+                VStack(alignment: .trailing, spacing: 2) {
                     Text(incomeText(cycle: cycle))
-                        .font(Theme.cartoonFont(14, weight: .black))
-                        .foregroundStyle(Theme.coinGreen)
+                        .font(Theme.mono(13, weight: .bold))
                         .monospacedDigit()
-                    Text(hState.ghostwriterHired ? "AUTO CASH" : "TAP TO DROP")
-                        .font(Theme.cartoonFont(8, weight: .bold))
-                        .foregroundStyle(hState.ghostwriterHired ? Theme.coinGreen.opacity(0.75) : Theme.textMuted)
+                        .foregroundStyle(Theme.go)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                    Text(hState.ghostwriterHired ? "AUTO" : "PER DROP")
+                        .font(Theme.mono(7.5, weight: .semibold))
+                        .kerning(0.8)
+                        .foregroundStyle(Theme.textFaint)
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 8)
-                .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Theme.ink.opacity(0.46)))
-                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Theme.coinGreen.opacity(0.55), lineWidth: 2))
             }
 
-            revenueLane(progress: barProgress, units: units, next: next, active: hState.cycleRunning || hState.ghostwriterHired)
+            revenueLane(progress: barProgress, units: units, next: next,
+                        active: hState.cycleRunning || hState.ghostwriterHired)
 
             actionRow
         }
         .padding(13)
-        .overlay(alignment: .leading) { rarityStripe(tierTint) }
-        .gameCard(highlighted: true, accent: pop ? Theme.coinGreen : tierTint)
+        .gameCard()
+    }
+
+    private func startBobbing(cycle: Double) {
+        guard !reduceMotion else { return }
+        let period = min(3.0, max(1.2, cycle))
+        withAnimation(.easeInOut(duration: period).repeatForever(autoreverses: true)) {
+            bobbing = true
+        }
     }
 
     private func incomeText(cycle: Double) -> String {
         let upgrades = game.state.cloutUpgrades(for: index)
         if upgrades.publicistHired || hState.ghostwriterHired {
-            return "\(money(game.incomePerCycle(of: index) / cycle))/s"
+            return "+\(money(game.incomePerCycle(of: index) / cycle))/S"
         }
         return money(game.incomePerCycle(of: index))
     }
 
+    // Right side of the card is the action zone: COP lives there; manual
+    // controls (DROP/HIRE) sit to its left until automation takes over.
     private var actionRow: some View {
-        HStack(spacing: 8) {
-            CartoonButton(
-                title: buyLabel,
-                subtitle: money(game.buyCost(for: index)),
-                color: tierTint,
-                colorway: game.theme,
-                disabled: game.state.cash < game.buyCost(for: index)
-            ) { game.buy(index) }
-
+        let cost = game.buyCost(for: index)
+        let affordable = game.state.cash >= cost
+        return HStack(spacing: 8) {
             if !hState.ghostwriterHired {
                 CartoonButton(
                     title: hState.cycleRunning ? "DROPPING…" : "DROP",
-                    color: Theme.coinGreen,
+                    color: Theme.go,
                     style: .secondary,
                     disabled: hState.cycleRunning
                 ) { game.post(index) }
@@ -146,73 +193,88 @@ struct HustleRowView: View {
                 CartoonButton(
                     title: "HIRE",
                     subtitle: money(hustle.ghostwriterCost),
-                    color: Theme.cloutPink,
+                    color: Theme.textMuted,
                     style: .outline,
                     disabled: game.state.cash < hustle.ghostwriterCost
                 ) { game.hireGhostwriter(index) }
+            } else {
+                // Automated: the staff hire holds down the left of the zone.
+                Text("\(hustle.ghostwriterName.uppercased()) ON DUTY")
+                    .font(Theme.mono(8, weight: .semibold))
+                    .kerning(0.8)
+                    .foregroundStyle(Theme.textFaint)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
+
+            CartoonButton(
+                title: buyLabel,
+                subtitle: money(cost),
+                color: Theme.go,
+                disabled: !affordable,
+                progress: min(1, game.state.cash / max(cost, 0.01)),
+                emphasized: true
+            ) { game.buy(index) }
+            .frame(width: hState.ghostwriterHired ? 140 : nil)
         }
     }
 
     private var buyLabel: String {
         switch game.buyMode {
-        case .max: return "BUY ×\(game.buyCount(for: index))"
-        default: return "BUY \(game.buyMode.rawValue)"
+        case .max: return "COP ×\(game.buyCount(for: index))"
+        default: return "COP \(game.buyMode.rawValue)"
         }
     }
 
-    private func statusChip(_ text: String, color: Color) -> some View {
-        Text(text)
-            .font(Theme.cartoonFont(8, weight: .black))
-            .foregroundStyle(color)
-            .padding(.horizontal, 7)
-            .padding(.vertical, 3)
-            .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(color.opacity(0.24)))
-            .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(color.opacity(0.70), lineWidth: 1.5))
-    }
-
     private func revenueLane(progress: Double, units: Int, next: Int?, active: Bool) -> some View {
-        VStack(spacing: 7) {
-            HStack {
-                Text(active ? "PAYOUT TIMER" : "NEXT HYPE STAR")
-                    .font(Theme.cartoonFont(8, weight: .black))
-                    .foregroundStyle(Theme.champagne.opacity(0.70))
-                Spacer()
-                Text(next.map { "\(units)/\($0)" } ?? "MAX")
-                    .font(Theme.cartoonFont(9, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.62))
-                    .monospacedDigit()
-            }
-            ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(Theme.ink.opacity(0.78))
-                    .frame(height: 30)
-                    .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(tierTint.opacity(0.55), lineWidth: 2))
-                GlowBar(progress: progress, color: active ? Theme.coinGreen : tierTint, height: 24)
-                    .padding(.horizontal, 3)
-                HStack {
-                    Text(active ? "CASH MACHINE" : "BUILDING HYPE")
-                        .font(Theme.cartoonFont(10, weight: .black))
-                        .foregroundStyle(active ? Theme.ink.opacity(0.86) : .white.opacity(0.78))
-                    Spacer()
-                }
-                .padding(.horizontal, 12)
-            }
+        HStack(spacing: 10) {
+            GlowBar(progress: progress, color: active ? Theme.go : tierTint, height: 6)
+            Text(next.map { "\(units)/\($0)" } ?? "MAX")
+                .font(Theme.mono(8.5, weight: .bold))
+                .foregroundStyle(Theme.textFaint)
+                .monospacedDigit()
+                .fixedSize()
         }
     }
 
     private var tierTint: Color {
-        let tier = game.tier(of: index)
-        if tier >= 4 { return Theme.cloutPink }
-        if tier >= 2 { return Theme.hypeBlue }
-        return Theme.luxeGold
+        Theme.tierColor(game.tier(of: index))
     }
+}
 
-    private func rarityStripe(_ color: Color) -> some View {
-        RoundedRectangle(cornerRadius: 4, style: .continuous)
-            .fill(LinearGradient(colors: [color, color.opacity(0.45)], startPoint: .top, endPoint: .bottom))
-            .frame(width: 6)
-            .padding(.vertical, 10)
-            .shadow(color: color.opacity(0.55), radius: 8)
+// MARK: - Display case: product art in a lit showroom well
+
+struct DisplayCase: View {
+    let imageName: String
+    var size: CGFloat = 58
+    var locked: Bool = false
+    var spotlight: Color = .white
+
+    var body: some View {
+        GameImage(name: imageName, size: size * 0.76)
+            .saturation(locked ? 0.5 : 1)
+            .opacity(locked ? 0.7 : 1)
+            .frame(width: size, height: size)
+            .background(
+                RoundedRectangle(cornerRadius: 13, style: .continuous)
+                    .fill(Theme.ink.opacity(0.55))
+                    .overlay(
+                        // Soft spotlight falling from above onto the product.
+                        RoundedRectangle(cornerRadius: 13, style: .continuous)
+                            .fill(
+                                RadialGradient(
+                                    colors: [spotlight.opacity(locked ? 0.10 : 0.22), .clear],
+                                    center: .init(x: 0.5, y: 0.05),
+                                    startRadius: 1, endRadius: size * 0.95
+                                )
+                            )
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 13, style: .continuous)
+                            .strokeBorder(Theme.hairline, lineWidth: 1)
+                    )
+            )
+            .shadow(color: .black.opacity(0.35), radius: 7, y: 4)
     }
 }

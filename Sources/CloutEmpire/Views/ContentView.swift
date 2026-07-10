@@ -3,10 +3,15 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject var game: Game
     @StateObject private var particles = ParticleField()
-    @State private var tab: MainTab = .empire
+    @StateObject private var wire = TickerFeed()
+    // Dev: DEV_TAB=rebrand|rex|profile opens on that tab for snapshots.
+    @State private var tab: MainTab = ProcessInfo.processInfo
+        .environment["DEV_TAB"].flatMap(MainTab.init(rawValue:)) ?? .empire
+    @State private var previousTabIndex = 0
     @State private var showingCreation = false
     @State private var cardFrames: [Int: CGRect] = [:]
     @State private var toast: GameEvent?
+    @State private var takeover: GameEvent?
 
     var body: some View {
         ZStack {
@@ -14,23 +19,29 @@ struct ContentView: View {
 
             VStack(spacing: 0) {
                 tabContent
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 GameTabBar(
                     selection: $tab,
                     colorway: game.theme,
                     rexBadge: game.rexUnreadCount > 0,
-                    rexUnlocked: game.rexUnlocked
+                    rexUnlocked: game.rexUnlocked,
+                    rebrandBadge: game.cloutOnRebrand > 0
                 )
             }
 
             ParticleOverlay()
                 .environmentObject(particles)
 
+            if let takeover { HypeTakeoverOverlay(event: takeover) }
             if let toast { toastOverlay(toast) }
         }
         .coordinateSpace(name: "game")
         .onPreferenceChange(CardFramesKey.self) { cardFrames = $0 }
         .onChange(of: game.lastEvent) { event in
-            if let event { celebrate(event) }
+            if let event {
+                celebrate(event)
+                wire.report(event, game: game)
+            }
         }
         .sheet(isPresented: $showingCreation) {
             PersonaCreationView().environmentObject(game)
@@ -40,6 +51,7 @@ struct ContentView: View {
         }
         .onChange(of: tab) { newTab in
             if newTab == .rex, game.rexUnlocked { game.markRexMet() }
+            previousTabIndex = newTab.index
         }
         .onChange(of: game.rexUnlocked) { unlocked in
             if !unlocked, tab == .rex { tab = .empire }
@@ -48,34 +60,49 @@ struct ContentView: View {
 
     @ViewBuilder
     private var tabContent: some View {
-        switch tab {
-        case .empire: empireTab
-        case .rex:
-            if game.rexUnlocked {
-                RexChatView(embedded: true).environmentObject(game)
-            } else {
-                dmsLockedPlaceholder
+        let forward = tab.index >= previousTabIndex
+        ZStack {
+            Group {
+                switch tab {
+                case .empire: empireTab
+                case .rex:
+                    if game.rexUnlocked {
+                        RexChatView(embedded: true).environmentObject(game)
+                    } else {
+                        dmsLockedPlaceholder
+                    }
+                case .rebrand: RebrandView(embedded: true).environmentObject(game)
+                case .profile: PersonaView(embedded: true).environmentObject(game)
+                }
             }
-        case .rebrand: RebrandView(embedded: true).environmentObject(game)
-        case .profile: PersonaView(embedded: true).environmentObject(game)
+            .id(tab)
+            .transition(
+                .asymmetric(
+                    insertion: .offset(x: forward ? 14 : -14).combined(with: .opacity),
+                    removal: .opacity
+                )
+            )
         }
+        .animation(.easeOut(duration: 0.18), value: tab)
     }
 
     private var dmsLockedPlaceholder: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 14) {
             Spacer()
             ZStack {
                 GameImage(name: "tab_rex", size: 72)
                     .opacity(0.3)
                 Image(systemName: "lock.fill")
-                    .font(.system(size: 28, weight: .bold))
+                    .font(.system(size: 26, weight: .bold))
                     .foregroundStyle(.white.opacity(0.85))
             }
-            Text("DMs Locked")
-                .font(Theme.cartoonFont(18, weight: .heavy))
+            Text("DMS LOCKED")
+                .font(Theme.display(20))
+                .kerning(1)
+                .foregroundStyle(Theme.textPrimary)
             Text("Unlock Sneaker Resells to hear from Vinnie.")
-                .font(Theme.cartoonFont(12, weight: .medium))
-                .foregroundStyle(.white.opacity(0.45))
+                .font(Theme.mono(10))
+                .foregroundStyle(Theme.textMuted)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             Spacer()
@@ -85,28 +112,22 @@ struct ContentView: View {
 
     private var empireTab: some View {
         VStack(spacing: 0) {
-            HeaderView(onProfileTap: { tab = .profile })
+            HeaderView(onProfileTap: { tab = .profile }, onCloutTap: { tab = .rebrand })
 
-            VStack(spacing: 10) {
+            TickerTape(feed: wire)
+                .padding(.top, 2)
+
+            VStack(spacing: 9) {
                 HStack(alignment: .lastTextBaseline) {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("MONEY MACHINES")
-                            .font(Theme.cartoonFont(20, weight: .black))
-                            .foregroundStyle(
-                                LinearGradient(colors: [.white, Theme.champagne], startPoint: .top, endPoint: .bottom)
-                            )
-                            .shadow(color: Theme.luxeGold.opacity(0.35), radius: 7, y: 2)
-                        Text("\(game.hustles.filter { game.state.hustles[$0.id].unitsOwned > 0 }.count)/\(game.hustles.count) money machines unlocked")
-                            .font(Theme.cartoonFont(10, weight: .medium))
-                            .foregroundStyle(Theme.textMuted)
-                    }
+                    Text("THE HUSTLES")
+                        .font(Theme.display(18))
+                        .kerning(1)
+                        .foregroundStyle(Theme.textPrimary)
                     Spacer()
-                    Text("STACK BUY")
-                        .font(Theme.cartoonFont(9, weight: .bold))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 5)
-                        .foregroundStyle(Theme.ink)
-                        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.champagne))
+                    Text("\(game.hustles.filter { game.state.hustles[$0.id].unitsOwned > 0 }.count)/\(game.hustles.count) LIVE")
+                        .font(Theme.mono(8.5, weight: .semibold))
+                        .kerning(0.8)
+                        .foregroundStyle(Theme.textFaint)
                 }
 
                 GameSegmentedControl(
@@ -116,10 +137,11 @@ struct ContentView: View {
                 )
             }
             .padding(.horizontal, Theme.screenPadding)
-            .padding(.vertical, 10)
+            .padding(.top, 12)
+            .padding(.bottom, 10)
 
             ScrollView(showsIndicators: false) {
-                LazyVStack(spacing: 12) {
+                LazyVStack(spacing: 10) {
                     FlexCard()
                     ForEach(game.hustles) { hustle in
                         HustleRowView(index: hustle.id)
@@ -148,44 +170,45 @@ struct ContentView: View {
             if let frame = cardFrames[index] {
                 particles.spawnCashPop(
                     "+\(money(amount))",
-                    at: CGPoint(x: frame.midX + .random(in: -25...25), y: frame.minY + 16)
+                    at: CGPoint(x: frame.midX + .random(in: -25...25), y: frame.minY + 16),
+                    color: Theme.go
                 )
             }
         case .milestone(let index, let tier):
             if let frame = cardFrames[index] {
                 particles.spawnConfetti(
                     at: CGPoint(x: frame.midX, y: frame.midY),
-                    colors: [Theme.tierColor(min(tier, 4)), game.theme.accent, .white]
+                    colors: [Theme.tierColor(min(tier, 4)), Theme.hype, .white]
                 )
             }
             show(event)
         case .hypeWave:
             particles.spawnConfetti(
                 at: CGPoint(x: 200, y: 150),
-                colors: [Theme.hypeBlue, game.theme.accent, .white],
+                colors: [Theme.hype, Theme.moneyHigh, .white],
                 count: 40
             )
-            show(event)
+            showTakeover(event)
         case .rebranded:
             particles.spawnConfetti(
                 at: CGPoint(x: 200, y: 170),
-                colors: [Theme.cloutPink, game.theme.accent, .white],
+                colors: [Theme.hype, Theme.moneyHigh, .white],
                 count: 48
             )
-            show(event)
+            showTakeover(event)
         case .newDM:
             show(event)
         case .flexHit:
             particles.spawnConfetti(
                 at: CGPoint(x: 200, y: 150),
-                colors: [Theme.luxeGold, game.theme.accent, .white],
+                colors: [Theme.hypeSoft, Theme.hype, .white],
                 count: 24
             )
             show(event)
         case .flexViral:
             particles.spawnConfetti(
                 at: CGPoint(x: 200, y: 150),
-                colors: [Theme.hypeBlue, game.theme.accent, .white],
+                colors: [Theme.hype, Theme.moneyHigh, .white],
                 count: 40
             )
             show(event)
@@ -200,6 +223,17 @@ struct ContentView: View {
             try? await Task.sleep(nanoseconds: 2_000_000_000)
             if toast?.id == event.id {
                 withAnimation(.easeOut(duration: 0.25)) { toast = nil }
+            }
+        }
+    }
+
+    /// The big moments (Hype Wave, Rebrand) get a ≤1.2s screen-wide treatment.
+    private func showTakeover(_ event: GameEvent) {
+        withAnimation(.easeOut(duration: 0.15)) { takeover = event }
+        Task {
+            try? await Task.sleep(nanoseconds: 1_100_000_000)
+            if takeover?.id == event.id {
+                withAnimation(.easeOut(duration: 0.25)) { takeover = nil }
             }
         }
     }

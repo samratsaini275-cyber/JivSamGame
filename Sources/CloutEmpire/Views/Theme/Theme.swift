@@ -1,5 +1,7 @@
 import SwiftUI
 
+// MARK: - Colorway (player-picked identity accent — persisted IDs, do not rename)
+
 struct Colorway: Identifiable {
     let id: String
     let name: String
@@ -12,20 +14,20 @@ struct Colorway: Identifiable {
 
     static let all: [Colorway] = [
         Colorway(id: "gold", name: "24K",
-                 accent: Color(red: 1.0, green: 0.80, blue: 0.36),
-                 accentDeep: Color(red: 0.66, green: 0.39, blue: 0.11)),
+                 accent: Color(red: 0.91, green: 0.78, blue: 0.49),
+                 accentDeep: Color(red: 0.60, green: 0.44, blue: 0.18)),
         Colorway(id: "volt", name: "Emerald",
-                 accent: Color(red: 0.42, green: 0.95, blue: 0.65),
-                 accentDeep: Color(red: 0.06, green: 0.44, blue: 0.28)),
+                 accent: Color(red: 0.42, green: 0.90, blue: 0.63),
+                 accentDeep: Color(red: 0.08, green: 0.42, blue: 0.28)),
         Colorway(id: "ice", name: "Platinum",
-                 accent: Color(red: 0.68, green: 0.90, blue: 1.0),
-                 accentDeep: Color(red: 0.20, green: 0.48, blue: 0.70)),
+                 accent: Color(red: 0.72, green: 0.86, blue: 0.95),
+                 accentDeep: Color(red: 0.28, green: 0.46, blue: 0.62)),
         Colorway(id: "crimson", name: "Bordeaux",
-                 accent: Color(red: 0.94, green: 0.33, blue: 0.39),
-                 accentDeep: Color(red: 0.42, green: 0.04, blue: 0.10)),
+                 accent: Color(red: 0.90, green: 0.36, blue: 0.42),
+                 accentDeep: Color(red: 0.44, green: 0.08, blue: 0.14)),
         Colorway(id: "amethyst", name: "Violet",
-                 accent: Color(red: 0.73, green: 0.52, blue: 1.0),
-                 accentDeep: Color(red: 0.31, green: 0.15, blue: 0.55)),
+                 accent: Color(red: 0.72, green: 0.55, blue: 0.96),
+                 accentDeep: Color(red: 0.32, green: 0.18, blue: 0.55)),
     ]
 
     static func byID(_ id: String) -> Colorway {
@@ -37,126 +39,159 @@ extension Game {
     var theme: Colorway { Colorway.byID(state.colorway) }
 }
 
+// MARK: - Tokens: "Midnight Atelier / Drop Night" (see DESIGN.md)
+
 enum Theme {
-    static let bg = Color(red: 0.025, green: 0.012, blue: 0.038)
-    static let surface = Color(red: 0.095, green: 0.052, blue: 0.122)
-    static let surfaceRaised = Color(red: 0.145, green: 0.075, blue: 0.175)
-    static let panelTop = Color(red: 0.235, green: 0.105, blue: 0.235)
-    static let panelBottom = Color(red: 0.050, green: 0.024, blue: 0.080)
-    static let comicBorder = Color(red: 1.0, green: 0.82, blue: 0.42).opacity(0.18)
+    // Elevation — separation by fill + shadow, never glowing borders.
+    static let bg = Color(red: 0.039, green: 0.039, blue: 0.059)          // #0A0A0F obsidian
+    static let bgTop = Color(red: 0.071, green: 0.071, blue: 0.102)       // #12121A
+    static let bgBottom = Color(red: 0.031, green: 0.031, blue: 0.047)    // #08080C
+    static let surface = Color(red: 0.082, green: 0.082, blue: 0.110)     // #15151C card fill
+    static let surfaceRaised = Color(red: 0.114, green: 0.114, blue: 0.149) // #1D1D26 wells/chips
+    static let hairline = Color.white.opacity(0.07)
+
+    static let textPrimary = Color(red: 0.949, green: 0.945, blue: 0.925) // #F2F1EC warm paper
+    static let textMuted = Color.white.opacity(0.62)
+    static let textFaint = Color.white.opacity(0.42)
+
+    // money — champagne gold, reserved EXCLUSIVELY for money values/moments.
+    static let money = Color(red: 0.910, green: 0.784, blue: 0.486)       // #E8C87C
+    static let moneyHigh = Color(red: 0.957, green: 0.890, blue: 0.698)   // #F4E3B2
+    static let moneyDeep = Color(red: 0.851, green: 0.663, blue: 0.306)   // #D9A94E
+    static var moneyGradient: LinearGradient {
+        LinearGradient(colors: [moneyHigh, money, moneyDeep], startPoint: .top, endPoint: .bottom)
+    }
+
+    // hype — the one hot accent (Hype, Clout, heat, celebration).
+    static let hype = Color(red: 1.0, green: 0.302, blue: 0.616)          // #FF4D9D
+    static let hypeSoft = Color(red: 1.0, green: 0.55, blue: 0.75)        // lighter tint of the same hue
+
+    // go — the one confirm color (DROP, COP-when-affordable, positive income).
+    static let go = Color(red: 0.243, green: 0.863, blue: 0.522)          // #3EDC85
+    static let goDeep = Color(red: 0.075, green: 0.51, blue: 0.29)
+
+    static let ink = Color(red: 0.020, green: 0.024, blue: 0.031)
+
+    // Legacy aliases — untouched views inherit the new palette through these.
+    static let coinGreen = go
+    static let cloutPink = hype
+    static let hypeBlue = hypeSoft
+    static let arcadePurple = hype
+    static let arcadeOrange = moneyDeep
+    static let luxeGold = money
+    static let champagne = moneyHigh
+    static let panelTop = surfaceRaised
+    static let panelBottom = surface
+    static let comicBorder = hairline
     static let comicShadow = Color.black.opacity(0.55)
     static let comicStroke: CGFloat = 1
 
-    static let coinGreen = Color(red: 0.34, green: 0.92, blue: 0.52)
-    static let cloutPink = Color(red: 0.96, green: 0.42, blue: 0.58)
-    static let hypeBlue = Color(red: 0.38, green: 0.72, blue: 1.0)
-    static let arcadePurple = Color(red: 0.58, green: 0.32, blue: 1.0)
-    static let arcadeOrange = Color(red: 1.0, green: 0.45, blue: 0.18)
-    static let luxeGold = Color(red: 1.0, green: 0.78, blue: 0.34)
-    static let champagne = Color(red: 1.0, green: 0.91, blue: 0.68)
-    static let ink = Color(red: 0.010, green: 0.011, blue: 0.014)
-    static let textMuted = Color.white.opacity(0.56)
+    static let screenPadding: CGFloat = 16
+    static let cardRadius: CGFloat = 18
+    static let chipRadius: CGFloat = 10
 
-    static let screenPadding: CGFloat = 18
-    static let cardRadius: CGFloat = 8
-
+    /// Obsidian floor: vertical gradient, a faint overhead spotlight, static grain.
     static func backdrop(_ colorway: Colorway) -> some View {
         ZStack {
-            LinearGradient(
-                colors: [
-                    Color(red: 0.13, green: 0.045, blue: 0.18),
-                    Color(red: 0.025, green: 0.012, blue: 0.045),
-                    Color(red: 0.12, green: 0.040, blue: 0.090),
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
+            LinearGradient(colors: [bgTop, bg, bgBottom], startPoint: .top, endPoint: .bottom)
+            // Showroom spotlight — barely-there pool of warm light from above.
+            RadialGradient(
+                colors: [Color.white.opacity(0.045), .clear],
+                center: .init(x: 0.5, y: -0.15),
+                startRadius: 10, endRadius: 460
             )
-            ArcadeBackdropPattern(colorway: colorway)
-            Rectangle()
-                .fill(
-                    LinearGradient(
-                        colors: [.black.opacity(0.10), .clear, cloutPink.opacity(0.10)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
+            GrainOverlay()
         }
         .ignoresSafeArea()
     }
 
+    /// Milestone tier accents, folded into the system: silver → hype tints → hype.
     static func tierColor(_ tier: Int) -> Color {
         switch tier {
-        case 1: return Color(white: 0.8)
-        case 2: return hypeBlue
-        case 3: return cloutPink
-        default: return Color(red: 1.0, green: 0.82, blue: 0.28)
+        case ..<2: return Color(white: 0.78)
+        case 2, 3: return hypeSoft
+        default: return hype
         }
+    }
+
+    // MARK: Type — display (poster), receipt (mono spec print), body
+
+    /// Fashion-poster face: SF compressed black. Headers and big moments only.
+    static func display(_ size: CGFloat, weight: Font.Weight = .black) -> Font {
+        .system(size: size, weight: weight).width(.compressed)
+    }
+
+    /// Receipt/spec-sheet print for labels, stats, and the flavor jokes.
+    static func mono(_ size: CGFloat, weight: Font.Weight = .medium) -> Font {
+        .system(size: size, weight: weight, design: .monospaced)
+    }
+
+    /// Neutral body sans. (Legacy `cartoonFont` callers land here.)
+    static func body(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
+        .system(size: size, weight: weight)
     }
 
     static func cartoonFont(_ size: CGFloat, weight: Font.Weight = .heavy) -> Font {
-        .system(size: size, weight: weight, design: .default)
+        body(size, weight: weight)
     }
 }
 
-struct ArcadeBackdropPattern: View {
-    var colorway: Colorway
-    @State private var drift: CGFloat = 0
-
+/// Static film grain so large dark areas don't read as flat. Drawn once.
+struct GrainOverlay: View {
     var body: some View {
-        GeometryReader { geo in
-            ZStack {
-                ForEach(0..<6, id: \.self) { index in
-                    Capsule()
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    colorway.accent.opacity(index.isMultiple(of: 2) ? 0.28 : 0.08),
-                                    Theme.cloutPink.opacity(index.isMultiple(of: 2) ? 0.16 : 0.06),
-                                ],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .frame(width: geo.size.width * 1.35, height: index.isMultiple(of: 2) ? 42 : 16)
-                        .rotationEffect(.degrees(index.isMultiple(of: 2) ? -14 : 18))
-                        .offset(
-                            x: sin(drift + CGFloat(index)) * 22 - geo.size.width * 0.14,
-                            y: CGFloat(index) * geo.size.height * 0.18 - 60
-                        )
-                }
-                ForEach(0..<18, id: \.self) { index in
-                    Image(systemName: index.isMultiple(of: 3) ? "sparkle" : "dollarsign")
-                        .font(.system(size: CGFloat(12 + (index % 4) * 5), weight: .black))
-                        .foregroundStyle(index.isMultiple(of: 2) ? Theme.luxeGold.opacity(0.18) : Theme.cloutPink.opacity(0.14))
-                        .rotationEffect(.degrees(Double(index * 21)))
-                        .offset(
-                            x: CGFloat((index * 67) % 380) - 190 + sin(drift * 0.7 + CGFloat(index)) * 10,
-                            y: CGFloat((index * 113) % 760) - 380 + cos(drift * 0.6 + CGFloat(index)) * 12
-                        )
-                }
-            }
-            .frame(width: geo.size.width, height: geo.size.height)
-            .onAppear {
-                withAnimation(.linear(duration: 9).repeatForever(autoreverses: true)) {
-                    drift = .pi * 2
-                }
+        Canvas { ctx, size in
+            var rng = SeededRandom(seed: 0x0DD1)
+            let count = Int(size.width * size.height / 480)
+            for _ in 0..<count {
+                let x = rng.next() * size.width
+                let y = rng.next() * size.height
+                let alpha = 0.015 + rng.next() * 0.035
+                ctx.fill(Path(CGRect(x: x, y: y, width: 1, height: 1)),
+                         with: .color(.white.opacity(alpha)))
             }
         }
-        .blendMode(.screen)
-        .opacity(0.95)
+        .allowsHitTesting(false)
     }
 }
+
+/// Tiny deterministic PRNG so the grain never shimmers between renders.
+struct SeededRandom {
+    private var state: UInt64
+    init(seed: UInt64) { state = seed &* 0x9E3779B97F4A7C15 | 1 }
+    mutating func next() -> CGFloat {
+        state ^= state << 13; state ^= state >> 7; state ^= state << 17
+        return CGFloat(state % 10_000) / 10_000
+    }
+}
+
+// MARK: - Cards: elevation, not outlines
 
 struct GameCard: ViewModifier {
     var highlighted: Bool = false
-    var accent: Color = Theme.comicBorder
+    var accent: Color = .white
 
     func body(content: Content) -> some View {
         content
-            .proPanel(radius: Theme.cardRadius, fill: Theme.surface)
-            .overlay(
+            .background(
                 RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous)
-                    .strokeBorder(highlighted ? accent.opacity(0.95) : Theme.luxeGold.opacity(0.35), lineWidth: highlighted ? 3 : 2)
+                    .fill(Theme.surface)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous)
+                            .fill(
+                                LinearGradient(colors: [.white.opacity(0.045), .clear],
+                                               startPoint: .top, endPoint: .center)
+                            )
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous)
+                            .fill(accent.opacity(highlighted ? 0.06 : 0))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous)
+                            .strokeBorder(highlighted ? accent.opacity(0.28) : Theme.hairline,
+                                          lineWidth: 1)
+                    )
+                    .shadow(color: .black.opacity(0.45), radius: 14, y: 8)
             )
     }
 }
@@ -165,11 +200,62 @@ struct PressableButtonStyle: ButtonStyle {
     var bounce: Bool = true
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .scaleEffect(bounce && configuration.isPressed ? 0.93 : 1)
+            .scaleEffect(bounce && configuration.isPressed ? 0.94 : 1)
             .animation(.spring(response: 0.2, dampingFraction: 0.55), value: configuration.isPressed)
     }
 }
 
+// MARK: - Stat chips (Clout / Hype) — chip-like, never card-like
+
+struct StatChip: View {
+    let imageName: String
+    let title: String
+    let value: String
+    var color: Color = Theme.hype
+    var progress: Double? = nil
+    var action: (() -> Void)? = nil
+
+    var body: some View {
+        Button { action?() } label: {
+            HStack(spacing: 8) {
+                if let progress {
+                    ZStack {
+                        Circle().stroke(color.opacity(0.22), lineWidth: 2.5)
+                        Circle()
+                            .trim(from: 0, to: CGFloat(min(1, max(0, progress))))
+                            .stroke(color, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                            .rotationEffect(.degrees(-90))
+                        GameImage(name: imageName, size: 14)
+                    }
+                    .frame(width: 26, height: 26)
+                } else {
+                    GameImage(name: imageName, size: 20)
+                }
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(title)
+                        .font(Theme.mono(10, weight: .bold))
+                        .foregroundStyle(Theme.textPrimary)
+                        .lineLimit(1)
+                    Text(value)
+                        .font(Theme.mono(8.5))
+                        .foregroundStyle(Theme.textMuted)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+            }
+            .padding(.horizontal, 10)
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            .background(
+                Capsule().fill(Theme.surfaceRaised.opacity(0.85))
+                    .overlay(Capsule().strokeBorder(color.opacity(0.25), lineWidth: 1))
+            )
+        }
+        .buttonStyle(PressableButtonStyle(bounce: action != nil))
+        .allowsHitTesting(action != nil)
+    }
+}
+
+/// Legacy shim — old call sites render as the new chip.
 struct StatBadge: View {
     let imageName: String
     let title: String
@@ -178,39 +264,11 @@ struct StatBadge: View {
     var progress: Double? = nil
 
     var body: some View {
-        HStack(spacing: 10) {
-            if let progress {
-                ZStack {
-                    Circle().stroke(color.opacity(0.22), lineWidth: 3)
-                    Circle()
-                        .trim(from: 0, to: CGFloat(min(1, max(0, progress))))
-                        .stroke(color, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                        .rotationEffect(.degrees(-90))
-                    GameImage(name: imageName, size: 18)
-                }
-                .frame(width: 32, height: 32)
-            } else {
-                GameImage(name: imageName, size: 28)
-            }
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(Theme.cartoonFont(10, weight: .black))
-                    .foregroundStyle(.white)
-                Text(value)
-                    .font(Theme.cartoonFont(9, weight: .medium))
-                    .foregroundStyle(Theme.textMuted)
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(12)
-        .background {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(LinearGradient(colors: [color.opacity(0.28), Theme.surface.opacity(0.95)], startPoint: .topLeading, endPoint: .bottomTrailing))
-        }
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(color.opacity(0.70), lineWidth: 2))
-        .shadow(color: color.opacity(0.24), radius: 12, y: 6)
+        StatChip(imageName: imageName, title: title, value: value, color: color, progress: progress)
     }
 }
+
+// MARK: - Segmented control: quiet, ink track, white-on-raised selection
 
 struct GameSegmentedControl<Option: Hashable & Identifiable>: View where Option: CustomStringConvertible {
     @Binding var selection: Option
@@ -218,42 +276,48 @@ struct GameSegmentedControl<Option: Hashable & Identifiable>: View where Option:
     var colorway: Colorway
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 3) {
             ForEach(options) { option in
+                let selected = selection == option
                 Button {
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.7)) { selection = option }
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.75)) { selection = option }
                 } label: {
                     Text(option.description)
-                        .font(Theme.cartoonFont(11, weight: .bold))
+                        .font(Theme.mono(11, weight: selected ? .bold : .medium))
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
+                        .padding(.vertical, 9)
                         .background {
-                            if selection == option {
-                                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                    .fill(colorway.gradient)
-                                    .shadow(color: colorway.accent.opacity(0.28), radius: 10, y: 4)
+                            if selected {
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .fill(Color.white.opacity(0.14))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                            .strokeBorder(.white.opacity(0.16), lineWidth: 1)
+                                    )
                             }
                         }
-                        .foregroundStyle(selection == option ? Theme.ink : Theme.textMuted)
+                        .foregroundStyle(selected ? Theme.textPrimary : Theme.textFaint)
                 }
-                .buttonStyle(PressableButtonStyle())
+                .buttonStyle(PressableButtonStyle(bounce: false))
             }
         }
-        .padding(5)
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Theme.ink.opacity(0.72)))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.luxeGold.opacity(0.42), lineWidth: 2))
-        .shadow(color: colorway.accent.opacity(0.22), radius: 14, y: 8)
+        .padding(3)
+        .background(RoundedRectangle(cornerRadius: Theme.chipRadius, style: .continuous)
+            .fill(Theme.ink.opacity(0.55)))
     }
 }
 
 // GameButton alias — views use CartoonButton from CartoonChrome.swift
 typealias GameButton = CartoonButton
 
+// MARK: - Tab bar: gold = active (the only non-money gold, it marks *your* place)
+
 struct GameTabBar: View {
     @Binding var selection: MainTab
     var colorway: Colorway
     var rexBadge: Bool
     var rexUnlocked: Bool = true
+    var rebrandBadge: Bool = false
 
     @State private var showDMsLockHint = false
 
@@ -266,26 +330,26 @@ struct GameTabBar: View {
             }
         }
         .padding(.horizontal, 10)
-        .padding(.top, 9)
-        .padding(.bottom, 11)
+        .padding(.top, 8)
+        .padding(.bottom, 10)
         .background {
-            LinearGradient(colors: [Theme.arcadePurple.opacity(0.45), Theme.ink.opacity(0.94)], startPoint: .top, endPoint: .bottom)
-            VStack { Rectangle().fill(Theme.luxeGold.opacity(0.45)).frame(height: 2); Spacer() }
+            Theme.ink.opacity(0.92)
+            VStack { Rectangle().fill(Theme.hairline).frame(height: 1); Spacer() }
         }
         .overlay(alignment: .top) {
             if showDMsLockHint {
                 Text(Self.dmsLockMessage)
-                    .font(Theme.cartoonFont(10, weight: .bold))
-                    .foregroundStyle(.white)
+                    .font(Theme.mono(10, weight: .bold))
+                    .foregroundStyle(Theme.textPrimary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
                     .background {
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(Theme.ink.opacity(0.95))
+                            .fill(Theme.ink.opacity(0.97))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .strokeBorder(Theme.luxeGold.opacity(0.45), lineWidth: 1)
+                                    .strokeBorder(.white.opacity(0.2), lineWidth: 1)
                             )
                     }
                     .padding(.horizontal, 20)
@@ -293,6 +357,10 @@ struct GameTabBar: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
+    }
+
+    private func badgeVisible(_ tab: MainTab) -> Bool {
+        (tab == .rex && rexBadge) || (tab == .rebrand && rebrandBadge)
     }
 
     private func tabButton(_ tab: MainTab) -> some View {
@@ -311,43 +379,37 @@ struct GameTabBar: View {
                 }
                 return
             }
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.65)) { selection = tab }
+            withAnimation(.easeOut(duration: 0.18)) { selection = tab }
         } label: {
             VStack(spacing: 3) {
                 ZStack {
-                    Circle()
-                        .fill(selected ? colorway.accent.opacity(0.28) : Theme.ink.opacity(0.40))
-                        .frame(width: 42, height: 34)
-                        .overlay(Circle().strokeBorder(selected ? colorway.accent : .white.opacity(0.12), lineWidth: selected ? 2 : 1))
-                    GameImage(name: tab.imageName, size: selected ? 29 : 23)
-                        .scaleEffect(selected ? 1.08 : 1)
-                        .opacity(locked ? 0.35 : 1)
+                    GameImage(name: tab.imageName, size: 23)
+                        .saturation(selected ? 1 : 0)
+                        .opacity(locked ? 0.3 : (selected ? 1 : 0.4))
                     if locked {
                         Image(systemName: "lock.fill")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(.white.opacity(0.9))
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(.white.opacity(0.85))
                             .shadow(color: .black.opacity(0.4), radius: 2, y: 1)
-                    } else if tab == .rex, rexBadge {
-                        Circle().fill(Theme.cloutPink).frame(width: 8, height: 8)
-                            .offset(x: 14, y: -12)
+                    } else if badgeVisible(tab) {
+                        Circle().fill(Theme.hype).frame(width: 7, height: 7)
+                            .offset(x: 13, y: -10)
                     }
                 }
+                .frame(height: 26)
                 Text(tab.label)
-                    .font(Theme.cartoonFont(9, weight: selected ? .bold : .medium))
+                    .font(Theme.mono(9, weight: selected ? .bold : .medium))
                     .foregroundStyle(
-                        locked ? .white.opacity(0.25)
-                        : (selected ? colorway.accent : Theme.textMuted)
+                        locked ? Color.white.opacity(0.28)
+                        : (selected ? Theme.money : Theme.textFaint)
                     )
+                Circle()
+                    .fill(Theme.money)
+                    .frame(width: 3, height: 3)
+                    .opacity(selected ? 1 : 0)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 5)
-            .background {
-                if selected {
-                    RoundedRectangle(cornerRadius: 13, style: .continuous)
-                        .fill(LinearGradient(colors: [colorway.accent.opacity(0.30), Theme.cloutPink.opacity(0.14)], startPoint: .top, endPoint: .bottom))
-                        .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).strokeBorder(colorway.accent.opacity(0.45), lineWidth: 1.5))
-                }
-            }
         }
         .buttonStyle(PressableButtonStyle(bounce: !locked))
         .help(locked ? Self.dmsLockMessage : "")
@@ -375,14 +437,18 @@ enum MainTab: String, CaseIterable, Identifiable {
         case .profile: return "Fit"
         }
     }
+
+    var index: Int { MainTab.allCases.firstIndex(of: self) ?? 0 }
 }
 
 extension BuyMode: CustomStringConvertible {
     var description: String { rawValue }
 }
 
+// MARK: - View helpers
+
 extension View {
-    func gameCard(highlighted: Bool = false, accent: Color = Theme.comicBorder) -> some View {
+    func gameCard(highlighted: Bool = false, accent: Color = .white) -> some View {
         modifier(GameCard(highlighted: highlighted, accent: accent))
     }
 
@@ -391,17 +457,20 @@ extension View {
     }
 
     func glow(_ color: Color, radius: CGFloat = 8) -> some View {
-        shadow(color: color.opacity(0.55), radius: radius)
+        shadow(color: color.opacity(0.45), radius: radius)
     }
 
+    /// Receipt-print section label: mono, tracked, uppercase, muted.
     func kicker() -> some View {
-        font(Theme.cartoonFont(10, weight: .bold))
-            .foregroundStyle(Theme.textMuted)
+        font(Theme.mono(9, weight: .semibold))
+            .kerning(1.2)
+            .foregroundStyle(Theme.textFaint)
             .textCase(.uppercase)
     }
 
     func gameTitle(_ colorway: Colorway) -> some View {
-        font(Theme.cartoonFont(28, weight: .black))
-        .foregroundStyle(colorway.gradient)
+        font(Theme.display(30))
+            .kerning(0.5)
+            .foregroundStyle(Theme.textPrimary)
     }
 }

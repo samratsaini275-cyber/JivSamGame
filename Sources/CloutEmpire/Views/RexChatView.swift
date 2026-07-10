@@ -32,11 +32,11 @@ struct RexChatView: View {
                 Spacer()
                 if game.rexUnreadCount > 0 {
                     Text("new")
-                        .font(Theme.cartoonFont(10, weight: .bold))
+                        .font(Theme.mono(9, weight: .bold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
-                        .background(Capsule().fill(.red))
+                        .background(Capsule().fill(Theme.hype))
                 }
             }
             .padding(.horizontal, Theme.screenPadding)
@@ -81,7 +81,7 @@ struct RexChatView: View {
                         .offset(x: 4, y: 4)
                 }
                 if unread {
-                    Circle().fill(.red).frame(width: 10, height: 10).offset(x: 2, y: -2)
+                    Circle().fill(Theme.hype).frame(width: 10, height: 10).offset(x: 2, y: -2)
                 }
             }
             VStack(alignment: .leading, spacing: 4) {
@@ -261,10 +261,6 @@ struct RexChatView: View {
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
                             .fill(Theme.surfaceRaised)
                     }
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .strokeBorder(Theme.comicBorder.opacity(0.5), lineWidth: 2)
-                    }
             }
             Spacer(minLength: 48)
         }
@@ -282,10 +278,6 @@ struct RexChatView: View {
                 .background {
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .fill(game.theme.accent)
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(Theme.comicBorder.opacity(0.5), lineWidth: 2)
                 }
             Spacer(minLength: 0)
         }
@@ -334,7 +326,7 @@ struct RexChatView: View {
                             : Theme.surfaceRaised.opacity(0.8)
                     )
                 }
-                .overlay(Capsule().strokeBorder(Theme.comicBorder, lineWidth: 2))
+                .shadow(color: enabled ? game.theme.accent.opacity(0.20) : .clear, radius: 8, y: 4)
         }
         .buttonStyle(PressableButtonStyle())
     }

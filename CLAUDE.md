@@ -40,9 +40,10 @@ All game logic lives in three layers, strictly ordered:
 - Survive: Clout Store upgrades (`hustleCloutUpgrades`), persona cosmetics, `daytonaPurchases` (permanent +2% Clout gain per purchase), dealer relationships.
 - Persona cosmetics are pure vanity except grail items: +0.5% Clout on Rebrand each, never income.
 
-**Theme:** design tokens in `Views/Theme/Theme.swift` — dark luxury look, `Colorway` is the player-picked accent, helpers like `luxCard()`, `glow()`, `PressableButtonStyle`. Images are loaded by name from `Resources/Images` via `GameImage`/`GameBundle`.
+**Theme:** design tokens in `Views/Theme/Theme.swift` — "Midnight Atelier / Drop Night" system, documented in `DESIGN.md` (obsidian elevation surfaces, `money` gold reserved for money values only, one `hype` magenta accent, one `go` confirm green; type = SF compressed display / SF Mono receipt print / plain sans body). `Colorway` is the player-picked accent, demoted to identity moments only (avatar ring, Fit). Legacy names (`coinGreen`, `cloutPink`, `luxeGold`, `panelTop`, …) are aliases into the new palette so old call sites stay coherent. Helpers: `gameCard()`, `kicker()`, `ShimmerSweep`, `StatChip`, `TickerTape`/`TickerFeed` (the "DROP WIRE" headline strip). Images are loaded by name from `Resources/Images` via `GameImage`/`GameBundle`. All motion respects `accessibilityReduceMotion`.
 
 ## Misc
 
 - `scripts/` holds Python asset generators (icons); `work/generated-assets` is intermediate output, not shipped.
 - `swift run` has no app bundle, so `CloutEmpireApp.init` manually sets `NSApp.setActivationPolicy(.regular)` to get a Dock icon and focus.
+- **UI screenshots without screen-recording perms:** `SNAPSHOT_PATH=/tmp/shot.png swift run CloutEmpire` renders the window to PNG after 2.5 s and quits. Combine with `DEV_SEED=1` (mid-game state) or `DEV_SEED=locked` (early game, all three unlock-affordability bands) and `DEV_TAB=rex|rebrand|profile` to capture specific screens/states. All three are dev-only env hooks in `CloutEmpireApp`/`ContentView`.

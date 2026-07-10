@@ -20,35 +20,36 @@ struct FlexCard: View {
 
     private var heatColor: Color {
         switch heatFraction {
-        case ..<0.34: return Theme.coinGreen
-        case ..<0.67: return Theme.luxeGold
-        default: return Theme.cloutPink
+        case ..<0.34: return Theme.go
+        case ..<0.67: return Theme.hypeSoft
+        default: return Theme.hype
         }
     }
 
     private var card: some View {
         let mood = Flex.mood(heatFraction: heatFraction)
-        return VStack(alignment: .leading, spacing: 9) {
+        return VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
-                Text("THE FEED")
-                    .font(Theme.cartoonFont(11, weight: .black))
-                    .foregroundStyle(Theme.champagne)
+                Text("THE FEED").kicker()
                 Spacer()
                 Text("SUS METER \(mood.emoji)")
-                    .font(Theme.cartoonFont(9, weight: .bold))
+                    .font(Theme.mono(8.5, weight: .bold))
+                    .kerning(0.6)
                     .foregroundStyle(heatColor)
             }
 
-            GlowBar(progress: heatFraction, color: heatColor)
+            GlowBar(progress: heatFraction, color: heatColor, height: 5)
 
             statusLine
 
             HStack(spacing: 10) {
+                // Quiet at rest; demands attention only while a streak is live.
                 CartoonButton(
                     title: buttonTitle,
-                    color: Theme.luxeGold,
-                    colorway: game.canFlexNow ? game.theme : nil,
-                    disabled: !game.canFlexNow
+                    color: Theme.hype,
+                    style: game.hypeActive ? .primary : .secondary,
+                    disabled: !game.canFlexNow,
+                    emphasized: game.hypeActive
                 ) {
                     showingSheet = true
                 }
@@ -59,23 +60,24 @@ struct FlexCard: View {
             }
         }
         .padding(12)
-        .gameCard(highlighted: game.hypeActive || game.isExposed,
-                  accent: game.isExposed ? Theme.cloutPink : Theme.luxeGold)
+        .gameCard(highlighted: game.hypeActive || game.isExposed, accent: Theme.hype)
     }
 
     @ViewBuilder
     private var statusLine: some View {
         if game.isExposed {
-            Text("🚨 RATIO'D — income ×\(String(format: "%g", Flex.exposureIncomeMultiplier)) for \(countdown(game.exposureRemaining))")
-                .font(Theme.cartoonFont(10, weight: .heavy))
-                .foregroundStyle(Theme.cloutPink)
+            Text("RATIO'D — INCOME ×\(String(format: "%g", Flex.exposureIncomeMultiplier)) FOR \(countdown(game.exposureRemaining))")
+                .font(Theme.mono(9, weight: .bold))
+                .kerning(0.4)
+                .foregroundStyle(Theme.hype)
         } else if game.hypeActive {
-            Text("🔥 HYPE ×\(String(format: "%g", game.currentHype)) — flex again in \(countdown(game.hypeRemaining)) or lose the streak")
-                .font(Theme.cartoonFont(10, weight: .heavy))
-                .foregroundStyle(Theme.luxeGold)
+            Text("HYPE ×\(String(format: "%g", game.currentHype)) — FLEX IN \(countdown(game.hypeRemaining)) OR LOSE THE STREAK")
+                .font(Theme.mono(9, weight: .bold))
+                .kerning(0.4)
+                .foregroundStyle(Theme.hypeSoft)
         } else {
             Text(Flex.mood(heatFraction: heatFraction).line)
-                .font(Theme.cartoonFont(10, weight: .medium))
+                .font(Theme.mono(9))
                 .foregroundStyle(Theme.textMuted)
         }
     }
@@ -100,10 +102,11 @@ struct FlexSheet: View {
         VStack(spacing: 14) {
             VStack(spacing: 4) {
                 Text("POST A FLEX")
-                    .font(Theme.cartoonFont(18, weight: .black))
-                    .foregroundStyle(.white)
+                    .font(Theme.display(22))
+                    .kerning(1)
+                    .foregroundStyle(Theme.textPrimary)
                 Text("Bigger flex, bigger Hype — and a bigger target on your back.")
-                    .font(Theme.cartoonFont(10, weight: .medium))
+                    .font(Theme.mono(9))
                     .foregroundStyle(Theme.textMuted)
             }
 
@@ -153,10 +156,17 @@ struct FlexSheet: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(11)
-            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Theme.surfaceRaised))
-            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(riskColor(chance).opacity(0.35), lineWidth: 1))
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [riskColor(chance).opacity(0.10), Theme.surfaceRaised],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+            )
         }
         .buttonStyle(PressableButtonStyle())
         .disabled(!game.canFlexNow)
@@ -164,9 +174,9 @@ struct FlexSheet: View {
 
     private func riskColor(_ chance: Double) -> Color {
         switch chance {
-        case ..<0.15: return Theme.coinGreen
-        case ..<0.35: return Theme.luxeGold
-        default: return Theme.cloutPink
+        case ..<0.15: return Theme.go
+        case ..<0.35: return Theme.hypeSoft
+        default: return Theme.hype
         }
     }
 

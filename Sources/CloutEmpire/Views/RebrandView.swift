@@ -30,13 +30,20 @@ struct RebrandView: View {
                 .padding(.top, embedded ? 8 : 0)
 
                 VStack(spacing: 6) {
-                    GameImage(name: "icon_clout", size: 56)
+                    GameImage(name: "icon_clout", size: 52)
                     Text("+\(Int(game.cloutOnRebrand))")
-                        .font(Theme.cartoonFont(52, weight: .black))
-                        .foregroundStyle(Theme.cloutPink)
-                        .glow(Theme.cloutPink, radius: 12)
+                        .font(Theme.display(54))
+                        .foregroundStyle(Theme.hype)
+                        .glow(Theme.hype, radius: 12)
                         .monospacedDigit()
                     Text("CLOUT ON RELAUNCH").kicker()
+                    if game.cloutOnRebrand <= 0 {
+                        Text("CLOUT COMES FROM LIFETIME REVENUE — KEEP STACKING")
+                            .font(Theme.mono(8.5))
+                            .kerning(0.6)
+                            .foregroundStyle(Theme.textMuted)
+                            .padding(.top, 2)
+                    }
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
@@ -97,8 +104,9 @@ struct RebrandView: View {
     private var cloutStoreSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("CLOUT STORE")
-                .font(Theme.cartoonFont(11, weight: .black))
-                .foregroundStyle(Theme.champagne)
+                .font(Theme.mono(10, weight: .bold))
+                .kerning(1.2)
+                .foregroundStyle(Theme.hype)
 
             Text("Spend available Clout on permanent hustle upgrades or a short income burst. Every point you spend leaves your passive +2%/point income bonus — that's the trade.")
                 .font(Theme.cartoonFont(10, weight: .medium))
@@ -129,9 +137,10 @@ struct RebrandView: View {
 
             Divider().overlay(.white.opacity(0.08))
 
-            Text("Pick a hustle")
-                .font(Theme.cartoonFont(10, weight: .bold))
-                .foregroundStyle(Theme.champagne.opacity(0.85))
+            Text("PICK A HUSTLE")
+                .font(Theme.mono(9, weight: .semibold))
+                .kerning(1)
+                .foregroundStyle(Theme.textMuted)
 
             ForEach(game.hustles.indices, id: \.self) { index in
                 hustleCloutRow(index)
@@ -156,8 +165,8 @@ struct RebrandView: View {
                         .foregroundStyle(.white)
                     Spacer()
                     Text(costNote)
-                        .font(Theme.cartoonFont(8, weight: .bold))
-                        .foregroundStyle(Theme.champagne.opacity(0.7))
+                        .font(Theme.mono(8, weight: .bold))
+                        .foregroundStyle(Theme.hypeSoft.opacity(0.8))
                 }
                 Text(body)
                     .font(Theme.cartoonFont(9, weight: .medium))
@@ -287,8 +296,7 @@ struct RebrandView: View {
                 .foregroundStyle(enabled ? Theme.coinGreen : Theme.textMuted)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
-                .background(Capsule().fill(enabled ? Theme.coinGreen.opacity(0.12) : Theme.surface.opacity(0.5)))
-                .overlay(Capsule().strokeBorder(enabled ? Theme.coinGreen.opacity(0.35) : Theme.comicBorder.opacity(0.2), lineWidth: 1))
+                .background(Capsule().fill(enabled ? Theme.coinGreen.opacity(0.16) : Theme.surface.opacity(0.5)))
                 .buttonStyle(PressableButtonStyle(bounce: false))
                 .disabled(!enabled)
         }

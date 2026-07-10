@@ -1,96 +1,140 @@
 import SwiftUI
 
-// MARK: - Studio chrome
+// MARK: - Button system
+// One primary (go fill, ink text), one secondary (tinted), one disabled (quiet
+// well that shows progress toward affordability). The screen tells you "you can
+// buy something" without reading a number: ≥80% shimmer, affordable pulse.
 
 struct CartoonButton: View {
     let title: String
     var subtitle: String? = nil
     var color: Color
-    var colorway: Colorway? = nil
+    var colorway: Colorway? = nil // legacy param; identity accents no longer paint buttons
     var style: Style = .primary
     var disabled: Bool = false
+    /// 0…1 progress toward affording this action; drives the disabled-state
+    /// inner fill and the ≥80% "almost affordable" shimmer.
+    var progress: Double? = nil
+    /// Gentle pulse when enabled — for buy/unlock moments, not every button.
+    var emphasized: Bool = false
     let action: () -> Void
 
     enum Style { case primary, secondary, outline }
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var pulsing = false
+
+    private var nearlyAffordable: Bool {
+        disabled && (progress ?? 0) >= 0.8
+    }
+
     var body: some View {
         Button(action: action) {
-            VStack(spacing: subtitle == nil ? 0 : 2) {
+            VStack(spacing: subtitle == nil ? 0 : 1) {
                 Text(title)
-                    .font(Theme.cartoonFont(10, weight: .bold))
+                    .font(Theme.body(12, weight: .heavy))
+                    .kerning(0.3)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                 if let subtitle {
                     Text(subtitle)
-                        .font(Theme.cartoonFont(9, weight: .medium))
+                        .font(Theme.mono(9, weight: .semibold))
                         .monospacedDigit()
+                        .opacity(0.85)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
-            .padding(.horizontal, 8)
+            .frame(maxWidth: .infinity, minHeight: subtitle == nil ? 20 : 30)
+            .padding(.vertical, 8)
+            .padding(.horizontal, 10)
             .foregroundStyle(foreground)
             .background { face }
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(stroke, lineWidth: 2.5))
-            .overlay(alignment: .top) {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(.white.opacity(disabled ? 0.04 : 0.22))
-                    .frame(height: 5)
-                    .padding(.horizontal, 8)
-                    .padding(.top, 3)
-            }
-            .background(alignment: .bottom) {
-                if !disabled {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(stroke.opacity(0.55))
-                        .offset(y: 5)
+            .overlay {
+                if nearlyAffordable, !reduceMotion {
+                    ShimmerSweep(period: 2.8)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
             }
-            .shadow(color: disabled ? .clear : color.opacity(style == .primary ? 0.42 : 0.22), radius: 16, y: 7)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(borderColor, lineWidth: 1)
+            )
+            .shadow(color: shadowColor, radius: 10, y: 5)
         }
         .buttonStyle(CartoonPressStyle())
         .disabled(disabled)
+        .onAppear { startPulseIfNeeded() }
+        .onChange(of: disabled) { _ in startPulseIfNeeded() }
+    }
+
+    private func startPulseIfNeeded() {
+        guard emphasized, !disabled, !reduceMotion else { pulsing = false; return }
+        pulsing = false
+        withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) {
+            pulsing = true
+        }
     }
 
     @ViewBuilder private var face: some View {
         switch style {
         case .primary:
-            if let colorway, !disabled {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [Theme.champagne, colorway.accent, Theme.arcadeOrange],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
+            if disabled {
+                ZStack(alignment: .leading) {
+                    Theme.ink.opacity(0.45)
+                    // Quiet progress toward affording it.
+                    if let progress, progress > 0.02 {
+                        GeometryReader { geo in
+                            Rectangle()
+                                .fill((nearlyAffordable ? Theme.money : Color.white)
+                                    .opacity(nearlyAffordable ? 0.14 : 0.07))
+                                .frame(width: geo.size.width * min(1, progress))
+                        }
+                    }
+                }
             } else {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(disabled ? Theme.surfaceRaised : color)
+                // Confirm fill: the passed color (go by default, hype for the
+                // flex moment) deepened toward the bottom.
+                ZStack {
+                    color
+                    LinearGradient(colors: [.white.opacity(0.12), .clear, .black.opacity(0.30)],
+                                   startPoint: .top, endPoint: .bottom)
+                }
             }
         case .secondary:
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(disabled ? Theme.surfaceRaised : color.opacity(0.32))
+            (disabled ? Theme.ink.opacity(0.4) : color.opacity(0.16))
         case .outline:
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(LinearGradient(colors: [Theme.arcadePurple.opacity(0.28), Theme.ink.opacity(0.60)], startPoint: .top, endPoint: .bottom))
+            (disabled ? Theme.ink.opacity(0.35) : Theme.ink.opacity(0.5))
         }
     }
 
     private var foreground: Color {
-        if disabled { return .white.opacity(0.35) }
+        if disabled {
+            return nearlyAffordable ? Theme.textPrimary.opacity(0.8) : .white.opacity(0.45)
+        }
         switch style {
         case .primary: return Theme.ink
         case .secondary, .outline: return color
         }
     }
 
-    private var stroke: Color {
-        if disabled { return .white.opacity(0.06) }
+    private var borderColor: Color {
+        if disabled {
+            return nearlyAffordable ? Theme.money.opacity(0.3) : Theme.hairline
+        }
         switch style {
-        case .primary: return Theme.champagne.opacity(0.55)
-        case .secondary, .outline: return color.opacity(0.45)
+        case .primary: return .white.opacity(pulsing ? 0.5 : 0.18)
+        case .secondary: return color.opacity(0.3)
+        case .outline: return color.opacity(0.4)
+        }
+    }
+
+    private var shadowColor: Color {
+        guard !disabled else { return .clear }
+        switch style {
+        case .primary: return color.opacity(emphasized ? (pulsing ? 0.5 : 0.22) : 0.28)
+        case .secondary, .outline: return .black.opacity(0.2)
         }
     }
 }
@@ -99,11 +143,37 @@ struct CartoonPressStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.94 : 1)
-            .offset(y: configuration.isPressed ? 4 : 0)
-            .brightness(configuration.isPressed ? -0.08 : 0.03)
-            .animation(.spring(response: 0.16, dampingFraction: 0.58), value: configuration.isPressed)
+            .brightness(configuration.isPressed ? -0.06 : 0)
+            .animation(.spring(response: 0.18, dampingFraction: 0.6), value: configuration.isPressed)
     }
 }
+
+// MARK: - Shimmer sweep ("almost affordable" — warm light passes over)
+
+struct ShimmerSweep: View {
+    /// Seconds per full traversal.
+    var period: Double = 2.8
+    var tint: Color = Theme.moneyHigh
+
+    var body: some View {
+        GeometryReader { geo in
+            TimelineView(.animation(minimumInterval: 1.0 / 30)) { timeline in
+                let t = timeline.date.timeIntervalSinceReferenceDate
+                    .truncatingRemainder(dividingBy: period) / period
+                let w = geo.size.width
+                LinearGradient(
+                    colors: [.clear, tint.opacity(0.16), .clear],
+                    startPoint: .leading, endPoint: .trailing
+                )
+                .frame(width: w * 0.6)
+                .offset(x: -w * 0.6 + t * (w + w * 0.6))
+            }
+        }
+        .allowsHitTesting(false)
+    }
+}
+
+// MARK: - Legacy panel helpers
 
 extension View {
     func comicShadow(radius: CGFloat = 0, y: CGFloat = 5) -> some View {
@@ -114,35 +184,24 @@ extension View {
         proPanel(radius: radius, fill: fill)
     }
 
+    /// Soft elevated panel — depth from fill and shadow, never glow strokes.
     func proPanel(radius: CGFloat = Theme.cardRadius, fill: Color = Theme.surface) -> some View {
         self
             .background(
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Theme.panelTop.opacity(0.96),
-                                fill,
-                                Theme.arcadePurple.opacity(0.20),
-                                Theme.panelBottom.opacity(0.98),
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
+                    .fill(fill)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: radius, style: .continuous)
+                            .fill(
+                                LinearGradient(colors: [.white.opacity(0.045), .clear],
+                                               startPoint: .top, endPoint: .center)
+                            )
                     )
-                    .shadow(color: Theme.cloutPink.opacity(0.18), radius: 16, y: 7)
-                    .shadow(color: .black.opacity(0.48), radius: 20, y: 10)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: radius, style: .continuous)
+                            .strokeBorder(Theme.hairline, lineWidth: 1)
+                    )
+                    .shadow(color: .black.opacity(0.4), radius: 14, y: 8)
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .strokeBorder(Theme.luxeGold.opacity(0.44), lineWidth: 2)
-            )
-            .overlay(alignment: .top) {
-                RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .fill(.white.opacity(0.12))
-                    .frame(height: 6)
-                    .padding(.horizontal, 10)
-                    .padding(.top, 3)
-            }
     }
 }

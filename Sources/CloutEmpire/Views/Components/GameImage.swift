@@ -35,7 +35,7 @@ struct GameImage: View {
     }
 }
 
-/// Framed production icon tile.
+/// Soft squircle icon tile — a gentle tinted well, no frame.
 struct GameIconTile: View {
     let name: String
     var size: CGFloat = 50
@@ -43,33 +43,21 @@ struct GameIconTile: View {
     var tint: Color = .white
 
     var body: some View {
-        GameImage(name: name, size: size * 0.70, dimmed: dimmed)
+        GameImage(name: name, size: size * 0.74, dimmed: dimmed)
             .frame(width: size, height: size)
             .background(
-                RoundedRectangle(cornerRadius: min(14, size * 0.22), style: .continuous)
+                RoundedRectangle(cornerRadius: size * 0.30, style: .continuous)
                     .fill(
                         LinearGradient(
                             colors: [
-                                dimmed ? Theme.surfaceRaised : tint.opacity(0.42),
-                                Theme.arcadePurple.opacity(dimmed ? 0.12 : 0.36),
-                                Theme.ink.opacity(0.78),
+                                tint.opacity(dimmed ? 0.08 : 0.24),
+                                Theme.ink.opacity(0.50),
                             ],
                             startPoint: .top,
                             endPoint: .bottom
                         )
                     )
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: min(14, size * 0.22), style: .continuous)
-                    .strokeBorder(dimmed ? .white.opacity(0.12) : tint.opacity(0.82), lineWidth: 2.5)
-            )
-            .overlay(alignment: .topLeading) {
-                Circle()
-                    .fill(.white.opacity(dimmed ? 0.05 : 0.20))
-                    .frame(width: size * 0.36, height: size * 0.36)
-                    .offset(x: size * 0.10, y: size * 0.08)
-            }
-            .shadow(color: dimmed ? .clear : tint.opacity(0.36), radius: 14, y: 5)
-            .shadow(color: .black.opacity(0.45), radius: 10, y: 7)
+            .shadow(color: .black.opacity(0.30), radius: 8, y: 5)
     }
 }
