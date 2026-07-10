@@ -10,14 +10,15 @@ import { RebrandScreen } from "./ui/Rebrand";
 import { EffectsLayer } from "./ui/Effects";
 import { IconEmpire, IconChat, IconSpark, IconProfile, IconLock } from "./ui/Icons";
 import { money } from "./ui/format";
+import { LABELS, MISC } from "./theme/content";
 
 type Tab = "empire" | "dms" | "rebrand" | "profile";
 
 const TABS: { id: Tab; label: string; Icon: (p: { size?: number }) => JSX.Element }[] = [
-  { id: "empire", label: "Empire", Icon: IconEmpire },
-  { id: "dms", label: "DMs", Icon: IconChat },
-  { id: "rebrand", label: "Rebrand", Icon: IconSpark },
-  { id: "profile", label: "Profile", Icon: IconProfile },
+  { id: "empire", label: LABELS.tabs.ledger, Icon: IconEmpire },
+  { id: "dms", label: LABELS.tabs.fixer, Icon: IconChat },
+  { id: "rebrand", label: LABELS.tabs.family, Icon: IconSpark },
+  { id: "profile", label: LABELS.tabs.boss, Icon: IconProfile },
 ];
 
 export function App() {
@@ -78,12 +79,12 @@ function OfflineModal() {
   return (
     <div className="modal-backdrop">
       <div className="offline-card">
-        <div className="offline-emoji">💼</div>
-        <div className="offline-title">While you were gone…</div>
-        <div className="offline-sub">Your staff kept the empire posting.</div>
+        <div className="offline-emoji">🕰️</div>
+        <div className="offline-title">{MISC.offlineTitle}</div>
+        <div className="offline-sub">{MISC.offlineSub}</div>
         <div className="offline-amount">+{money(game.offlineEarnings)}</div>
         <button className="btn-cta" onClick={() => game.dismissOfflineEarnings()}>
-          SECURE THE BAG
+          {MISC.offlineCta}
         </button>
       </div>
     </div>

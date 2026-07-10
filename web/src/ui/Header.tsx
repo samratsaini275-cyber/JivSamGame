@@ -5,6 +5,7 @@ import { HUSTLES, baseLookByID } from "../engine/data";
 import { game as gameInstance } from "../engine/game";
 import { IconSound } from "./Icons";
 import { isMuted, setMuted } from "./sfx";
+import { GAME, LABELS, PRESS } from "../theme/content";
 
 export function Header({ onProfileTap }: { onProfileTap: () => void }) {
   const game = useGame();
@@ -14,7 +15,7 @@ export function Header({ onProfileTap }: { onProfileTap: () => void }) {
   const [muted, setMutedState] = useState(isMuted());
   const cashRef = useRef<HTMLDivElement>(null);
 
-  // Bump the cash number when a payout lands (rate-limited by Effects' emitter cadence).
+  // Bump the cash number when a payout lands.
   useEffect(() => {
     let last = 0;
     return gameInstance.onEvent((e) => {
@@ -25,7 +26,7 @@ export function Header({ onProfileTap }: { onProfileTap: () => void }) {
       const el = cashRef.current;
       if (!el) return;
       el.classList.remove("bump");
-      void el.offsetWidth; // restart the animation
+      void el.offsetWidth;
       el.classList.add("bump");
     });
   }, []);
@@ -33,13 +34,13 @@ export function Header({ onProfileTap }: { onProfileTap: () => void }) {
   return (
     <header className="header">
       <div className="header-top">
-        <button className="avatar-btn" onClick={onProfileTap} aria-label="Profile">
-          <img src={`/images/${look.image}.png`} alt="" className="avatar-img" />
+        <button className="avatar-btn" onClick={onProfileTap} aria-label="The Boss">
+          <span className="avatar-emoji">{look.emoji}</span>
           <span className="avatar-ring" />
         </button>
         <div className="header-id">
-          <div className="header-handle">@{game.state.handle || "you"}</div>
-          <div className="header-brand">CLOUT EMPIRE</div>
+          <div className="header-handle">"{game.state.handle || "the new face"}"</div>
+          <div className="header-brand">{GAME.title} · {GAME.year}</div>
         </div>
         <button
           className="sound-btn"
@@ -48,8 +49,8 @@ export function Header({ onProfileTap }: { onProfileTap: () => void }) {
         >
           <IconSound muted={muted} />
         </button>
-        <div className="clout-chip" title="Clout — permanent income bonus">
-          <img src="/images/icon_clout.png" alt="" className="chip-icon" />
+        <div className="clout-chip" title={`${LABELS.respect} — permanent income bonus`}>
+          <span className="chip-emoji">🤝</span>
           <span>{game.state.clout.toLocaleString()}</span>
         </div>
       </div>
@@ -58,21 +59,21 @@ export function Header({ onProfileTap }: { onProfileTap: () => void }) {
         <div className="cash-amount" ref={cashRef}>{money(game.state.cash)}</div>
         <div className="cash-meta">
           <span className="persec">
-            <img src="/images/icon_sparkle.png" alt="" className="chip-icon" />
-            {money(perSec)}/sec
+            <span className="chip-emoji">💵</span>
+            {money(perSec)}{LABELS.perSec}
           </span>
           <span className={`viral-chip ${game.viralBuffActive ? "buffed" : ""}`}>
-            <img src="/images/icon_hype.png" alt="" className="chip-icon" />
-            VIRAL ×{Math.pow(2, viral)}
+            <span className="chip-emoji">🗞️</span>
+            {PRESS.chip} ×{Math.pow(2, viral)}
           </span>
           {game.milleBuffActive && <span className="buff-chip">⚡ ×2 INCOME</span>}
         </div>
       </div>
 
-      <div className="viral-track" title="Level up every hustle to trigger a Viral Moment">
+      <div className="viral-track" title="Grow every racket to make the front page">
         <div className="viral-track-label">
-          <img src="/images/icon_fire.png" alt="" className="chip-icon" />
-          Next Viral Moment
+          <span className="chip-emoji">🗞️</span>
+          {PRESS.tracker}
         </div>
         <div className="viral-bar">
           <div

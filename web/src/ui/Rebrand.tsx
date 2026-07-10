@@ -1,8 +1,9 @@
-// Prestige screen: burn the account, keep the Clout.
+// Prestige screen: Start a New Family — burn the ledgers, keep the Respect.
 import { useEffect, useState } from "react";
 import { useGame } from "./hooks";
 import { cloutMultiplier } from "../engine/formulas";
 import { money } from "./format";
+import { FAMILY, LABELS } from "../theme/content";
 
 export function RebrandScreen() {
   const game = useGame();
@@ -19,53 +20,40 @@ export function RebrandScreen() {
   return (
     <div className="screen rebrand">
       <div className="rebrand-hero">
-        <img src="/images/icon_clout.png" alt="" className="rebrand-icon" />
-        <div className="rebrand-title">REBRAND</div>
-        <div className="rebrand-sub">
-          Delete the account. Keep the aura. Every point of Clout boosts all income by 2% — forever.
-        </div>
+        <span className="rebrand-icon">🤝</span>
+        <div className="rebrand-title">{FAMILY.title}</div>
+        <div className="rebrand-sub">{FAMILY.sub}</div>
       </div>
 
       <div className="rebrand-stats">
         <div className="rstat">
           <div className="rstat-value">{clout.toLocaleString()}</div>
-          <div className="rstat-label">CLOUT HELD</div>
+          <div className="rstat-label">{FAMILY.statHeld}</div>
         </div>
         <div className="rstat">
           <div className="rstat-value">×{cloutMultiplier(clout).toFixed(2)}</div>
-          <div className="rstat-label">INCOME BONUS</div>
+          <div className="rstat-label">{FAMILY.statBonus}</div>
         </div>
         <div className="rstat highlight">
           <div className="rstat-value">+{gain.toLocaleString()}</div>
-          <div className="rstat-label">ON REBRAND</div>
+          <div className="rstat-label">{FAMILY.statGain}</div>
         </div>
       </div>
 
       {game.cloutGainRateBonus > 0 && (
         <div className="rebrand-bonus">
-          ⌚ Gain rate boosted +{Math.round(game.cloutGainRateBonus * 1000) / 10}%
-          {game.state.daytonaPurchases > 0 && ` (Daytona ×${game.state.daytonaPurchases})`}
+          {FAMILY.bonusNote(Math.round(game.cloutGainRateBonus * 1000) / 10, game.state.daytonaPurchases)}
         </div>
       )}
 
       <div className="rebrand-ledger">
         <div className="ledger-col keep">
-          <div className="ledger-title">✓ YOU KEEP</div>
-          <ul>
-            <li>Clout &amp; its income bonus</li>
-            <li>Lifetime earnings record</li>
-            <li>Your persona &amp; all drip</li>
-            <li>Daytona clout-rate bonus</li>
-          </ul>
+          <div className="ledger-title">{FAMILY.keepTitle}</div>
+          <ul>{FAMILY.keeps.map((k) => <li key={k}>{k}</li>)}</ul>
         </div>
         <div className="ledger-col lose">
-          <div className="ledger-title">✗ YOU LOSE</div>
-          <ul>
-            <li>Cash ({money(game.state.cash)})</li>
-            <li>All hustles &amp; staff</li>
-            <li>Rex's rented gear</li>
-            <li>Active buffs</li>
-          </ul>
+          <div className="ledger-title">{FAMILY.loseTitle}</div>
+          <ul>{FAMILY.loses(money(game.state.cash)).map((k) => <li key={k}>{k}</li>)}</ul>
         </div>
       </div>
 
@@ -78,11 +66,11 @@ export function RebrandScreen() {
             game.rebrand();
           }}
         >
-          {armed ? `TAP AGAIN — GAIN ${gain.toLocaleString()} CLOUT` : "REBRAND THE EMPIRE"}
+          {armed ? FAMILY.ctaArmed(gain.toLocaleString()) : FAMILY.cta}
         </button>
       ) : (
         <div className="rebrand-locked">
-          Stack more lifetime cash to earn your first Clout.
+          {FAMILY.lockedTitle}
           <div className="clout-progress">
             <div
               className="clout-progress-fill"
@@ -96,7 +84,7 @@ export function RebrandScreen() {
             />
           </div>
           <span>
-            {money(game.state.lifetimeCash)} / {money(nextCloutTarget(game.state.lifetimeCash, clout, game.cloutGainRateBonus))} lifetime
+            {money(game.state.lifetimeCash)} / {money(nextCloutTarget(game.state.lifetimeCash, clout, game.cloutGainRateBonus))} {LABELS.fortune.toLowerCase()}
           </span>
         </div>
       )}

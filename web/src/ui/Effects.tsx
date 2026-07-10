@@ -4,6 +4,7 @@ import { GameEvent, game } from "../engine/game";
 import { HUSTLES, tierName } from "../engine/data";
 import { money } from "./format";
 import { sfx } from "./sfx";
+import { PRESS, FAMILY } from "../theme/content";
 
 interface Pop { id: number; x: number; y: number; text: string }
 interface Confetto { id: number; x: number; y: number; dx: number; dy: number; color: string; spin: number }
@@ -23,7 +24,7 @@ function cardPoint(index: number): { x: number; y: number } | null {
   };
 }
 
-const CONFETTI_COLORS = ["#ffcc5c", "#57eb85", "#61b8ff", "#f56b95", "#ffffff", "#ba85ff"];
+const CONFETTI_COLORS = ["#e0b64f", "#e8dcc3", "#3d7a74", "#7ca163", "#c9a02c", "#b58ed0"];
 
 export function EffectsLayer() {
   const [pops, setPops] = useState<Pop[]>([]);
@@ -52,16 +53,16 @@ export function EffectsLayer() {
       let sub = "";
       if (e.kind === "milestone") {
         origin = cardPoint(e.hustleIndex) ?? origin;
-        title = `${HUSTLES[e.hustleIndex].name} leveled up!`;
-        sub = `${tierName(e.tier)} — income ×2, speed ×2`;
+        title = PRESS.milestoneToast(HUSTLES[e.hustleIndex].name, tierName(e.tier));
+        sub = PRESS.milestoneSub;
         sfx.milestone();
       } else if (e.kind === "hypeWave") {
-        title = "VIRAL MOMENT!";
-        sub = `Everything you own earns ×${Math.pow(2, e.tier)}`;
+        title = PRESS.toastTitle;
+        sub = PRESS.toastSub(Math.pow(2, e.tier));
         sfx.viral();
       } else if (e.kind === "rebranded") {
-        title = "REBRANDED ✨";
-        sub = `+${e.clout.toLocaleString()} Clout secured`;
+        title = FAMILY.toastTitle;
+        sub = FAMILY.toastSub(e.clout.toLocaleString());
         sfx.rebrand();
       }
 

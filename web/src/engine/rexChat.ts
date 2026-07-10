@@ -4,6 +4,7 @@ import {
   ItemSlot, RexItemDef, rexItemByID, rexItemsForSlot, REX, REX_TIER_NAMES,
 } from "./data";
 import { money } from "../ui/format";
+import { FIXER } from "../theme/content";
 
 export interface RexDMThread {
   id: string;
@@ -15,11 +16,11 @@ export interface RexDMThread {
 }
 
 export const REX_THREADS: RexDMThread[] = [
-  { id: "intro", title: "Rex Calloway", preview: "Yo. Been watching the brand…",
+  { id: "intro", title: FIXER.threads.intro.title, preview: FIXER.threads.intro.preview,
     unlockMoneyTier: 0, unlockLifetimeCash: 0, slot: null },
-  { id: "wrist", title: "Rex · Wrist Game", preview: "The watch is the whole argument.",
+  { id: "wrist", title: FIXER.threads.wrist.title, preview: FIXER.threads.wrist.preview,
     unlockMoneyTier: REX.unlockMoneyTier, unlockLifetimeCash: 500, slot: "wrist" },
-  { id: "garage", title: "Rex · Garage Era", preview: "You don't drive it. You park it where people eat.",
+  { id: "garage", title: FIXER.threads.garage.title, preview: FIXER.threads.garage.preview,
     unlockMoneyTier: REX.unlockMoneyTier, unlockLifetimeCash: 1_200, slot: "garage" },
 ];
 
@@ -120,8 +121,8 @@ function introMessages(game: Game): RexChatMessage[] {
     msgs.push({
       id: "intro_followup", sender: "rex",
       text: game.state.rexIntroReply === "Who is this?"
-        ? "I'm Rex. I make brands look expensive. Stick around."
-        : "That's the energy. Check the other threads — wrist and garage — when you're ready to level up the flex.",
+        ? FIXER.introFollowWho
+        : FIXER.introFollowYes,
       itemID: null, pitchID: null,
     });
   }
@@ -131,8 +132,8 @@ function introMessages(game: Game): RexChatMessage[] {
 function slotMessages(slot: ItemSlot, game: Game): RexChatMessage[] {
   const msgs: RexChatMessage[] = [];
   const opener = slot === "wrist"
-    ? "Alright. Wrist game separates tourists from founders. Pick your lane."
-    : "Garage talk. The car doesn't matter — the photo angle does.";
+    ? "Alright. A watch chain separates citizens from operators. Pick your lane."
+    : "Garage talk. The car doesn't matter — where the papers see it parked does.";
   msgs.push({ id: `${slot}_opener`, sender: "rex", text: opener, itemID: null, pitchID: null });
 
   for (const item of rexItemsForSlot(slot)) {
@@ -184,9 +185,9 @@ function rexFollowUp(item: RexItemDef, pitchID: string, game: Game): RexChatMess
   } else if (game.isItemEquipped(item)) {
     text = "Looking expensive. That's the whole point.";
   } else if (game.ownsItem(item)) {
-    text = "It's in the stash. Equip when you're ready to be seen.";
+    text = FIXER.stashBark;
   } else if (game.state.rexDismissedPitches.includes(pitchID)) {
-    text = "Fair. The flex will still be there when the bag catches up.";
+    text = FIXER.passBark;
   } else {
     return null;
   }

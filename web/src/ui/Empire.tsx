@@ -7,6 +7,7 @@ import { HUSTLES, tierName } from "../engine/data";
 import { nextThreshold, unitCost } from "../engine/formulas";
 import { money, duration } from "./format";
 import { sfx } from "./sfx";
+import { LABELS, MISC, MYSTERY_CARD } from "../theme/content";
 
 export function Empire() {
   const game = useGame();
@@ -20,8 +21,8 @@ export function Empire() {
     <div className="screen empire">
       <div className="empire-toolbar">
         <div>
-          <div className="section-title">PORTFOLIO</div>
-          <div className="section-sub">{ownedCount}/{HUSTLES.length} hustles running</div>
+          <div className="section-title">{MISC.portfolio}</div>
+          <div className="section-sub">{MISC.running(ownedCount, HUSTLES.length)}</div>
         </div>
         <div className="segmented" role="tablist" aria-label="Buy amount">
           {BUY_MODES.map((m) => (
@@ -40,10 +41,10 @@ export function Empire() {
         {HUSTLES.slice(0, visibleCount).map((h) => <HustleCard key={h.id} index={h.id} />)}
         {hiddenCount > 0 && (
           <div className="mystery-card">
-            <span className="mystery-icon">🔮</span>
+            <span className="mystery-icon">{MYSTERY_CARD.icon}</span>
             <div>
-              <div className="mystery-title">{hiddenCount} more hustles await</div>
-              <div className="mystery-sub">Grow the empire to reveal what's next.</div>
+              <div className="mystery-title">{MYSTERY_CARD.title(hiddenCount)}</div>
+              <div className="mystery-sub">{MYSTERY_CARD.sub}</div>
             </div>
           </div>
         )}
@@ -54,7 +55,6 @@ export function Empire() {
 
 function HustleArt({ index }: { index: number }) {
   const def = HUSTLES[index];
-  if (def.image) return <img src={`/images/${def.image}.png`} alt="" />;
   return (
     <span className="emoji-art" style={{ ["--hue" as string]: `${(index * 47) % 360}deg` }}>
       {def.emoji}
@@ -101,7 +101,7 @@ function HustleCard({ index }: { index: number }) {
           disabled={!canUnlock}
           onClick={() => { game.buyOne(index); sfx.buy(); }}
         >
-          <span className="btn-buy-label">START</span>
+          <span className="btn-buy-label">{LABELS.start}</span>
           <span className="btn-buy-cost">{money(firstCost)}</span>
         </button>
       </div>
@@ -136,9 +136,9 @@ function HustleCard({ index }: { index: number }) {
               ? `${money(game.incomePerCycle(index) / cycle)}/sec`
               : s.cycleRunning
                 ? `${money(game.incomePerCycle(index))} · ${duration(Math.max(cycle - s.cycleProgress, 0))}`
-                : `TAP TO POST · ${money(game.incomePerCycle(index))}`}
+                : `${LABELS.runBatch} · ${money(game.incomePerCycle(index))}`}
           </span>
-          {s.ghostwriterHired && <span className="auto-chip">AUTO</span>}
+          {s.ghostwriterHired && <span className="auto-chip">{LABELS.automated}</span>}
         </button>
 
         <div className="milestone-row">
@@ -146,7 +146,7 @@ function HustleCard({ index }: { index: number }) {
             <div className="milestone-fill" style={{ width: `${milestonePct}%` }} />
           </div>
           <span className={`milestone-label ${almostMilestone ? "almost" : ""}`}>
-            {next ? `${s.unitsOwned}/${next}` : "MAXED"}
+            {next ? `${s.unitsOwned}/${next}` : LABELS.maxed}
           </span>
         </div>
       </div>
@@ -165,9 +165,9 @@ function HustleCard({ index }: { index: number }) {
             className={`btn-hire ${game.state.cash >= def.ghostwriterCost ? "" : "disabled"}`}
             disabled={game.state.cash < def.ghostwriterCost}
             onClick={() => { game.hireGhostwriter(index); sfx.hire(); }}
-            title={`${def.ghostwriterName} posts automatically`}
+            title={`${def.ghostwriterName} runs batches automatically`}
           >
-            🤖 {def.ghostwriterName} · {money(def.ghostwriterCost)}
+            🤵 {def.ghostwriterName} · {money(def.ghostwriterCost)}
           </button>
         )}
       </div>

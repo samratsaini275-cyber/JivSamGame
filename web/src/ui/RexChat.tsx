@@ -7,6 +7,7 @@ import {
 import { rexItemByID, REX_TIER_NAMES } from "../engine/data";
 import { money } from "./format";
 import { sfx } from "./sfx";
+import { FIXER } from "../theme/content";
 
 export function RexScreen({ onGoEmpire }: { onGoEmpire: () => void }) {
   const game = useGame();
@@ -28,18 +29,15 @@ function DMsLocked({ onGoEmpire }: { onGoEmpire: () => void }) {
       <div className="ghost-thread">
         <RexAvatar />
         <div className="thread-info">
-          <div className="thread-title">Rex Calloway</div>
-          <div className="thread-preview blurred">Yo. Been watching the brand…</div>
+          <div className="thread-title">{FIXER.name}</div>
+          <div className="thread-preview blurred">{FIXER.threads.intro.preview}</div>
         </div>
         <span className="ghost-lock">🔒</span>
       </div>
-      <div className="lock-title">Someone wants to slide in</div>
-      <div className="lock-sub">
-        A certain lifestyle consultant only DMs founders who move product.
-        Unlock <b>Sneaker Resells</b> to get on his radar.
-      </div>
+      <div className="lock-title">{FIXER.dmsLockedTitle}</div>
+      <div className="lock-sub" dangerouslySetInnerHTML={{ __html: FIXER.dmsLockedSub }} />
       <button className="btn-cta lock-cta" onClick={onGoEmpire}>
-        SHOW ME THE HUSTLE
+        {FIXER.dmsLockedCta}
       </button>
     </div>
   );
@@ -50,8 +48,8 @@ function ThreadList({ threads, onOpen }: { threads: RexDMThread[]; onOpen: (id: 
   return (
     <div className="screen dms">
       <div className="dms-header">
-        <div className="section-title">DMs</div>
-        <div className="section-sub">Rex Calloway · lifestyle consultant</div>
+        <div className="section-title">THE FIXER</div>
+        <div className="section-sub">{FIXER.name} · {FIXER.role}</div>
       </div>
       <div className="thread-list">
         {threads.map((t) => {
@@ -69,7 +67,7 @@ function ThreadList({ threads, onOpen }: { threads: RexDMThread[]; onOpen: (id: 
         })}
       </div>
       <div className="dms-footnote">
-        Rex slides in with new pitches as the bag grows. His gear boosts the whole empire.
+        Sal comes around with new offers as the fortune grows. His finery boosts the whole outfit.
       </div>
     </div>
   );
@@ -78,7 +76,7 @@ function ThreadList({ threads, onOpen }: { threads: RexDMThread[]; onOpen: (id: 
 function RexAvatar({ size = 46 }: { size?: number }) {
   return (
     <span className="rex-avatar" style={{ width: size, height: size, fontSize: size * 0.42 }}>
-      🕶️
+      🎩
     </span>
   );
 }
@@ -105,7 +103,7 @@ function ChatView({ thread, onBack }: { thread: RexDMThread; onBack: () => void 
         <RexAvatar size={38} />
         <div className="chat-header-info">
           <div className="chat-name">{thread.title}</div>
-          <div className="chat-status">online · probably at a valet stand</div>
+          <div className="chat-status">{FIXER.status}</div>
         </div>
       </div>
 
@@ -136,7 +134,7 @@ function ChatView({ thread, onBack }: { thread: RexDMThread; onBack: () => void 
           );
         })}
         {pitch && replies.length > 0 && (
-          <div className="typing-hint">Rex is waiting on you…</div>
+          <div className="typing-hint">{FIXER.waiting}</div>
         )}
       </div>
 
@@ -158,7 +156,7 @@ function ChatView({ thread, onBack }: { thread: RexDMThread; onBack: () => void 
             );
           })
         ) : (
-          <div className="reply-idle">Keep stacking — Rex will slide back in.</div>
+          <div className="reply-idle">{FIXER.idleReply}</div>
         )}
       </div>
     </div>

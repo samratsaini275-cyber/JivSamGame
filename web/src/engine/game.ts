@@ -5,6 +5,7 @@ import {
   pick, PersonaSlot,
 } from "./data";
 import { GameState, newGame, loadState, saveState, applyRebrand } from "./state";
+import { FIXER } from "../theme/content";
 
 export type BuyMode = "x1" | "x10" | "x100" | "max";
 export const BUY_MODES: { id: BuyMode; label: string }[] = [
@@ -390,7 +391,7 @@ export class Game {
       case "dismiss":
         st.rexDismissedPitches.push(pitchID);
         st.rexPitchReplies[pitchID] = action.label;
-        st.rexPitchFollowUp[pitchID] = "Fair. The flex will still be there when the bag catches up.";
+        st.rexPitchFollowUp[pitchID] = FIXER.passBark;
         break;
     }
     this.notify();
