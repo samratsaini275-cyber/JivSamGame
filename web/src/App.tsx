@@ -1,0 +1,91 @@
+import { useEffect, useState } from "react";
+import { useGame } from "./ui/hooks";
+import { colorwayByID } from "./engine/data";
+import { rexUnreadCount } from "./engine/rexChat";
+import { Header } from "./ui/Header";
+import { Empire } from "./ui/Empire";
+import { RexScreen } from "./ui/RexChat";
+import { PersonaScreen, PersonaCreation } from "./ui/Persona";
+import { RebrandScreen } from "./ui/Rebrand";
+import { EffectsLayer } from "./ui/Effects";
+import { IconEmpire, IconChat, IconSpark, IconProfile, IconLock } from "./ui/Icons";
+import { money } from "./ui/format";
+
+type Tab = "empire" | "dms" | "rebrand" | "profile";
+
+const TABS: { id: Tab; label: string; Icon: (p: { size?: number }) => JSX.Element }[] = [
+  { id: "empire", label: "Empire", Icon: IconEmpire },
+  { id: "dms", label: "DMs", Icon: IconChat },
+  { id: "rebrand", label: "Rebrand", Icon: IconSpark },
+  { id: "profile", label: "Profile", Icon: IconProfile },
+];
+
+export function App() {
+  const game = useGame();
+  const [tab, setTab] = useState<Tab>("empire");
+  const colorway = colorwayByID(game.state.colorway);
+  const unread = rexUnreadCount(game);
+
+  // Colorway tints the whole UI via CSS variables.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty("--accent", colorway.accent);
+    root.style.setProperty("--accent-deep", colorway.accentDeep);
+  }, [colorway.id]);
+
+  return (
+    <div className="stage">
+      <div className="stage-glow" aria-hidden />
+      <div className="phone">
+        {tab === "empire" && <Header onProfileTap={() => setTab("profile")} />}
+
+        <main className="phone-content">
+          {tab === "empire" && <Empire />}
+          {tab === "dms" && <RexScreen onGoEmpire={() => setTab("empire")} />}
+          {tab === "rebrand" && <RebrandScreen />}
+          {tab === "profile" && <PersonaScreen />}
+        </main>
+
+        <nav className="tab-bar">
+          {TABS.map(({ id, label, Icon }) => (
+            <button
+              key={id}
+              className={`tab ${tab === id ? "active" : ""}`}
+              onClick={() => setTab(id)}
+            >
+              <span className="tab-icon">
+                <Icon />
+                {id === "dms" && unread > 0 && <span className="tab-badge">{unread}</span>}
+                {id === "dms" && !game.rexUnlocked && (
+                  <span className="tab-lock"><IconLock size={10} /></span>
+                )}
+              </span>
+              <span className="tab-label">{label}</span>
+            </button>
+          ))}
+        </nav>
+
+        <EffectsLayer />
+        {!game.personaCreated && <PersonaCreation />}
+        {game.offlineEarnings > 0 && <OfflineModal />}
+      </div>
+    </div>
+  );
+}
+
+function OfflineModal() {
+  const game = useGame();
+  return (
+    <div className="modal-backdrop">
+      <div className="offline-card">
+        <div className="offline-emoji">💼</div>
+        <div className="offline-title">While you were gone…</div>
+        <div className="offline-sub">Your staff kept the empire posting.</div>
+        <div className="offline-amount">+{money(game.offlineEarnings)}</div>
+        <button className="btn-cta" onClick={() => game.dismissOfflineEarnings()}>
+          SECURE THE BAG
+        </button>
+      </div>
+    </div>
+  );
+}
