@@ -354,7 +354,7 @@ export const FRONTS: FrontDef[] = [
   { id: "laundromat", name: "Sunrise Laundromat", emoji: "🧺",
     flavor: "We clean shirts. Mostly shirts. Some paper.",
     district: "docks", price: 600, priceCurrency: "dirty",
-    baseThroughput: 14, baseCut: 0.35, cutPerLevel: 0.012, cutFloor: 0.2,
+    baseThroughput: 26, baseCut: 0.35, cutPerLevel: 0.012, cutFloor: 0.2,
     throughputGrowth: 1.55, upgradeBase: 1_400, upgradeGrowth: 1.85 },
   { id: "barber", name: "Kowalski's Barber Shop", emoji: "💈",
     flavor: "Two chairs, one till, zero questions.",
@@ -525,12 +525,12 @@ export const HEAT_TUNING = {
   passivePerUnit: 0.0008,
   racketWeight: (index: number) => 1 + index * 0.35,
   /** Dirty stockpile above this many seconds of laundering capacity heats up. */
-  stockpileGraceSeconds: 120,
-  stockpileFloor: 2_500,
+  stockpileGraceSeconds: 150,
+  stockpileFloor: 9_000,
   stockpileMaxRate: 0.08,
   stockpileRateK: 0.02,
   /** Passive cool-down when lying low. */
-  decayPerSec: 0.009,
+  decayPerSec: 0.012,
   /** Each active precinct payroll multiplies heat gain by this. */
   payrollFactor: 0.76,
   /** Payroll cost per minute, per precinct (dirty). */
@@ -638,9 +638,9 @@ export const SHIPMENT_ROUTES: ShipmentRouteDef[] = [
 ];
 
 export const SHIPMENT_SIZES = [
-  { id: "small", name: "Light Load", seconds: 25, heat: 5, floor: 120 },
-  { id: "medium", name: "Full Truck", seconds: 75, heat: 9, floor: 600 },
-  { id: "large", name: "The Works", seconds: 200, heat: 14, floor: 2_600 },
+  { id: "small", name: "Light Load", seconds: 25, heat: 3, floor: 120 },
+  { id: "medium", name: "Full Truck", seconds: 75, heat: 7, floor: 600 },
+  { id: "large", name: "The Works", seconds: 200, heat: 12, floor: 2_600 },
 ] as const;
 
 export const SHIPMENT_COPY = {
