@@ -59,35 +59,31 @@ export function Header({ onProfileTap, onHeatTap }: { onProfileTap: () => void; 
         </div>
       </div>
 
-      <div className="cash-block">
-        <div className="cash-row">
-          <div className="cash-col dirty" title={LAUNDER.dirtyHint}>
-            <div className="cash-tag">💵 {LAUNDER.dirtyLabel}</div>
-            <div className="cash-amount dirty" ref={cashRef}>{money(game.state.cash)}</div>
-          </div>
-          <div className="cash-col clean" title={LAUNDER.cleanHint}>
-            <div className="cash-tag">🏦 {LAUNDER.cleanLabel}</div>
-            <div className="cash-amount clean">{money(game.state.cleanCash)}</div>
-          </div>
+      <div className="ledger-plate">
+        <div className="plate-col" title={LAUNDER.dirtyHint}>
+          <div className="ledger-tag dirty">{LAUNDER.dirtyLabel}</div>
+          <div className="cash-amount dirty" ref={cashRef}>{money(game.state.cash)}</div>
+          <div className="plate-sub">{money(perSec)}{LABELS.perSec}</div>
         </div>
-        <div className="cash-meta">
-          <span className="persec">
-            <span className="chip-emoji">💵</span>
-            {money(perSec)}{LABELS.perSec}
-          </span>
-          <span className={`viral-chip ${game.viralBuffActive ? "buffed" : ""}`}>
-            <span className="chip-emoji">🗞️</span>
-            {PRESS.chip} ×{Math.pow(2, viral)}
-          </span>
-          {game.milleBuffActive && <span className="buff-chip">⚡ ×2 INCOME</span>}
+        <div className="plate-divider" aria-hidden>
+          <span className="plate-rule" />
+          <span className="plate-diamond">◆</span>
+          <span className="plate-rule" />
+        </div>
+        <div className="plate-col" title={LAUNDER.cleanHint}>
+          <div className="ledger-tag clean">{LAUNDER.cleanLabel}</div>
+          <div className="cash-amount clean">{money(game.state.cleanCash)}</div>
+          <div className="plate-sub">
+            <span className={`press-tag ${game.viralBuffActive ? "buffed" : ""}`}>
+              {PRESS.chip} ×{Math.pow(2, viral)}
+            </span>
+            {game.milleBuffActive && <span className="buff-chip">×2 INCOME</span>}
+          </div>
         </div>
       </div>
 
       <div className="viral-track" title="Grow every racket to make the front page">
-        <div className="viral-track-label">
-          <span className="chip-emoji">🗞️</span>
-          {PRESS.tracker}
-        </div>
+        <span className="viral-track-label">{PRESS.tracker}</span>
         <div className="viral-bar">
           <div
             className="viral-bar-fill"

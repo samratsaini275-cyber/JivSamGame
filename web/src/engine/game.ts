@@ -97,11 +97,11 @@ export class Game {
   }
 
   get viralBuffActive(): boolean {
-    return (this.state.viralBuffUntil ?? 0) > Date.now();
+    return this.state.viralBuffUntil !== null && Date.now() < this.state.viralBuffUntil;
   }
 
   get milleBuffActive(): boolean {
-    return (this.state.milleBuffUntil ?? 0) > Date.now();
+    return this.state.milleBuffUntil !== null && Date.now() < this.state.milleBuffUntil;
   }
 
   get effectiveViralTier(): number {
@@ -386,11 +386,12 @@ export class Game {
   // MARK: The law — heat, bribes, payroll, investigation, raids, prison
 
   get inPrison(): boolean {
-    return (this.state.prisonUntil ?? 0) > Date.now();
+    return this.state.prisonUntil !== null && Date.now() < this.state.prisonUntil;
   }
 
   get prisonSecondsLeft(): number {
-    return Math.max(0, ((this.state.prisonUntil ?? 0) - Date.now()) / 1000);
+    if (this.state.prisonUntil === null) return 0;
+    return Math.max(0, (this.state.prisonUntil - Date.now()) / 1000);
   }
 
   get underInvestigation(): boolean {
@@ -944,6 +945,11 @@ export class Game {
 
   // MARK: Tick loop
 
+  /** Test/sim hook: advance the simulation without the wall-clock interval. */
+  debugTick(dt: number): void {
+    this.tick(dt);
+  }
+
   private tick(dt: number): void {
     let changed = false;
     for (let i = 0; i < this.state.hustles.length; i++) {
@@ -1039,6 +1045,6 @@ function rexIdleBarkFor(game: Game): string {
 export const game = Game.loadOrNew();
 
 // Dev console access: window.game.state.cash += 1e6, etc.
-if (import.meta.env.DEV) {
+if (typeof window !== "undefined" && import.meta.env.DEV) {
   (window as unknown as { game: Game }).game = game;
 }

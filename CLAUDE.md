@@ -2,7 +2,30 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## What this is
+## Two apps live here
+
+1. **`web/` — "Bootleg Empire"** (Vite + React 18 + TypeScript): the mobile-first web version, re-themed as a 1926 Prohibition mob tycoon with an interactive canvas city map, dirty/clean laundering economy, police heat/prison system, shipments, Respect levels and Legacy prestige. See "The web app" section below.
+2. **`Sources/` — "Drip Empire"** (SwiftPM macOS): the original streetwear-themed idle game. See the Swift sections that follow.
+
+The two share design DNA (same economy math, tick pattern, prestige curve) but have separate codebases and save formats. Work on one does not touch the other.
+
+## The web app (`web/`)
+
+```bash
+cd web && npm install
+npm run dev    # vite dev server on port 5199
+npm test       # vitest: economy unit tests + 15-min fast-forward balance sim
+npm run build  # tsc + vite build
+```
+
+- **Theme config is law:** every player-facing string, palette token, business/district/plot definition and tuning constant lives in `web/src/theme/content.ts`. Re-skins and store-review edits happen in that one file — never scatter strings in components.
+- **Engine layers** (mirrors the Swift architecture): `engine/formulas.ts` pure math → `engine/state.ts` versioned save snapshot (localStorage key `clout-empire-save-v1`, `saveVersion: 2`, migration in `migrate()`) → `engine/game.ts` the `Game` class owning the 10 Hz tick (production, laundering, shipments, heat/law) with a listener bridge to React (`useSyncExternalStore` via `ui/hooks.ts`).
+- **Persisted IDs are load-bearing:** hustle indices, item/front/district ids and stat rows must not be renamed/reordered — display names come from the theme config.
+- **Map:** procedural vector canvas (`map/render.ts`), no bitmap assets; `map/camera.ts` handles pan/pinch/momentum; DOM overlays for HUD/sheets. Cosmetic FX are event-driven and capped.
+- **Tests:** `engine/__tests__/` uses fake timers + a localStorage shim; the sim harness fast-forwards a scripted bot through a fresh session to check balance targets (laundering bottleneck ~8–10 min, first investigation ≲13 min).
+- In dev, `window.game` is exposed for console debugging.
+
+## What the Swift app is
 
 "Drip Empire" (formerly Clout Empire) — a satirical AdVenture Capitalist-style idle game about faking a streetwear empire. SwiftPM macOS executable (macOS 13+), SwiftUI, no external dependencies. The window is phone-shaped (390×~800) and views are kept iOS-portable for a possible future Xcode target. The original design doc (`readme.md.rtf`, referenced by section number in code comments like "README §4") was removed in commit 319c80f; recover it from git history and read with `textutil -convert txt -stdout` if needed.
 

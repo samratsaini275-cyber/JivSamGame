@@ -31,9 +31,9 @@ export function FrontsSection() {
           </div>
         </div>
         <div className="wash-flow" aria-hidden>
-          <span className="wash-dirty">💵</span>
+          <span className="wash-dirty">$</span>
           <span className="wash-arrow">→</span>
-          <span className="wash-clean">🏦</span>
+          <span className="wash-clean">$</span>
         </div>
       </div>
 

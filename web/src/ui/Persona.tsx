@@ -63,7 +63,7 @@ export function PersonaScreen() {
             {personaItemsForSlot(slot).map((item) => {
               const owns = game.ownsCosmetic(item);
               const equipped = game.isCosmeticEquipped(item);
-              const afford = game.state.cash >= item.cost;
+              const afford = game.state.cleanCash >= item.cost;
               return (
                 <div key={item.id} className={`drip-row ${equipped ? "equipped" : ""}`}>
                   <span className="drip-emoji">{item.emoji}</span>
@@ -83,7 +83,7 @@ export function PersonaScreen() {
                       disabled={!afford}
                       onClick={() => { game.buyCosmetic(item); sfx.buy(); }}
                     >
-                      {money(item.cost)}
+                      🏦 {money(item.cost)}
                     </button>
                   )}
                 </div>

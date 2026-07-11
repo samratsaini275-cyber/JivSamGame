@@ -215,7 +215,7 @@ export const FIXER_ITEMS: Record<string, { name: string; blurb: string; boost: s
     boost: "+15% income, established rackets (Tier 1+)" },
   daytona: { name: "The Judge's Heirloom", emoji: "🕰️",
     blurb: "Won in a card game the judge denies attending.",
-    boost: "+2% Respect gain — permanent, survives a New Family" },
+    boost: "+2% Legacy gain — permanent, survives a New Family" },
   mille: { name: "The Minute Repeater", emoji: "💎",
     blurb: "Chimes the hour. Nobody who owns one needs to know the hour.",
     boost: "×2 income for 10s whenever you expand a racket" },
@@ -262,7 +262,7 @@ export const BOSS = {
   } as Record<string, { name: string; emoji: string }>,
   slots: { Clothes: "Suits", Jewelry: "Rings", Watch: "Watches" } as Record<string, string>,
   tierNames: ["", "Modest", "Sharp", "Stately", "Heirloom"],
-  grailNote: " · +0.5% Respect on New Family",
+  grailNote: " · +0.5% Legacy on New Family",
   items: {
     thrifted: { name: "Secondhand Tweed", emoji: "🧥" },
     streetdrop: { name: "Tailored Pinstripe", emoji: "🤵" },

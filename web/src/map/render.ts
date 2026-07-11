@@ -123,13 +123,33 @@ export function drawScene(
     dpr * (viewH / 2 - cam.y * cam.zoom),
   );
 
+  // Visible world bounds for culling (generous margin for signs/labels).
+  const halfW = viewW / 2 / cam.zoom;
+  const halfH = viewH / 2 / cam.zoom;
+  const vx0 = cam.x - halfW - 80, vx1 = cam.x + halfW + 80;
+  const vy0 = cam.y - halfH - 80, vy1 = cam.y + halfH + 80;
+
   drawWaterLines(ctx, now, reducedMotion);
+  // engraved chart label in the open water
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.font = "24px Limelight, serif";
+  ctx.fillStyle = "rgba(140, 185, 178, 0.22)";
+  ctx.fillText("NEW  CARTHAGE  HARBOR", 1000, 1365);
+  ctx.font = "13px Limelight, serif";
+  ctx.fillText("EST. 1926", 1000, 1385);
+  ctx.restore();
   drawBridges(ctx);
-  for (const d of DISTRICTS) drawDistrict(ctx, d, game.districtUnlocked(d.id), game, night);
+  for (const d of DISTRICTS) {
+    const r = d.rect;
+    if (r.x + r.w < vx0 || r.x > vx1 || r.y + r.h < vy0 || r.y > vy1) continue;
+    drawDistrict(ctx, d, game.districtUnlocked(d.id), game, night);
+  }
   drawCompass(ctx);
 
-  // plots
+  // plots (culled to the viewport)
   for (const v of PLOT_VISUALS) {
+    if (v.x1 < vx0 || v.x0 > vx1 || v.y1 < vy0 || v.y0 > vy1) continue;
     const unlocked = game.districtUnlocked(v.def.district);
     drawPlot(ctx, v, game, unlocked, now, night);
   }
