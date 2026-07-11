@@ -22,8 +22,9 @@ export function PersonaScreen() {
         <div className="profile-info">
           <div className="profile-handle">"{game.state.handle}"</div>
           <div className="profile-stats">
-            <span className="stat">🤝 {game.state.clout.toLocaleString()} {LABELS.respect}</span>
-            <span className="stat">💰 {money(game.state.lifetimeCash)} {BOSS.lifetimeStat}</span>
+            <span className="stat">🤝 {LABELS.respect} L{game.respectLevel}</span>
+            <span className="stat">👑 {game.state.clout.toLocaleString()} {LABELS.legacy}</span>
+            <span className="stat">💰 {money(game.state.lifetimeClean)} {BOSS.lifetimeStat}</span>
           </div>
           <div className="profile-slots">
             {PERSONA_SLOTS.map((slot) => {

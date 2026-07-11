@@ -41,6 +41,24 @@ export interface GameState {
   /** Last time the Judge's favor threw a case out. */
   lastCaseDismissedAt: number | null;
 
+  // MARK: Progression (§5–6)
+  /** Respect XP — levels gate districts and lawyer perks. Survives prestige. */
+  respectXP: number;
+  /** One-time milestone headline ids already fired. */
+  milestones: string[];
+  /** The single in-flight shipment, or null. Timestamps epoch ms. */
+  activeShipment: {
+    routeID: string;
+    sizeID: string;
+    departedAt: number;
+    arrivesAt: number;
+    payout: number;
+    heatOnArrive: number;
+    /** When the checkpoint pops (0 = no checkpoint this run). */
+    checkpointAt: number;
+    checkpointResolved: boolean;
+  } | null;
+
   lastSaved: number | null; // epoch ms
 
   // Rex Calloway's flex economy (wiped on Rebrand except Daytona count)
@@ -80,6 +98,7 @@ export function newGame(): GameState {
     clout: 0, hustles, fronts: {}, districtsUnlocked: ["docks"],
     heat: 0, payrolls: [], investigationEndsAt: null, prisonUntil: null,
     raidedHustles: [], lawyerPerks: [], lastCaseDismissedAt: null,
+    respectXP: 0, milestones: [], activeShipment: null,
     lastSaved: null,
     ownedItems: [], equippedWrist: null, equippedGarage: null,
     daytonaPurchases: 0, rexMet: false,
@@ -113,6 +132,8 @@ export function applyRebrand(state: GameState, gained: number): void {
   state.investigationEndsAt = null;
   state.prisonUntil = null;
   state.raidedHustles = [];
+  state.activeShipment = null;
+  // respectXP and milestones survive — the town remembers the name.
 }
 
 /** v1 (CloutEmpire) → v2 (Bootleg Empire): old cash becomes dirty cash. */

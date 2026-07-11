@@ -285,22 +285,26 @@ export const BOSS = {
 
 export const FAMILY = {
   title: "START A NEW FAMILY",
-  sub: "Burn the ledgers. Keep the name. Every point of Respect boosts all income by 2% — forever.",
-  statHeld: "RESPECT HELD",
+  sub: "Burn the ledgers. Keep the name. Every Legacy token boosts all income by 2% — forever.",
+  statHeld: "LEGACY HELD",
   statBonus: "INCOME BONUS",
   statGain: "ON NEW FAMILY",
   keepTitle: "✓ THE FAMILY KEEPS",
-  keeps: ["Respect & its income bonus", "The fortune's record", "Your alias & wardrobe", "The Judge's favor"],
+  keeps: ["Legacy & its income bonus", "Respect & the fortune's record", "Your alias & wardrobe", "The Judge's favor"],
   loseTitle: "✗ THE FAMILY LOSES",
-  loses: (cash: string) => [`Cash on hand (${cash})`, "All rackets & crews", "Sal's rented finery", "Active buffs"],
+  loses: (cash: string) => [`Cash on hand (${cash})`, "All rackets & crews", "Sal's rented finery", "Heat, payrolls & buffs"],
   cta: "START A NEW FAMILY",
-  ctaArmed: (gain: string) => `TAP AGAIN — GAIN ${gain} RESPECT`,
-  lockedTitle: "Grow the fortune to earn the family's first Respect.",
+  ctaArmed: (gain: string) => `TAP AGAIN — GAIN ${gain} LEGACY`,
+  lockedTitle: "Grow the Family Fortune (clean cash) to earn the first Legacy token.",
+  perksTitle: "WHAT LEGACY BUYS",
   toastTitle: "A NEW FAMILY RISES",
-  toastSub: (gain: string) => `+${gain} Respect secured`,
+  toastSub: (gain: string) => `+${gain} Legacy secured`,
   bonusNote: (pct: number, daytonas: number) =>
-    `🕰️ Respect gain boosted +${pct}%${daytonas > 0 ? ` (Judge's Heirloom ×${daytonas})` : ""}`,
+    `🕰️ Legacy gain boosted +${pct}%${daytonas > 0 ? ` (Judge's Heirloom ×${daytonas})` : ""}`,
 } as const;
+
+/** Family Fortune (lifetime clean) per √-step of Legacy. */
+export const LEGACY_DIVISOR = 10_000;
 
 // ---------------------------------------------------------------------------
 // Offline earnings & misc UI copy
@@ -597,4 +601,132 @@ export const HEAT_COPY = {
   owned: "SECURED",
 } as const;
 
-// Shipments content arrives with Phase 5.
+// ---------------------------------------------------------------------------
+// Shipments — §5, the active-play moment.
+// ---------------------------------------------------------------------------
+
+export interface ShipmentRouteDef {
+  id: string;
+  name: string;
+  blurb: string;
+  emoji: string;
+  vehicle: "truck" | "boat";
+  /** Racket indices that must be owned (and not raided). */
+  requires: number[];
+  /** Plot ids the vehicle travels between. */
+  fromPlot: string;
+  toPlot: string;
+  /** Multipliers on the base payout/heat table. */
+  payoutMult: number;
+  heatMult: number;
+  travelSeconds: number;
+}
+
+export const SHIPMENT_ROUTES: ShipmentRouteDef[] = [
+  { id: "still_run", name: "Still Run", emoji: "🚚", vehicle: "truck",
+    blurb: "Mason jars under flour sacks, back roads the whole way.",
+    requires: [0, 1], fromPlot: "p_still", toPlot: "p_anchor",
+    payoutMult: 1, heatMult: 1, travelSeconds: 12 },
+  { id: "rum_run", name: "Rum Run", emoji: "⛵", vehicle: "boat",
+    blurb: "Twelve miles out, the law ends. The ledger doesn't.",
+    requires: [4], fromPlot: "p_smuggle", toPlot: "p_anchor",
+    payoutMult: 2.2, heatMult: 1.5, travelSeconds: 16 },
+  { id: "harbor_convoy", name: "Harbor Convoy", emoji: "🚢", vehicle: "boat",
+    blurb: "Three freighters of 'olive oil.' The manifests sing.",
+    requires: [13], fromPlot: "p_freight", toPlot: "p_smuggle",
+    payoutMult: 5, heatMult: 2.2, travelSeconds: 18 },
+];
+
+export const SHIPMENT_SIZES = [
+  { id: "small", name: "Light Load", seconds: 25, heat: 5, floor: 120 },
+  { id: "medium", name: "Full Truck", seconds: 75, heat: 9, floor: 600 },
+  { id: "large", name: "The Works", seconds: 200, heat: 14, floor: 2_600 },
+] as const;
+
+export const SHIPMENT_COPY = {
+  cta: "SHIPMENT",
+  panelTitle: "SEND A SHIPMENT",
+  panelSub: "Big loads pay big and draw eyes. The badge is watching the roads.",
+  confirm: (pay: string, heat: number) => `+${pay} · +${heat} HEAT`,
+  departed: "SHIPMENT ROLLING",
+  departedSub: (name: string) => `${name} is on the move`,
+  arrivedToast: "SHIPMENT LANDS!",
+  arrivedSub: (pay: string) => `${pay} in dirty cash hits the till`,
+  seizedToast: "SHIPMENT SEIZED!",
+  seizedSub: "The raid caught the load on the road.",
+  inTransit: (s: number) => `IN TRANSIT · ${s}s`,
+  checkpointTitle: "CHECKPOINT AHEAD!",
+  checkpointSub: "A badge waves the traffic down.",
+  detour: (s: number) => `TAKE THE DETOUR · +${s}s, −half heat`,
+  barrel: "BARREL THROUGH · +2 heat",
+  needRoute: "Open the right rackets to run this route.",
+  onlyOne: "One load at a time — the roads have eyes.",
+} as const;
+
+export const SHIPMENT_TUNING = {
+  /** Payout ≈ potential income/sec × size.seconds, min size.floor. */
+  checkpointChance: 0.5,
+  detourExtraSeconds: 6,
+  barrelExtraHeat: 2,
+  respectXP: { still_run: 10, rum_run: 25, harbor_convoy: 60 } as Record<string, number>,
+} as const;
+
+// ---------------------------------------------------------------------------
+// Respect levels (XP) & Legacy prestige — §6.
+// ---------------------------------------------------------------------------
+
+export const RESPECT = {
+  label: "Respect",
+  /** XP needed to go from level L to L+1 (L is 1-based). */
+  xpForNext: (level: number) => Math.round(150 * Math.pow(1.55, level - 1)),
+  xp: {
+    perUnit: 1,
+    firstPlot: 25,
+    crewHire: 15,
+    fixerItem: 5,
+    districtUnlock: 200,
+  },
+  levelChip: (level: number) => `🤝 L${level}`,
+  levelUpToast: (level: number) => `RESPECT RISES — LEVEL ${level}`,
+  levelUpSub: "New doors open across New Carthage",
+} as const;
+
+export const LEGACY = {
+  label: "Legacy",
+  /** Each token: +2% income, −0.1% launder cut (cap 5%), −0.5 release heat. */
+  cutPerToken: 0.001,
+  cutCap: 0.05,
+  releaseHeatPerToken: 0.5,
+  releaseHeatFloor: 10,
+  perks: (n: number) => [
+    `+${(n * 2).toLocaleString()}% all production`,
+    `−${Math.min(5, n * 0.1).toFixed(1)}% laundering cut`,
+    `Release heat ${Math.max(10, 30 - n * 0.5).toFixed(0)} instead of 30`,
+  ],
+} as const;
+
+/** Lawyer perk Respect-level requirements (id → level). */
+export const LAWYER_RESPECT: Record<string, number> = {
+  retainer: 10,
+  bagman: 11,
+  silk_glove: 13,
+};
+
+// ---------------------------------------------------------------------------
+// One-time milestone headlines — §6.
+// ---------------------------------------------------------------------------
+
+export const MILESTONES: Record<string, { title: string; sub: string; xp: number }> = {
+  first_shipment: {
+    title: "FIRST LOAD DELIVERED",
+    sub: "Somewhere, a thirsty city sighs with relief", xp: 50 },
+  velvet_open: {
+    title: "THE VELVET ROOM OPENS ITS DOORS",
+    sub: "Feathers! Brass! A trumpet solo the papers call 'indecently good'", xp: 150 },
+  first_raid_survived: {
+    title: "THE BOSS WALKS FREE",
+    sub: "Reporters swarm the courthouse steps. The city takes notes", xp: 100 },
+  bridge_islands: {
+    title: "BRIDGE TO THE HARBOR ISLANDS COMPLETE",
+    sub: "The empire reaches blue water at last", xp: 250 },
+};

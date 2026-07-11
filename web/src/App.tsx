@@ -13,6 +13,7 @@ import { money } from "./ui/format";
 import { LABELS, MISC } from "./theme/content";
 import { MapScreen } from "./map/MapScreen";
 import { LawPanel, PrisonOverlay } from "./ui/Law";
+import { CheckpointPopup } from "./ui/Shipment";
 
 type Tab = "map" | "empire" | "dms" | "rebrand" | "profile";
 
@@ -74,6 +75,7 @@ export function App() {
         </nav>
 
         <EffectsLayer />
+        <CheckpointPopup />
         {lawOpen && <LawPanel onClose={() => setLawOpen(false)} />}
         {game.inPrison && <PrisonOverlay />}
         {!game.personaCreated && <PersonaCreation />}

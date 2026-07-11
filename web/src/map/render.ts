@@ -3,7 +3,7 @@
 import { Camera } from "./camera";
 import {
   WORLD, DISTRICTS, DistrictDef, PLOTS, PlotDef, LANDMARKS, FRONTS,
-  MAP_COPY, PALETTE,
+  MAP_COPY, PALETTE, SHIPMENT_ROUTES,
 } from "../theme/content";
 import { HUSTLES } from "../engine/data";
 import { Game } from "../engine/game";
@@ -161,6 +161,8 @@ export function drawScene(
   }
   ctx.restore();
 
+  drawActiveShipment(ctx, game, now);
+
   // cash bills
   ctx.textAlign = "center";
   for (const b of fx.bills) {
@@ -181,6 +183,86 @@ export function drawScene(
     ctx.fillStyle = `rgba(10, 14, 34, ${0.32 * night})`;
     ctx.fillRect(0, 0, viewW, viewH);
   }
+}
+
+/** The in-flight shipment vehicle: gold-trimmed, unmistakably yours. */
+function drawActiveShipment(ctx: CanvasRenderingContext2D, game: Game, now: number): void {
+  const sh = game.state.activeShipment;
+  if (!sh) return;
+  const route = SHIPMENT_ROUTES.find((r) => r.id === sh.routeID);
+  if (!route) return;
+  const from = PLOT_VISUALS.find((p) => p.def.id === route.fromPlot);
+  const to = PLOT_VISUALS.find((p) => p.def.id === route.toPlot);
+  if (!from || !to) return;
+
+  // Freeze at the checkpoint while the player decides.
+  const clock = sh.checkpointAt > 0 && !sh.checkpointResolved && now >= sh.checkpointAt
+    ? sh.checkpointAt
+    : Math.min(now, sh.arrivesAt);
+  const p = Math.min(1, Math.max(0, (clock - sh.departedAt) / (sh.arrivesAt - sh.departedAt)));
+
+  let x: number, y: number;
+  if (route.vehicle === "boat") {
+    // Boats swing out into the water on a shallow arc.
+    const midX = (from.def.x + to.def.x) / 2;
+    const midY = Math.max(from.def.y, to.def.y) + 120;
+    const t = p;
+    x = (1 - t) * (1 - t) * from.def.x + 2 * (1 - t) * t * midX + t * t * to.def.x;
+    y = (1 - t) * (1 - t) * (from.def.y + 20) + 2 * (1 - t) * t * midY + t * t * (to.def.y + 20);
+  } else if (p < 0.5) {
+    x = from.def.x + (to.def.x - from.def.x) * (p / 0.5);
+    y = from.def.y + 20;
+  } else {
+    x = to.def.x;
+    y = from.def.y + 20 + (to.def.y - from.def.y) * ((p - 0.5) / 0.5);
+  }
+
+  ctx.save();
+  if (route.vehicle === "boat") {
+    ctx.fillStyle = "#1c2130";
+    ctx.strokeStyle = PALETTE.gold;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x - 18, y - 4);
+    ctx.lineTo(x + 18, y - 4);
+    ctx.lineTo(x + 10, y + 8);
+    ctx.lineTo(x - 10, y + 8);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = PALETTE.paper;
+    ctx.fillRect(x - 3, y - 16, 5, 12);
+    // wake
+    ctx.strokeStyle = "rgba(232, 220, 195, 0.3)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(x - 22, y + 10);
+    ctx.lineTo(x - 34, y + 13);
+    ctx.moveTo(x - 22, y + 4);
+    ctx.lineTo(x - 32, y + 4);
+    ctx.stroke();
+  } else {
+    ctx.fillStyle = "#1c2130";
+    ctx.strokeStyle = PALETTE.gold;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(x - 15, y - 9, 30, 17, 4);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = PALETTE.goldDeep;
+    ctx.fillRect(x + 5, y - 6, 8, 11);
+    ctx.fillStyle = "#0a0c11";
+    ctx.beginPath();
+    ctx.arc(x - 8, y + 9, 3.5, 0, Math.PI * 2);
+    ctx.arc(x + 8, y + 9, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // cargo tag
+  ctx.textAlign = "center";
+  ctx.font = "900 9px 'Barlow Condensed', sans-serif";
+  ctx.fillStyle = PALETTE.gold;
+  ctx.fillText(route.emoji + " " + route.name.toUpperCase(), x, y - 20);
+  ctx.restore();
 }
 
 function drawWaterLines(ctx: CanvasRenderingContext2D, now: number, reduced: boolean): void {

@@ -4,7 +4,10 @@ import { GameEvent, game } from "../engine/game";
 import { HUSTLES, tierName } from "../engine/data";
 import { money } from "./format";
 import { sfx } from "./sfx";
-import { PRESS, FAMILY, MAP_COPY, HEAT_COPY, districtByID } from "../theme/content";
+import {
+  PRESS, FAMILY, MAP_COPY, HEAT_COPY, SHIPMENT_COPY, SHIPMENT_ROUTES, RESPECT,
+  districtByID,
+} from "../theme/content";
 
 interface Pop { id: number; x: number; y: number; text: string }
 interface Confetto { id: number; x: number; y: number; dx: number; dy: number; color: string; spin: number }
@@ -96,6 +99,29 @@ export function EffectsLayer() {
         title = HEAT_COPY.releaseToast;
         sub = HEAT_COPY.releaseSub;
         sfx.milestone();
+      } else if (e.kind === "shipmentDeparted") {
+        const route = SHIPMENT_ROUTES.find((r) => r.id === e.routeID);
+        title = SHIPMENT_COPY.departed;
+        sub = SHIPMENT_COPY.departedSub(route?.name ?? "The load");
+        sfx.post();
+      } else if (e.kind === "shipmentArrived") {
+        title = SHIPMENT_COPY.arrivedToast;
+        sub = SHIPMENT_COPY.arrivedSub(money(e.amount));
+        sfx.buy();
+      } else if (e.kind === "shipmentSeized") {
+        title = SHIPMENT_COPY.seizedToast;
+        sub = SHIPMENT_COPY.seizedSub;
+        sfx.warning();
+      } else if (e.kind === "respectLevel") {
+        title = RESPECT.levelUpToast(e.level);
+        sub = RESPECT.levelUpSub;
+        sfx.milestone();
+      } else if (e.kind === "headline") {
+        title = e.title;
+        sub = e.sub;
+        sfx.viral();
+      } else if (e.kind === "checkpoint") {
+        return; // handled by the CheckpointPopup, not a toast
       }
 
       const burst: Confetto[] = Array.from({ length: e.kind === "milestone" ? 26 : 44 }, () => ({

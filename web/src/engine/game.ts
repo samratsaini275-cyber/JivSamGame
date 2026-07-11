@@ -9,6 +9,8 @@ import {
   FIXER, FRONTS, FrontDef, VELVET_CLEAN_INCOME_PER_LEVEL,
   DISTRICTS, DistrictDef, PLOTS,
   HEAT_TUNING as HT, LAWYER_PERKS,
+  SHIPMENT_ROUTES, ShipmentRouteDef, SHIPMENT_SIZES, SHIPMENT_TUNING,
+  RESPECT, LEGACY, LEGACY_DIVISOR, LAWYER_RESPECT, MILESTONES,
 } from "../theme/content";
 
 export type BuyMode = "x1" | "x10" | "x100" | "max";
@@ -28,7 +30,13 @@ export type GameEvent =
   | { kind: "investigation" }
   | { kind: "raid"; hustleIndex: number }
   | { kind: "caseDismissed" }
-  | { kind: "released" };
+  | { kind: "released" }
+  | { kind: "shipmentDeparted"; routeID: string }
+  | { kind: "checkpoint" }
+  | { kind: "shipmentArrived"; amount: number }
+  | { kind: "shipmentSeized" }
+  | { kind: "respectLevel"; level: number }
+  | { kind: "headline"; title: string; sub: string };
 
 /** Precinct landmark ids in payroll-cost order (matches district order). */
 export const PRECINCTS = [
@@ -190,8 +198,14 @@ export class Game {
     );
   }
 
+  /** Legacy tokens on prestige — converts the Family Fortune (clean lifetime). */
   get cloutOnRebrand(): number {
-    return F.cloutGain(this.state.lifetimeCash, this.state.clout, this.cloutGainRateBonus);
+    return F.cloutGain(
+      this.state.lifetimeClean,
+      this.state.clout,
+      this.cloutGainRateBonus,
+      LEGACY_DIVISOR,
+    );
   }
 
   // MARK: Districts
@@ -210,13 +224,19 @@ export class Game {
   }
 
   canUnlockDistrict(def: DistrictDef): boolean {
-    return !this.districtUnlocked(def.id) && this.state.cleanCash >= def.price;
+    return (
+      !this.districtUnlocked(def.id) &&
+      this.state.cleanCash >= def.price &&
+      this.respectLevel >= def.respectLevel
+    );
   }
 
   unlockDistrict(def: DistrictDef): boolean {
     if (this.inPrison || !this.canUnlockDistrict(def)) return false;
     this.state.cleanCash -= def.price;
     this.state.districtsUnlocked.push(def.id);
+    this.grantRespect(RESPECT.xp.districtUnlock);
+    if (def.id === "islands") this.milestoneOnce("bridge_islands");
     this.emit({ kind: "districtUnlocked", districtID: def.id });
     this.save();
     this.notify();
@@ -225,6 +245,142 @@ export class Game {
 
   get nextLockedDistrict(): DistrictDef | null {
     return DISTRICTS.find((d) => !this.districtUnlocked(d.id)) ?? null;
+  }
+
+  // MARK: Respect (XP levels) & milestones
+
+  get respectLevel(): number {
+    let xp = this.state.respectXP;
+    let level = 1;
+    while (level < 40) {
+      const need = RESPECT.xpForNext(level);
+      if (xp < need) break;
+      xp -= need;
+      level++;
+    }
+    return level;
+  }
+
+  get respectProgress(): { into: number; needed: number } {
+    let xp = this.state.respectXP;
+    let level = 1;
+    while (level < 40) {
+      const need = RESPECT.xpForNext(level);
+      if (xp < need) return { into: xp, needed: need };
+      xp -= need;
+      level++;
+    }
+    return { into: 0, needed: RESPECT.xpForNext(level) };
+  }
+
+  grantRespect(xp: number): void {
+    const before = this.respectLevel;
+    this.state.respectXP += xp;
+    const after = this.respectLevel;
+    if (after > before) this.emit({ kind: "respectLevel", level: after });
+  }
+
+  /** Fire a scripted headline exactly once, with its Respect reward. */
+  private milestoneOnce(id: string): void {
+    if (this.state.milestones.includes(id)) return;
+    const m = MILESTONES[id];
+    if (!m) return;
+    this.state.milestones.push(id);
+    this.grantRespect(m.xp);
+    this.emit({ kind: "headline", title: m.title, sub: m.sub });
+  }
+
+  // MARK: Shipments — the active-play burst
+
+  /** All owned rackets' potential $/s (manual ones count at full tilt). */
+  get potentialIncomePerSec(): number {
+    return this.state.hustles.reduce((sum, s, i) => {
+      if (s.unitsOwned <= 0 || this.isRaided(i)) return sum;
+      return sum + this.incomePerCycle(i) / this.cycleTime(i);
+    }, 0);
+  }
+
+  routeAvailable(route: ShipmentRouteDef): boolean {
+    return route.requires.every(
+      (i) =>
+        this.state.hustles[i].unitsOwned > 0 &&
+        !this.isRaided(i) &&
+        this.hustleAvailable(i),
+    );
+  }
+
+  shipmentQuote(route: ShipmentRouteDef, sizeID: string): { payout: number; heat: number } {
+    const size = SHIPMENT_SIZES.find((s) => s.id === sizeID) ?? SHIPMENT_SIZES[0];
+    const payout = Math.max(
+      size.floor,
+      this.potentialIncomePerSec * size.seconds * route.payoutMult,
+    );
+    let heat = size.heat * route.heatMult;
+    if (this.frontLevel("importexport") > 0) heat *= 0.75; // Meridian's manifests
+    return { payout, heat: Math.round(heat) };
+  }
+
+  startShipment(routeID: string, sizeID: string): boolean {
+    if (this.inPrison || this.state.activeShipment) return false;
+    const route = SHIPMENT_ROUTES.find((r) => r.id === routeID);
+    if (!route || !this.routeAvailable(route)) return false;
+    const { payout, heat } = this.shipmentQuote(route, sizeID);
+    const now = Date.now();
+    const hasCheckpoint = Math.random() < SHIPMENT_TUNING.checkpointChance;
+    this.state.activeShipment = {
+      routeID,
+      sizeID,
+      departedAt: now,
+      arrivesAt: now + route.travelSeconds * 1000,
+      payout,
+      heatOnArrive: heat,
+      checkpointAt: hasCheckpoint ? now + route.travelSeconds * 450 : 0,
+      checkpointResolved: !hasCheckpoint,
+    };
+    this.emit({ kind: "shipmentDeparted", routeID });
+    this.notify();
+    return true;
+  }
+
+  /** Checkpoint choice: detour (slower, half heat) or barrel (+2 heat now). */
+  resolveCheckpoint(detour: boolean): void {
+    const sh = this.state.activeShipment;
+    if (!sh || sh.checkpointResolved) return;
+    sh.checkpointResolved = true;
+    if (detour) {
+      sh.arrivesAt += SHIPMENT_TUNING.detourExtraSeconds * 1000;
+      sh.heatOnArrive = Math.round(sh.heatOnArrive / 2);
+    } else {
+      this.state.heat = Math.min(100, this.state.heat + SHIPMENT_TUNING.barrelExtraHeat);
+    }
+    this.notify();
+  }
+
+  private checkpointEmitted = false;
+
+  private shipmentTick(): void {
+    const sh = this.state.activeShipment;
+    if (!sh) return;
+    const now = Date.now();
+    if (sh.checkpointAt > 0 && !sh.checkpointResolved && now >= sh.checkpointAt) {
+      if (!this.checkpointEmitted) {
+        this.checkpointEmitted = true;
+        this.emit({ kind: "checkpoint" });
+      }
+      // Safety: an unanswered checkpoint barrels through after 8s.
+      if (now >= sh.checkpointAt + 8000) this.resolveCheckpoint(false);
+      return; // hold the payout until the checkpoint resolves
+    }
+    if (now >= sh.arrivesAt) {
+      this.checkpointEmitted = false;
+      this.state.activeShipment = null;
+      this.deposit(sh.payout);
+      this.state.heat = Math.min(100, this.state.heat + sh.heatOnArrive);
+      this.grantRespect(SHIPMENT_TUNING.respectXP[sh.routeID] ?? 10);
+      this.milestoneOnce("first_shipment");
+      this.emit({ kind: "shipmentArrived", amount: sh.payout });
+      this.save();
+    }
   }
 
   // MARK: The law — heat, bribes, payroll, investigation, raids, prison
@@ -361,6 +517,7 @@ export class Game {
     if (this.inPrison || this.hasLawyerPerk(id)) return false;
     const perk = LAWYER_PERKS.find((p) => p.id === id);
     if (!perk || !this.districtUnlocked("row")) return false;
+    if (this.respectLevel < (LAWYER_RESPECT[id] ?? 0)) return false;
     if (this.state.cleanCash < perk.cost) return false;
     this.state.cleanCash -= perk.cost;
     this.state.lawyerPerks.push(id);
@@ -371,7 +528,12 @@ export class Game {
 
   private release(): void {
     this.state.prisonUntil = null;
-    this.state.heat = HT.heatAfterRelease;
+    // Legacy tokens teach the family how to walk out quieter.
+    this.state.heat = Math.max(
+      LEGACY.releaseHeatFloor,
+      HT.heatAfterRelease - this.state.clout * LEGACY.releaseHeatPerToken,
+    );
+    this.milestoneOnce("first_raid_survived");
     this.emit({ kind: "released" });
     this.save();
     this.notify();
@@ -449,6 +611,11 @@ export class Game {
 
     st.raidedHustles.push(target);
     st.prisonUntil = Date.now() + this.prisonSeconds() * 1000;
+    if (st.activeShipment) {
+      st.activeShipment = null; // the load is seized on the road
+      this.checkpointEmitted = false;
+      this.emit({ kind: "shipmentSeized" });
+    }
     this.emit({ kind: "raid", hustleIndex: target });
     this.save();
     this.notify();
@@ -466,10 +633,14 @@ export class Game {
     return def.baseThroughput * Math.pow(def.throughputGrowth, level - 1);
   }
 
-  /** Fraction lost in the wash at a given level. */
+  /** Fraction lost in the wash at a given level (Legacy shaves it further). */
   frontCut(def: FrontDef, level = this.frontLevel(def.id)): number {
+    const legacyBonus = Math.min(LEGACY.cutCap, this.state.clout * LEGACY.cutPerToken);
     if (level <= 0) return def.baseCut;
-    return Math.max(def.cutFloor, def.baseCut - def.cutPerLevel * (level - 1));
+    return Math.max(
+      0.03,
+      Math.max(def.cutFloor, def.baseCut - def.cutPerLevel * (level - 1)) - legacyBonus,
+    );
   }
 
   frontUpgradeCost(def: FrontDef, level = this.frontLevel(def.id)): number {
@@ -505,6 +676,8 @@ export class Game {
     if (def.priceCurrency === "dirty") this.state.cash -= def.price;
     else this.state.cleanCash -= def.price;
     this.state.fronts[def.id] = 1;
+    this.grantRespect(RESPECT.xp.firstPlot);
+    if (def.id === "velvet") this.milestoneOnce("velvet_open");
     this.notify();
     return true;
   }
@@ -633,6 +806,7 @@ export class Game {
     this.state.cash -= item.cost;
     this.state.ownedItems.push(item.id);
     if (item.id === "daytona") this.state.daytonaPurchases += 1;
+    this.grantRespect(RESPECT.xp.fixerItem);
     this.equipItem(item);
     return true;
   }
@@ -660,8 +834,10 @@ export class Game {
     if (count <= 0 || this.state.cash < cost) return;
     const tierBefore = this.tier(index);
     const viralBefore = this.viralTier;
+    const firstBuy = this.state.hustles[index].unitsOwned === 0;
     this.state.cash -= cost;
     this.state.hustles[index].unitsOwned += count;
+    this.grantRespect(count * RESPECT.xp.perUnit + (firstBuy ? RESPECT.xp.firstPlot : 0));
 
     // "Richard Mille": every unit purchase doubles income for 10 seconds.
     if (this.state.equippedWrist === "mille") {
@@ -706,6 +882,7 @@ export class Game {
     if (s.ghostwriterHired || this.state.cash < HUSTLES[index].ghostwriterCost) return;
     this.state.cash -= HUSTLES[index].ghostwriterCost;
     s.ghostwriterHired = true;
+    this.grantRespect(RESPECT.xp.crewHire);
     this.notify();
   }
 
@@ -802,6 +979,7 @@ export class Game {
 
     // In lockup the family keeps the wash running at half speed.
     this.launder(dt, this.inPrison ? 0.5 : 1);
+    this.shipmentTick();
     this.lawTick(dt);
 
     this.ticksSinceSave++;

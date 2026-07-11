@@ -11,6 +11,7 @@ import { money } from "../ui/format";
 import { sfx } from "../ui/sfx";
 import { HustleCard } from "../ui/Empire";
 import { PrecinctRow } from "../ui/Law";
+import { ShipmentButton } from "../ui/Shipment";
 
 export function MapScreen() {
   const game = useGame();
@@ -21,6 +22,7 @@ export function MapScreen() {
   return (
     <div className="map-screen">
       <MapCanvas onSelect={setSel} />
+      <ShipmentButton />
       {sel && (
         <div className="sheet-backdrop" onClick={close}>
           <div className="sheet" onClick={(e) => e.stopPropagation()}>
@@ -40,11 +42,17 @@ function SheetContent({ sel, onClose }: { sel: MapSelection; onClose: () => void
     const d = districtByID(sel.id);
     if (game.districtUnlocked(d.id)) return <DistrictInfo id={d.id} />;
     const afford = game.canUnlockDistrict(d);
+    const level = game.respectLevel;
+    const needsRespect = level < d.respectLevel;
     return (
       <div className="sheet-body">
         <div className="sheet-title">{d.name}</div>
         <div className="sheet-flavor">{d.blurb}</div>
-        <div className="sheet-note">Reach Respect {d.respectLevel} · pay in clean cash</div>
+        <div className="sheet-note">
+          {needsRespect
+            ? `Reach Respect L${d.respectLevel} — the family is L${level}. Run shipments, open rackets.`
+            : `Respect L${d.respectLevel} ✓ · pay the ward bosses in clean cash`}
+        </div>
         <button
           className={`btn-cta ${afford ? "" : "disabled"}`}
           disabled={!afford}

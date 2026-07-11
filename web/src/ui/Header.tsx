@@ -5,7 +5,7 @@ import { HUSTLES, baseLookByID } from "../engine/data";
 import { game as gameInstance } from "../engine/game";
 import { IconSound } from "./Icons";
 import { isMuted, setMuted } from "./sfx";
-import { GAME, LABELS, PRESS, LAUNDER } from "../theme/content";
+import { GAME, LABELS, PRESS, LAUNDER, RESPECT } from "../theme/content";
 import { HeatBadge } from "./Law";
 
 export function Header({ onProfileTap, onHeatTap }: { onProfileTap: () => void; onHeatTap: () => void }) {
@@ -51,9 +51,11 @@ export function Header({ onProfileTap, onHeatTap }: { onProfileTap: () => void; 
         >
           <IconSound muted={muted} />
         </button>
-        <div className="clout-chip" title={`${LABELS.respect} — permanent income bonus`}>
-          <span className="chip-emoji">🤝</span>
-          <span>{game.state.clout.toLocaleString()}</span>
+        <div
+          className="clout-chip"
+          title={`${LABELS.respect} — ${game.respectProgress.into}/${game.respectProgress.needed} XP to the next level`}
+        >
+          <span>{RESPECT.levelChip(game.respectLevel)}</span>
         </div>
       </div>
 

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useGame } from "./hooks";
 import { cloutMultiplier } from "../engine/formulas";
 import { money } from "./format";
-import { FAMILY, LABELS } from "../theme/content";
+import { FAMILY, LABELS, LEGACY, LEGACY_DIVISOR } from "../theme/content";
 
 export function RebrandScreen() {
   const game = useGame();
@@ -57,6 +57,13 @@ export function RebrandScreen() {
         </div>
       </div>
 
+      {(clout > 0 || gain > 0) && (
+        <div className="ledger-col keep legacy-perks">
+          <div className="ledger-title">{FAMILY.perksTitle}</div>
+          <ul>{LEGACY.perks(clout + gain).map((p) => <li key={p}>{p}</li>)}</ul>
+        </div>
+      )}
+
       {gain > 0 ? (
         <button
           className={`btn-cta rebrand-btn ${armed ? "armed" : ""}`}
@@ -76,15 +83,15 @@ export function RebrandScreen() {
               className="clout-progress-fill"
               style={{
                 width: `${Math.min(
-                  (game.state.lifetimeCash /
-                    Math.max(nextCloutTarget(game.state.lifetimeCash, clout, game.cloutGainRateBonus), 1)) * 100,
+                  (game.state.lifetimeClean /
+                    Math.max(nextCloutTarget(clout, game.cloutGainRateBonus), 1)) * 100,
                   100,
                 )}%`,
               }}
             />
           </div>
           <span>
-            {money(game.state.lifetimeCash)} / {money(nextCloutTarget(game.state.lifetimeCash, clout, game.cloutGainRateBonus))} {LABELS.fortune.toLowerCase()}
+            {money(game.state.lifetimeClean)} / {money(nextCloutTarget(clout, game.cloutGainRateBonus))} {LABELS.fortune.toLowerCase()}
           </span>
         </div>
       )}
@@ -92,8 +99,8 @@ export function RebrandScreen() {
   );
 }
 
-function nextCloutTarget(lifetime: number, clout: number, bonus: number): number {
+function nextCloutTarget(clout: number, bonus: number): number {
   // Invert floor(√(L/divisor)·(1+bonus)) − clout ≥ 1.
   const needSqrt = (clout + 1) / (1 + bonus);
-  return Math.max(0, needSqrt * needSqrt * 25_000);
+  return Math.max(0, needSqrt * needSqrt * LEGACY_DIVISOR);
 }

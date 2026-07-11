@@ -56,10 +56,15 @@ export function cloutMultiplier(clout: number): number {
   return 1 + CLOUT_BONUS_PER_POINT * clout;
 }
 
-export function cloutGain(lifetimeCash: number, currentClout: number, gainRateBonus = 0): number {
+export function cloutGain(
+  lifetimeCash: number,
+  currentClout: number,
+  gainRateBonus = 0,
+  divisor = CLOUT_DIVISOR,
+): number {
   return Math.max(
     0,
-    Math.floor(Math.sqrt(lifetimeCash / CLOUT_DIVISOR) * (1 + gainRateBonus) + 1e-9) - currentClout,
+    Math.floor(Math.sqrt(lifetimeCash / divisor) * (1 + gainRateBonus) + 1e-9) - currentClout,
   );
 }
 
