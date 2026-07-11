@@ -452,6 +452,22 @@ img { -webkit-user-drag: none; }
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 .hustle-art.dim img { opacity: 0.35; filter: grayscale(0.7); }
+
+/* Minted SVG medallions — the luxury renders. */
+.medallion-art {
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5));
+}
+.hustle-art img.medallion-art {
+  border: none;
+  border-radius: 0;
+  object-fit: contain;
+}
+.medallion-art.small { width: 34px; height: 34px; flex-shrink: 0; }
+.medallion-art.dim { opacity: 0.55; filter: grayscale(0.5) drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5)); }
+
 .emoji-art {
   width: 100%;
   height: 100%;

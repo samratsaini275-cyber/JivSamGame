@@ -9,6 +9,26 @@ import { HUSTLES } from "../engine/data";
 import { Game } from "../engine/game";
 import { money, abbreviate } from "../ui/format";
 import { unitCost } from "../engine/formulas";
+import { racketIcon, frontIcon } from "../theme/icons";
+
+// Pre-rasterized medallion plates for building faces (emoji as fallback).
+const iconImages = new Map<string, HTMLImageElement>();
+function plotIconImage(def: PlotDef): HTMLImageElement | null {
+  if (typeof Image === "undefined") return null;
+  const key = `${def.kind}:${def.ref}`;
+  let img = iconImages.get(key);
+  if (img) return img.complete && img.naturalWidth > 0 ? img : null;
+  const uri = def.kind === "racket"
+    ? racketIcon(def.ref as number)
+    : def.kind === "front"
+      ? frontIcon(def.ref as string)
+      : null;
+  if (!uri) return null;
+  img = new Image();
+  img.src = uri;
+  iconImages.set(key, img);
+  return img.complete && img.naturalWidth > 0 ? img : null;
+}
 
 export interface PlotVisual {
   def: PlotDef;
@@ -460,11 +480,17 @@ function drawPlot(
     }
   }
 
-  // face emoji
-  ctx.textAlign = "center";
-  ctx.font = `${Math.round(26 * (def.size ?? 1))}px sans-serif`;
-  ctx.globalAlpha = state === "for_sale" ? 0.5 : 1;
-  ctx.fillText(plotEmoji(def), def.x, y + h * 0.2);
+  // face plate: brass medallion, emoji as fallback while it rasterizes
+  const plate = plotIconImage(def);
+  ctx.globalAlpha = state === "for_sale" ? 0.8 : 1;
+  if (plate) {
+    const ps = 34 * (def.size ?? 1);
+    ctx.drawImage(plate, def.x - ps / 2, y - h * 0.12 - ps / 2, ps, ps);
+  } else {
+    ctx.textAlign = "center";
+    ctx.font = `${Math.round(26 * (def.size ?? 1))}px sans-serif`;
+    ctx.fillText(plotEmoji(def), def.x, y + h * 0.2);
+  }
   ctx.globalAlpha = 1;
 
   // name + status

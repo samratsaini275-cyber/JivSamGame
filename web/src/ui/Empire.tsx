@@ -8,6 +8,7 @@ import { nextThreshold, unitCost } from "../engine/formulas";
 import { money, duration } from "./format";
 import { sfx } from "./sfx";
 import { LABELS, MISC, MYSTERY_CARD, DISTRICTS, HEAT_COPY } from "../theme/content";
+import { racketIcon } from "../theme/icons";
 import { FrontsSection } from "./Fronts";
 
 export function Empire() {
@@ -58,6 +59,8 @@ export function Empire() {
 
 function HustleArt({ index }: { index: number }) {
   const def = HUSTLES[index];
+  const icon = racketIcon(index);
+  if (icon) return <img className="medallion-art" src={icon} alt="" draggable={false} />;
   return (
     <span className="emoji-art" style={{ ["--hue" as string]: `${(index * 47) % 360}deg` }}>
       {def.emoji}

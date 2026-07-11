@@ -1,8 +1,17 @@
 // THE FRONTS — laundering panel. Dirty in, respectable out, some evaporates.
 import { useGame } from "./hooks";
 import { FRONTS, LAUNDER } from "../theme/content";
+import { frontIcon } from "../theme/icons";
 import { money } from "./format";
 import { sfx } from "./sfx";
+
+function FrontArt({ id, emoji, dim }: { id: string; emoji: string; dim?: boolean }) {
+  const icon = frontIcon(id);
+  if (icon) {
+    return <img className={`medallion-art small ${dim ? "dim" : ""}`} src={icon} alt="" draggable={false} />;
+  }
+  return <span className={`front-emoji ${dim ? "dim" : ""}`}>{emoji}</span>;
+}
 
 export function FrontsSection() {
   const game = useGame();
@@ -44,7 +53,7 @@ export function FrontsSection() {
             const afford = game.canAffordFront(f);
             return (
               <div key={f.id} className={`front-row locked ${afford ? "ready" : ""}`}>
-                <span className="front-emoji dim">{f.emoji}</span>
+                <FrontArt id={f.id} emoji={f.emoji} dim />
                 <div className="front-info">
                   <div className="front-name">{f.name}</div>
                   <div className="front-flavor">{f.flavor}</div>
@@ -63,7 +72,7 @@ export function FrontsSection() {
           const affordUp = game.state.cleanCash >= upgradeCost;
           return (
             <div key={f.id} className="front-row">
-              <span className="front-emoji">{f.emoji}</span>
+              <FrontArt id={f.id} emoji={f.emoji} />
               <div className="front-info">
                 <div className="front-name">
                   {f.name} <span className="front-level">Lv {level}</span>
