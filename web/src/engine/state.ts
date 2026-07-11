@@ -24,6 +24,23 @@ export interface GameState {
   fronts: Record<string, number>;
   /** District ids the family controls. Always includes "docks". */
   districtsUnlocked: string[];
+
+  // MARK: The law (§4) — all timestamps epoch ms so saves survive reloads.
+  /** 0–100. Green < 40, amber < 70, red = investigation. */
+  heat: number;
+  /** Precinct landmark ids with an active protection payroll. */
+  payrolls: string[];
+  /** When the Feds' case lands; null = no open investigation. */
+  investigationEndsAt: number | null;
+  /** In lockup until this instant; null = free. */
+  prisonUntil: number | null;
+  /** Racket indices boarded up by raids (produce nothing until reopened). */
+  raidedHustles: number[];
+  /** Lawyer perk ids bought at the Judge's mansion. */
+  lawyerPerks: string[];
+  /** Last time the Judge's favor threw a case out. */
+  lastCaseDismissedAt: number | null;
+
   lastSaved: number | null; // epoch ms
 
   // Rex Calloway's flex economy (wiped on Rebrand except Daytona count)
@@ -60,7 +77,10 @@ export function newGame(): GameState {
   return {
     saveVersion: 2,
     cash: 0, cleanCash: 0, lifetimeCash: 0, lifetimeClean: 0,
-    clout: 0, hustles, fronts: {}, districtsUnlocked: ["docks"], lastSaved: null,
+    clout: 0, hustles, fronts: {}, districtsUnlocked: ["docks"],
+    heat: 0, payrolls: [], investigationEndsAt: null, prisonUntil: null,
+    raidedHustles: [], lawyerPerks: [], lastCaseDismissedAt: null,
+    lastSaved: null,
     ownedItems: [], equippedWrist: null, equippedGarage: null,
     daytonaPurchases: 0, rexMet: false,
     rexIntroAcknowledged: false, rexIntroReply: null,
@@ -87,6 +107,12 @@ export function applyRebrand(state: GameState, gained: number): void {
   state.rexPitchFollowUp = {};
   state.rexDismissedPitches = [];
   // Clean cash and the fronts' deeds survive — they're legitimate businesses.
+  // The law forgets a Family that no longer exists:
+  state.heat = 0;
+  state.payrolls = [];
+  state.investigationEndsAt = null;
+  state.prisonUntil = null;
+  state.raidedHustles = [];
 }
 
 /** v1 (CloutEmpire) → v2 (Bootleg Empire): old cash becomes dirty cash. */

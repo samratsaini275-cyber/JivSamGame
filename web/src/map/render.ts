@@ -370,6 +370,28 @@ function drawPlot(
   ctx.fillStyle = "rgba(232, 220, 195, 0.85)";
   ctx.fillText(plotName(def), def.x, def.y + 13);
 
+  if (state === "raided") {
+    // boards
+    ctx.strokeStyle = "#5a4a33";
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.moveTo(x + 6, y + h * 0.3);
+    ctx.lineTo(x + w - 6, y + h * 0.9);
+    ctx.moveTo(x + w - 6, y + h * 0.3);
+    ctx.lineTo(x + 6, y + h * 0.9);
+    ctx.stroke();
+    // police tape
+    ctx.save();
+    ctx.translate(def.x, y + h * 0.6);
+    ctx.rotate(-0.08);
+    ctx.fillStyle = "#d9b23b";
+    ctx.fillRect(-w / 2 - 8, -7, w + 16, 14);
+    ctx.fillStyle = "#17130c";
+    ctx.font = "900 8px 'Barlow Condensed', sans-serif";
+    ctx.fillText("POLICE LINE · DO NOT CROSS", 0, 3);
+    ctx.restore();
+  }
+
   if (state === "for_sale") {
     const price = plotPrice(def, game);
     const afford = price !== null && plotAffordable(def, game);
@@ -412,7 +434,9 @@ export type PlotState = "hidden" | "for_sale" | "owned" | "raided" | "civic";
 export function plotState(def: PlotDef, game: Game): PlotState {
   if (def.kind === "precinct" || def.kind === "landmark") return "civic";
   if (def.kind === "racket") {
-    return game.state.hustles[def.ref as number].unitsOwned > 0 ? "owned" : "for_sale";
+    const i = def.ref as number;
+    if (game.isRaided(i)) return "raided";
+    return game.state.hustles[i].unitsOwned > 0 ? "owned" : "for_sale";
   }
   return game.frontLevel(def.ref as string) > 0 ? "owned" : "for_sale";
 }

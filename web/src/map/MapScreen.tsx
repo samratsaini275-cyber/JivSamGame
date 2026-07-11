@@ -5,10 +5,12 @@ import { useGame } from "../ui/hooks";
 import { HUSTLES } from "../engine/data";
 import {
   DISTRICTS, FRONTS, LANDMARKS, MAP_COPY, LAUNDER, districtByID, PLOTS,
+  LAWYER_PERKS, HEAT_COPY,
 } from "../theme/content";
 import { money } from "../ui/format";
 import { sfx } from "../ui/sfx";
 import { HustleCard } from "../ui/Empire";
+import { PrecinctRow } from "../ui/Law";
 
 export function MapScreen() {
   const game = useGame();
@@ -102,15 +104,62 @@ function SheetContent({ sel, onClose }: { sel: MapSelection; onClose: () => void
     );
   }
 
-  // precinct / landmark
+  // precinct: bribes + protection payroll
+  if (plot.kind === "precinct") {
+    const lm = LANDMARKS[plot.ref as string];
+    return (
+      <div className="sheet-body">
+        <div className="sheet-title">{lm.emoji} {lm.name}</div>
+        <div className="sheet-flavor">{lm.blurb}</div>
+        <PrecinctRow precinctID={plot.ref as string} />
+      </div>
+    );
+  }
+
+  // landmark: the Judge's parlor sells lawyer perks; City Hall waits.
+  if (plot.ref === "judge") {
+    return <JudgeParlor />;
+  }
   const lm = LANDMARKS[plot.ref as string];
   return (
     <div className="sheet-body">
       <div className="sheet-title">{lm.emoji} {lm.name}</div>
       <div className="sheet-flavor">{lm.blurb}</div>
-      <div className="sheet-note">
-        {plot.kind === "precinct" ? MAP_COPY.precinctIdle : MAP_COPY.landmarkIdle}
-      </div>
+      <div className="sheet-note">{MAP_COPY.landmarkIdle}</div>
+    </div>
+  );
+}
+
+function JudgeParlor() {
+  const game = useGame();
+  return (
+    <div className="sheet-body">
+      <div className="sheet-title">⚖️ {HEAT_COPY.lawyerTitle}</div>
+      <div className="sheet-flavor">{HEAT_COPY.lawyerSub}</div>
+      {LAWYER_PERKS.map((perk) => {
+        const owned = game.hasLawyerPerk(perk.id);
+        const afford = game.state.cleanCash >= perk.cost;
+        return (
+          <div key={perk.id} className={`drip-row ${owned ? "equipped" : ""}`}>
+            <span className="drip-emoji">📜</span>
+            <div className="drip-info">
+              <div className="drip-name">{perk.name}</div>
+              <div className="drip-tier t3">{perk.blurb}</div>
+            </div>
+            {owned ? (
+              <span className="drip-state">{HEAT_COPY.owned}</span>
+            ) : (
+              <button
+                className={`btn-mini buy clean ${afford ? "" : "disabled"}`}
+                disabled={!afford}
+                onClick={() => { if (game.buyLawyerPerk(perk.id)) sfx.rebrand(); }}
+              >
+                🏦 {money(perk.cost)}
+              </button>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

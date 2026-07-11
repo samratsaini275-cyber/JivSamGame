@@ -6,8 +6,9 @@ import { game as gameInstance } from "../engine/game";
 import { IconSound } from "./Icons";
 import { isMuted, setMuted } from "./sfx";
 import { GAME, LABELS, PRESS, LAUNDER } from "../theme/content";
+import { HeatBadge } from "./Law";
 
-export function Header({ onProfileTap }: { onProfileTap: () => void }) {
+export function Header({ onProfileTap, onHeatTap }: { onProfileTap: () => void; onHeatTap: () => void }) {
   const game = useGame();
   const look = baseLookByID(game.state.baseLook);
   const perSec = game.incomePerSecond;
@@ -42,6 +43,7 @@ export function Header({ onProfileTap }: { onProfileTap: () => void }) {
           <div className="header-handle">"{game.state.handle || "the new face"}"</div>
           <div className="header-brand">{GAME.title} · {GAME.year}</div>
         </div>
+        <HeatBadge onTap={onHeatTap} />
         <button
           className="sound-btn"
           aria-label={muted ? "Unmute" : "Mute"}

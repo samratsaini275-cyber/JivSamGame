@@ -8,6 +8,7 @@ import { GameState, newGame, loadState, saveState, applyRebrand } from "./state"
 import {
   FIXER, FRONTS, FrontDef, VELVET_CLEAN_INCOME_PER_LEVEL,
   DISTRICTS, DistrictDef, PLOTS,
+  HEAT_TUNING as HT, LAWYER_PERKS,
 } from "../theme/content";
 
 export type BuyMode = "x1" | "x10" | "x100" | "max";
@@ -23,7 +24,16 @@ export type GameEvent =
   | { kind: "milestone"; hustleIndex: number; tier: number }
   | { kind: "hypeWave"; tier: number }
   | { kind: "rebranded"; clout: number }
-  | { kind: "districtUnlocked"; districtID: string };
+  | { kind: "districtUnlocked"; districtID: string }
+  | { kind: "investigation" }
+  | { kind: "raid"; hustleIndex: number }
+  | { kind: "caseDismissed" }
+  | { kind: "released" };
+
+/** Precinct landmark ids in payroll-cost order (matches district order). */
+export const PRECINCTS = [
+  "precinct_docks", "precinct_warsaw", "precinct_downtown", "precinct_row",
+] as const;
 
 type Listener = () => void;
 type EventListener = (e: GameEvent) => void;
@@ -144,7 +154,7 @@ export class Game {
 
   get incomePerSecond(): number {
     return this.state.hustles.reduce((sum, s, i) => {
-      if (s.unitsOwned <= 0 || !s.ghostwriterHired) return sum;
+      if (s.unitsOwned <= 0 || !s.ghostwriterHired || this.isRaided(i)) return sum;
       return sum + this.incomePerCycle(i) / this.cycleTime(i);
     }, 0);
   }
@@ -204,7 +214,7 @@ export class Game {
   }
 
   unlockDistrict(def: DistrictDef): boolean {
-    if (!this.canUnlockDistrict(def)) return false;
+    if (this.inPrison || !this.canUnlockDistrict(def)) return false;
     this.state.cleanCash -= def.price;
     this.state.districtsUnlocked.push(def.id);
     this.emit({ kind: "districtUnlocked", districtID: def.id });
@@ -215,6 +225,233 @@ export class Game {
 
   get nextLockedDistrict(): DistrictDef | null {
     return DISTRICTS.find((d) => !this.districtUnlocked(d.id)) ?? null;
+  }
+
+  // MARK: The law — heat, bribes, payroll, investigation, raids, prison
+
+  get inPrison(): boolean {
+    return (this.state.prisonUntil ?? 0) > Date.now();
+  }
+
+  get prisonSecondsLeft(): number {
+    return Math.max(0, ((this.state.prisonUntil ?? 0) - Date.now()) / 1000);
+  }
+
+  get underInvestigation(): boolean {
+    return this.state.investigationEndsAt !== null;
+  }
+
+  get investigationSecondsLeft(): number {
+    return Math.max(0, ((this.state.investigationEndsAt ?? 0) - Date.now()) / 1000);
+  }
+
+  isRaided(index: number): boolean {
+    return this.state.raidedHustles.includes(index);
+  }
+
+  hasLawyerPerk(id: string): boolean {
+    return this.state.lawyerPerks.includes(id);
+  }
+
+  payrollActive(precinctID: string): boolean {
+    return this.state.payrolls.includes(precinctID);
+  }
+
+  payrollCostPerMin(precinctID: string): number {
+    const i = PRECINCTS.indexOf(precinctID as (typeof PRECINCTS)[number]);
+    return HT.payrollPerMin[Math.max(0, i)];
+  }
+
+  /** Dirty stockpile size above which the pile itself draws eyes. */
+  get stockpileThreshold(): number {
+    return Math.max(HT.stockpileFloor, this.launderRate * HT.stockpileGraceSeconds);
+  }
+
+  /** Current heat delta per second (for the dial + panel readout). */
+  get heatRatePerSec(): number {
+    if (this.inPrison) return -HT.decayPerSec;
+    let passive = 0;
+    for (let i = 0; i < this.state.hustles.length; i++) {
+      const s = this.state.hustles[i];
+      if (s.unitsOwned <= 0 || this.isRaided(i)) continue;
+      passive += s.unitsOwned * HT.passivePerUnit * HT.racketWeight(i);
+    }
+    passive *= Math.pow(HT.payrollFactor, this.state.payrolls.length);
+    const threshold = this.stockpileThreshold;
+    const excess = this.state.cash / threshold - 1;
+    const stockpile = excess > 0
+      ? Math.min(HT.stockpileMaxRate, HT.stockpileRateK * excess)
+      : 0;
+    return passive + stockpile - HT.decayPerSec;
+  }
+
+  get bribeCost(): number {
+    return HT.bribeBase(this.incomePerSecond + 1) * HT.bribeHeatScale(this.state.heat);
+  }
+
+  get bribeRelief(): number {
+    return HT.bribeRelief(this.state.heat);
+  }
+
+  /** One-time palm grease at any precinct. Dirty cash. */
+  bribe(): boolean {
+    if (this.inPrison) return false;
+    const cost = this.bribeCost;
+    if (this.state.cash < cost) return false;
+    this.state.cash -= cost;
+    this.state.heat = Math.max(0, this.state.heat - this.bribeRelief);
+    this.notify();
+    return true;
+  }
+
+  togglePayroll(precinctID: string): void {
+    if (this.inPrison) return;
+    const i = this.state.payrolls.indexOf(precinctID);
+    if (i >= 0) this.state.payrolls.splice(i, 1);
+    else this.state.payrolls.push(precinctID);
+    this.notify();
+  }
+
+  get bailCost(): number {
+    const base = Math.max(HT.bailFloor, this.state.lifetimeClean * HT.bailRate);
+    return this.hasLawyerPerk("bagman") ? base * 0.5 : base;
+  }
+
+  payBail(): boolean {
+    if (!this.inPrison || this.state.cleanCash < this.bailCost) return false;
+    this.state.cleanCash -= this.bailCost;
+    this.release();
+    return true;
+  }
+
+  /** Monetization hook (§4c) — rewarded-ad early release. Not wired yet. */
+  adReleaseAvailable(): boolean {
+    return false;
+  }
+
+  async adRelease(): Promise<boolean> {
+    return false;
+  }
+
+  reopenCost(index: number): number {
+    return HT.reopenFeeUnits *
+      F.unitCost(HUSTLES[index].baseCost, this.state.hustles[index].unitsOwned);
+  }
+
+  /** Legal fees + repairs (clean). Comes back one milestone tier down. */
+  reopenHustle(index: number): boolean {
+    if (this.inPrison || !this.isRaided(index)) return false;
+    const cost = this.reopenCost(index);
+    if (this.state.cleanCash < cost) return false;
+    this.state.cleanCash -= cost;
+    this.state.raidedHustles = this.state.raidedHustles.filter((i) => i !== index);
+    const s = this.state.hustles[index];
+    const tier = F.milestoneTier(s.unitsOwned);
+    s.unitsOwned = tier > 0
+      ? Math.max(1, F.MILESTONE_THRESHOLDS[tier - 1] - 1)
+      : Math.max(1, s.unitsOwned - 5);
+    s.cycleProgress = 0;
+    s.cycleRunning = false;
+    this.save();
+    this.notify();
+    return true;
+  }
+
+  buyLawyerPerk(id: string): boolean {
+    if (this.inPrison || this.hasLawyerPerk(id)) return false;
+    const perk = LAWYER_PERKS.find((p) => p.id === id);
+    if (!perk || !this.districtUnlocked("row")) return false;
+    if (this.state.cleanCash < perk.cost) return false;
+    this.state.cleanCash -= perk.cost;
+    this.state.lawyerPerks.push(id);
+    this.save();
+    this.notify();
+    return true;
+  }
+
+  private release(): void {
+    this.state.prisonUntil = null;
+    this.state.heat = HT.heatAfterRelease;
+    this.emit({ kind: "released" });
+    this.save();
+    this.notify();
+  }
+
+  private prisonSeconds(): number {
+    const scale = 1 + Math.log10(Math.max(1, this.state.lifetimeClean / 100_000));
+    return Math.min(HT.prisonMaxSeconds, HT.prisonBaseSeconds * Math.max(1, scale));
+  }
+
+  /** Advance heat, payroll billing, investigations and lockup. */
+  private lawTick(dt: number): void {
+    const st = this.state;
+    const now = Date.now();
+
+    // Prison: countdown handled by timestamps; check for walk-out.
+    if (st.prisonUntil !== null && now >= st.prisonUntil) {
+      this.release();
+      return;
+    }
+
+    // Payroll billing (dirty). Broke = the captain walks.
+    for (const pid of [...st.payrolls]) {
+      const charge = (this.payrollCostPerMin(pid) / 60) * dt;
+      if (st.cash >= charge) st.cash -= charge;
+      else st.payrolls = st.payrolls.filter((p) => p !== pid);
+    }
+
+    st.heat = Math.min(100, Math.max(0, st.heat + this.heatRatePerSec * dt));
+
+    if (this.inPrison) return;
+
+    // Investigation lifecycle.
+    if (st.investigationEndsAt === null && st.heat >= HT.investigationStartsAt) {
+      const secs = this.hasLawyerPerk("retainer")
+        ? HT.investigationSecondsWithLawyer
+        : HT.investigationSeconds;
+      st.investigationEndsAt = now + secs * 1000;
+      this.emit({ kind: "investigation" });
+    } else if (st.investigationEndsAt !== null && st.heat < HT.investigationCallsOffBelow) {
+      st.investigationEndsAt = null; // laid low; case goes cold
+    } else if (
+      st.investigationEndsAt !== null &&
+      (now >= st.investigationEndsAt || st.heat >= 100)
+    ) {
+      this.raid();
+    }
+  }
+
+  /** The Feds pick your best earner. It always hurts. */
+  private raid(): void {
+    const st = this.state;
+    st.investigationEndsAt = null;
+
+    // The Judge's favor: once an hour, the case evaporates instead.
+    if (
+      this.hasLawyerPerk("silk_glove") &&
+      now_minus(st.lastCaseDismissedAt) >= HT.caseDismissCooldownMs
+    ) {
+      st.lastCaseDismissedAt = Date.now();
+      st.heat = Math.max(40, st.heat - 25);
+      this.emit({ kind: "caseDismissed" });
+      this.notify();
+      return;
+    }
+
+    let target = -1;
+    let best = -1;
+    for (let i = 0; i < st.hustles.length; i++) {
+      if (st.hustles[i].unitsOwned <= 0 || this.isRaided(i)) continue;
+      const rate = this.incomePerCycle(i) / this.cycleTime(i);
+      if (rate > best) { best = rate; target = i; }
+    }
+    if (target < 0) { st.heat = 50; return; } // nothing to seize
+
+    st.raidedHustles.push(target);
+    st.prisonUntil = Date.now() + this.prisonSeconds() * 1000;
+    this.emit({ kind: "raid", hustleIndex: target });
+    this.save();
+    this.notify();
   }
 
   // MARK: Fronts & laundering (dirty → clean)
@@ -256,12 +493,14 @@ export class Game {
   }
 
   canAffordFront(def: FrontDef): boolean {
+    if (!this.districtUnlocked(def.district)) return false;
     return def.priceCurrency === "dirty"
       ? this.state.cash >= def.price
       : this.state.cleanCash >= def.price;
   }
 
   buyFront(def: FrontDef): boolean {
+    if (this.inPrison) return false;
     if (this.frontLevel(def.id) > 0 || !this.canAffordFront(def)) return false;
     if (def.priceCurrency === "dirty") this.state.cash -= def.price;
     else this.state.cleanCash -= def.price;
@@ -271,6 +510,7 @@ export class Game {
   }
 
   upgradeFront(def: FrontDef): boolean {
+    if (this.inPrison) return false;
     const level = this.frontLevel(def.id);
     if (level <= 0) return false;
     const cost = this.frontUpgradeCost(def, level);
@@ -340,6 +580,7 @@ export class Game {
 
   /** Wardrobe is a legitimate purchase — clean cash only. */
   buyCosmetic(item: PersonaItemDef): boolean {
+    if (this.inPrison) return false;
     if (this.ownsCosmetic(item) || this.state.cleanCash < item.cost) return false;
     this.state.cleanCash -= item.cost;
     this.state.ownedCosmetics.push(item.id);
@@ -387,6 +628,7 @@ export class Game {
 
   /// Buying auto-equips. Returns false if unaffordable (Rex: "Manifest harder.")
   buyItem(item: RexItemDef): boolean {
+    if (this.inPrison) return false;
     if (this.ownsItem(item) || this.state.cash < item.cost) return false;
     this.state.cash -= item.cost;
     this.state.ownedItems.push(item.id);
@@ -412,7 +654,7 @@ export class Game {
   // MARK: Player actions
 
   buy(index: number): void {
-    if (!this.hustleAvailable(index)) return;
+    if (this.inPrison || this.isRaided(index) || !this.hustleAvailable(index)) return;
     const count = this.buyCount(index);
     const cost = F.bulkCost(HUSTLES[index].baseCost, this.state.hustles[index].unitsOwned, count);
     if (count <= 0 || this.state.cash < cost) return;
@@ -459,6 +701,7 @@ export class Game {
   }
 
   hireGhostwriter(index: number): void {
+    if (this.inPrison || this.isRaided(index)) return;
     const s = this.state.hustles[index];
     if (s.ghostwriterHired || this.state.cash < HUSTLES[index].ghostwriterCost) return;
     this.state.cash -= HUSTLES[index].ghostwriterCost;
@@ -528,7 +771,7 @@ export class Game {
     let changed = false;
     for (let i = 0; i < this.state.hustles.length; i++) {
       const s = this.state.hustles[i];
-      if (s.unitsOwned <= 0) continue;
+      if (s.unitsOwned <= 0 || this.isRaided(i)) continue;
       const cycle = this.cycleTime(i);
 
       if (s.ghostwriterHired) {
@@ -557,7 +800,9 @@ export class Game {
       }
     }
 
-    this.launder(dt);
+    // In lockup the family keeps the wash running at half speed.
+    this.launder(dt, this.inPrison ? 0.5 : 1);
+    this.lawTick(dt);
 
     this.ticksSinceSave++;
     if (this.ticksSinceSave >= SAVE_EVERY_TICKS) {
@@ -598,6 +843,10 @@ export class Game {
     this.state.lastSaved = Date.now();
     saveState(this.state);
   }
+}
+
+function now_minus(t: number | null): number {
+  return t === null ? Infinity : Date.now() - t;
 }
 
 function rexIdleBarkFor(game: Game): string {

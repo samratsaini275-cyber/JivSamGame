@@ -7,7 +7,7 @@ import { HUSTLES, tierName } from "../engine/data";
 import { nextThreshold, unitCost } from "../engine/formulas";
 import { money, duration } from "./format";
 import { sfx } from "./sfx";
-import { LABELS, MISC, MYSTERY_CARD, DISTRICTS } from "../theme/content";
+import { LABELS, MISC, MYSTERY_CARD, DISTRICTS, HEAT_COPY } from "../theme/content";
 import { FrontsSection } from "./Fronts";
 
 export function Empire() {
@@ -86,6 +86,35 @@ export function HustleCard({ index }: { index: number }) {
   const progressPct = running ? Math.min((s.cycleProgress / cycle) * 100, 100) : 0;
   // Sub-second cycles read as a constant blur — show them as always-full.
   const instant = s.ghostwriterHired && cycle < 0.35;
+
+  if (owned && game.isRaided(index)) {
+    const fee = game.reopenCost(index);
+    const canReopen = !game.inPrison && game.state.cleanCash >= fee;
+    return (
+      <div className="hustle-card raided" data-hustle-card={index}>
+        <div className="hustle-art dim">
+          <HustleArt index={index} />
+          <span className="lock-badge">🚧</span>
+        </div>
+        <div className="hustle-body">
+          <div className="hustle-title-row">
+            <span className="hustle-name">{def.name}</span>
+            <span className="raided-chip">{HEAT_COPY.raidedTag}</span>
+          </div>
+          <div className="hustle-flavor">{HEAT_COPY.reopenNote}</div>
+        </div>
+        <div className="hustle-actions">
+          <button
+            className={`btn-buy ${canReopen ? "" : "disabled"}`}
+            disabled={!canReopen}
+            onClick={() => { if (game.reopenHustle(index)) sfx.hire(); }}
+          >
+            <span className="btn-buy-label">{HEAT_COPY.reopenCta(money(fee))}</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (!owned) {
     const firstCost = unitCost(def.baseCost, 0);

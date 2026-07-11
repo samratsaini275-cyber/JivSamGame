@@ -12,6 +12,7 @@ import { IconEmpire, IconChat, IconSpark, IconProfile, IconLock, IconMap } from 
 import { money } from "./ui/format";
 import { LABELS, MISC } from "./theme/content";
 import { MapScreen } from "./map/MapScreen";
+import { LawPanel, PrisonOverlay } from "./ui/Law";
 
 type Tab = "map" | "empire" | "dms" | "rebrand" | "profile";
 
@@ -26,6 +27,7 @@ const TABS: { id: Tab; label: string; Icon: (p: { size?: number }) => JSX.Elemen
 export function App() {
   const game = useGame();
   const [tab, setTab] = useState<Tab>("map");
+  const [lawOpen, setLawOpen] = useState(false);
   const colorway = colorwayByID(game.state.colorway);
   const unread = rexUnreadCount(game);
 
@@ -40,7 +42,9 @@ export function App() {
     <div className="stage">
       <div className="stage-glow" aria-hidden />
       <div className="phone">
-        {(tab === "empire" || tab === "map") && <Header onProfileTap={() => setTab("profile")} />}
+        {(tab === "empire" || tab === "map") && (
+          <Header onProfileTap={() => setTab("profile")} onHeatTap={() => setLawOpen(true)} />
+        )}
 
         <main className="phone-content">
           {tab === "map" && <MapScreen />}
@@ -70,6 +74,8 @@ export function App() {
         </nav>
 
         <EffectsLayer />
+        {lawOpen && <LawPanel onClose={() => setLawOpen(false)} />}
+        {game.inPrison && <PrisonOverlay />}
         {!game.personaCreated && <PersonaCreation />}
         {game.offlineEarnings > 0 && <OfflineModal />}
       </div>

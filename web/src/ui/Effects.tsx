@@ -4,7 +4,7 @@ import { GameEvent, game } from "../engine/game";
 import { HUSTLES, tierName } from "../engine/data";
 import { money } from "./format";
 import { sfx } from "./sfx";
-import { PRESS, FAMILY, MAP_COPY, districtByID } from "../theme/content";
+import { PRESS, FAMILY, MAP_COPY, HEAT_COPY, districtByID } from "../theme/content";
 
 interface Pop { id: number; x: number; y: number; text: string }
 interface Confetto { id: number; x: number; y: number; dx: number; dy: number; color: string; spin: number }
@@ -25,6 +25,17 @@ function cardPoint(index: number): { x: number; y: number } | null {
 }
 
 const CONFETTI_COLORS = ["#e0b64f", "#e8dcc3", "#3d7a74", "#7ca163", "#c9a02c", "#b58ed0"];
+
+/** Red/blue screen flash + shake — raids only, per the art direction. */
+function flashRaid(): void {
+  const phone = document.querySelector(".phone");
+  if (!phone) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  phone.classList.remove("raid-flash");
+  void (phone as HTMLElement).offsetWidth;
+  phone.classList.add("raid-flash");
+  window.setTimeout(() => phone.classList.remove("raid-flash"), 1600);
+}
 
 export function EffectsLayer() {
   const [pops, setPops] = useState<Pop[]>([]);
@@ -68,6 +79,23 @@ export function EffectsLayer() {
         title = MAP_COPY.unlockToast(districtByID(e.districtID).name);
         sub = MAP_COPY.unlockToastSub;
         sfx.viral();
+      } else if (e.kind === "investigation") {
+        title = HEAT_COPY.investigation;
+        sub = HEAT_COPY.investigationSub;
+        sfx.warning();
+      } else if (e.kind === "raid") {
+        title = `${HEAT_COPY.raidToast} ${HUSTLES[e.hustleIndex].name.toUpperCase()}`;
+        sub = HEAT_COPY.raidToastSub(HUSTLES[e.hustleIndex].name);
+        sfx.siren();
+        flashRaid();
+      } else if (e.kind === "caseDismissed") {
+        title = HEAT_COPY.dismissToast;
+        sub = HEAT_COPY.dismissSub;
+        sfx.rebrand();
+      } else if (e.kind === "released") {
+        title = HEAT_COPY.releaseToast;
+        sub = HEAT_COPY.releaseSub;
+        sfx.milestone();
       }
 
       const burst: Confetto[] = Array.from({ length: e.kind === "milestone" ? 26 : 44 }, () => ({

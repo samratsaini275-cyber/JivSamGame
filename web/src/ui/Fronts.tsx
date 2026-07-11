@@ -8,8 +8,11 @@ export function FrontsSection() {
   const game = useGame();
   const rate = game.launderRate;
   const anyOwned = FRONTS.some((f) => game.frontLevel(f.id) > 0);
-  // Progressive disclosure: owned fronts + the next unowned one.
-  const firstUnowned = FRONTS.findIndex((f) => game.frontLevel(f.id) === 0);
+  // Progressive disclosure: owned fronts + the next unowned one whose
+  // district the family controls.
+  const firstUnowned = FRONTS.findIndex(
+    (f) => game.frontLevel(f.id) === 0 && game.districtUnlocked(f.district),
+  );
   const visible = FRONTS.filter(
     (f, i) => game.frontLevel(f.id) > 0 || i === firstUnowned,
   );

@@ -1098,6 +1098,172 @@ img { -webkit-user-drag: none; }
   font-variant-numeric: tabular-nums;
 }
 
+/* ============ The law (Phase 4) ============ */
+
+.heat-badge {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.heat-badge.investigating { animation: badgePulse 0.9s ease-in-out infinite; }
+@keyframes badgePulse {
+  50% { filter: drop-shadow(0 0 10px rgba(194, 42, 51, 0.85)); transform: scale(1.07); }
+}
+.heat-countdown {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 8px;
+  font-weight: 900;
+  color: #ff8b93;
+  background: rgba(10, 12, 17, 0.9);
+  padding: 1px 5px;
+  border-radius: 999px;
+  border: 1px solid rgba(194, 42, 51, 0.6);
+  white-space: nowrap;
+}
+
+.law-card {
+  width: 100%;
+  max-width: 360px;
+  max-height: 92%;
+  overflow-y: auto;
+  padding: 18px 16px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #1c2130, #10131a 60%);
+  border: 1.5px solid rgba(194, 42, 51, 0.5);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: cardIn 0.3s cubic-bezier(0.3, 1.3, 0.55, 1);
+  scrollbar-width: none;
+}
+.law-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.law-status { font-size: 10px; font-weight: 900; letter-spacing: 0.08em; }
+.heat-meter {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+.heat-meter-fill { height: 100%; border-radius: 999px; transition: width 0.3s ease; }
+.law-rate { font-size: 11px; font-weight: 700; color: var(--muted); }
+.law-warn { color: #ff8b93; }
+.law-ok { color: #a9c795; }
+
+.precinct-row {
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(10, 12, 17, 0.55);
+  border: 1px solid rgba(232, 220, 195, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.precinct-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.precinct-name { font-size: 12.5px; font-weight: 800; }
+.precinct-district { font-size: 9.5px; color: var(--faint); font-weight: 700; }
+.precinct-actions { display: flex; gap: 7px; flex-wrap: wrap; }
+.precinct-actions .btn-mini { flex: 1; min-width: 45%; }
+.btn-mini.active-payroll {
+  background: rgba(124, 161, 99, 0.16);
+  border-color: rgba(124, 161, 99, 0.55);
+  color: #a9c795;
+}
+.precinct-note { font-size: 9.5px; font-weight: 800; color: #a9c795; letter-spacing: 0.05em; }
+
+.raided-chip {
+  flex-shrink: 0;
+  font-size: 8.5px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 3px 7px;
+  border-radius: 4px;
+  color: #17130c;
+  background: repeating-linear-gradient(-45deg, #d9b23b 0 6px, #17130c 6px 8px, #d9b23b 8px 14px);
+  background-color: #d9b23b;
+  text-shadow: 0 0 3px #d9b23b, 0 0 3px #d9b23b;
+}
+.hustle-card.raided { border-color: rgba(194, 42, 51, 0.45); opacity: 0.95; }
+
+.prison-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  background: rgba(5, 6, 9, 0.94);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.4s ease;
+  overflow: hidden;
+}
+.prison-bars {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 44px,
+    rgba(26, 31, 42, 0.95) 44px 58px
+  );
+  box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.9);
+  pointer-events: none;
+}
+.prison-inner {
+  position: relative;
+  text-align: center;
+  padding: 30px 24px;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.prison-title {
+  font-family: var(--font-display);
+  font-size: 24px;
+  letter-spacing: 0.14em;
+  color: var(--paper);
+}
+.prison-clock {
+  font-family: var(--font-condensed);
+  font-size: 46px;
+  font-weight: 900;
+  color: #ff8b93;
+  font-variant-numeric: tabular-nums;
+}
+.prison-sub { font-size: 12px; color: var(--muted); line-height: 1.5; }
+.prison-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.prison-ad { opacity: 0.55; }
+.prison-note { font-size: 10px; color: var(--faint); }
+
+.phone.raid-flash::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 55;
+  pointer-events: none;
+  animation: raidFlash 1.5s ease-out;
+}
+@keyframes raidFlash {
+  0%, 20%, 40% { background: rgba(194, 42, 51, 0.3); }
+  10%, 30%, 50% { background: rgba(61, 90, 180, 0.3); }
+  100% { background: transparent; }
+}
+.phone.raid-flash { animation: raidShake 0.5s ease-in-out; }
+@keyframes raidShake {
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(3px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .phone.raid-flash, .phone.raid-flash::after { animation: none; }
+}
+
 /* ============ The city map (Phase 3) ============ */
 
 .map-screen {

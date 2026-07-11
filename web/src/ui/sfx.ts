@@ -54,4 +54,13 @@ export const sfx = {
   rebrand() { [392, 494, 587, 784].forEach((f, i) => tone(f, i * 0.12, 0.32, "sine", 0.11)); },
   /** Chat reply sent. */
   message() { tone(880, 0, 0.05, "sine", 0.06); tone(660, 0.045, 0.07, "sine", 0.05); },
+  /** Raid: two-tone siren sweep. */
+  siren() {
+    for (let i = 0; i < 3; i++) {
+      tone(690, i * 0.42, 0.24, "square", 0.05);
+      tone(520, i * 0.42 + 0.21, 0.24, "square", 0.05);
+    }
+  },
+  /** Investigation opened: low warning. */
+  warning() { tone(220, 0, 0.25, "square", 0.05); tone(196, 0.22, 0.3, "square", 0.05); },
 };

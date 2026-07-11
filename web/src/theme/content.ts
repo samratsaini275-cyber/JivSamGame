@@ -512,4 +512,89 @@ export const MAP_COPY = {
   landmarkIdle: "The doors are closed to you. For now.",
 } as const;
 
-// Heat & shipments content arrives with Phases 4–5.
+// ---------------------------------------------------------------------------
+// Heat, police & prison — §4. Consequences are a core mechanic.
+// ---------------------------------------------------------------------------
+
+export const HEAT_TUNING = {
+  /** Passive heat/sec per racket unit, scaled up for later rackets. */
+  passivePerUnit: 0.0008,
+  racketWeight: (index: number) => 1 + index * 0.35,
+  /** Dirty stockpile above this many seconds of laundering capacity heats up. */
+  stockpileGraceSeconds: 120,
+  stockpileFloor: 2_500,
+  stockpileMaxRate: 0.08,
+  stockpileRateK: 0.02,
+  /** Passive cool-down when lying low. */
+  decayPerSec: 0.009,
+  /** Each active precinct payroll multiplies heat gain by this. */
+  payrollFactor: 0.76,
+  /** Payroll cost per minute, per precinct (dirty). */
+  payrollPerMin: [90, 900, 40_000, 4_000_000] as number[],
+  /** One-time bribe: cost scales with income and current heat. */
+  bribeBase: (incomePerSec: number) => Math.max(150, incomePerSec * 25),
+  bribeHeatScale: (heat: number) => Math.pow(1 + heat / 28, 2),
+  bribeRelief: (heat: number) => 12 + heat * 0.22,
+  investigationStartsAt: 70,
+  investigationCallsOffBelow: 60,
+  investigationSeconds: 120,
+  investigationSecondsWithLawyer: 200,
+  prisonBaseSeconds: 90,
+  prisonMaxSeconds: 300,
+  bailRate: 0.04, // × Family Fortune (lifetime clean)
+  bailFloor: 500,
+  heatAfterRelease: 30,
+  /** Reopen fee: multiple of the racket's next-unit price (clean). */
+  reopenFeeUnits: 2.5,
+  caseDismissCooldownMs: 3_600_000,
+} as const;
+
+export const LAWYER_PERKS: { id: string; name: string; blurb: string; cost: number }[] = [
+  { id: "retainer", name: "Counsel on Retainer",
+    blurb: "Motions, continuances, lunches. Investigations take far longer to stick.",
+    cost: 25_000_000 },
+  { id: "bagman", name: "The Bail Bondsman",
+    blurb: "Half-price bail. He knows the night clerk by her first name.",
+    cost: 250_000_000 },
+  { id: "silk_glove", name: "The Judge's Favor",
+    blurb: "Once an hour, a case simply… evaporates. Terrible filing system down there.",
+    cost: 2_000_000_000 },
+];
+
+export const HEAT_COPY = {
+  label: "HEAT",
+  safe: "The badge is bored",
+  warm: "Eyes on the street",
+  investigation: "UNDER INVESTIGATION",
+  investigationSub: "The Feds are building a case…",
+  raidToast: "RAID! FEDS SEIZE",
+  raidToastSub: (name: string) => `${name} boarded up — the boss is downtown`,
+  dismissToast: "CASE THROWN OUT!",
+  dismissSub: "The Judge's favor holds. The file is lost.",
+  releaseToast: "THE BOSS WALKS",
+  releaseSub: "Heat settles to a simmer. You're a known face now.",
+  panelTitle: "THE LAW",
+  panelSub: "Heat rises with rackets, shipments and idle dirty cash. Pay it down or lie low.",
+  sourcesTitle: "WHY THEY'RE WATCHING",
+  srcRackets: "Rackets running",
+  srcStockpile: "Dirty cash stockpile",
+  srcPayroll: (n: number) => `${n} precinct${n === 1 ? "" : "s"} on payroll`,
+  bribeCta: (cost: string) => `GREASE PALMS · 💵 ${cost}`,
+  bribeDone: "The captain suddenly remembers a fishing trip.",
+  payrollOn: (cost: string) => `PUT ON PAYROLL · 💵 ${cost}/min`,
+  payrollActive: "CAPTAIN'S ON THE PAYROLL",
+  payrollOff: "STOP PAYMENTS",
+  prisonTitle: "COUNTY LOCKUP",
+  prisonSub: "The family keeps the fronts washing at half speed. The rackets run without you.",
+  prisonWait: "Sit tight",
+  prisonBail: (cost: string) => `POST BAIL · 🏦 ${cost}`,
+  prisonAd: "TELL IT TO THE PAPERS (soon)",
+  raidedTag: "RAIDED",
+  reopenCta: (cost: string) => `REOPEN · 🏦 ${cost}`,
+  reopenNote: "Legal fees, new locks, a fresh coat of paint — and the ward remembers.",
+  lawyerTitle: "THE JUDGE'S PARLOR",
+  lawyerSub: "Favors, retainers, and a very understanding legal system.",
+  owned: "SECURED",
+} as const;
+
+// Shipments content arrives with Phase 5.
