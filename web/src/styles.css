@@ -37,6 +37,45 @@
   font-family: "Barlow", -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
 }
 
+/* ============ Atmosphere — the cinematic overlay ============ */
+.atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+.atmo-key {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(80% 42% at 50% -6%, rgba(255, 224, 150, 0.1), transparent 60%);
+  mix-blend-mode: screen;
+}
+.atmo-vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(130% 96% at 50% 42%, transparent 52%, rgba(4, 6, 10, 0.5) 100%);
+}
+.atmo-grain {
+  position: absolute;
+  inset: -60%;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='120' height='120' filter='url(%23n)'/></svg>");
+  background-size: 160px 160px;
+  animation: grainShift 0.8s steps(4) infinite;
+}
+@keyframes grainShift {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(-4%, 2%); }
+  50% { transform: translate(3%, -3%); }
+  75% { transform: translate(-2%, 3%); }
+  100% { transform: translate(2%, -2%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .atmo-grain { animation: none; }
+}
+
 /* Illustrated character busts */
 .portrait-frame {
   display: inline-grid;
@@ -115,10 +154,24 @@ img { -webkit-user-drag: none; }
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background:
-    radial-gradient(120% 60% at 50% -5%, rgba(138, 106, 29, 0.28), transparent 60%),
-    linear-gradient(180deg, #141822 0%, #0a0c11 45%, #10131a 100%);
+  background: linear-gradient(180deg, #141822 0%, #0a0c11 45%, #10131a 100%);
 }
+/* Base scene: a warm key light from top, a cool floor, and a faint deco
+   chevron weave — the field every screen is lit against. Sits behind content. */
+.phone-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 55% at 50% -8%, rgba(212, 169, 67, 0.16), transparent 62%),
+    radial-gradient(90% 60% at 15% 8%, rgba(232, 162, 74, 0.06), transparent 55%),
+    radial-gradient(120% 80% at 50% 120%, rgba(55, 113, 107, 0.08), transparent 60%),
+    repeating-linear-gradient(135deg, rgba(212, 169, 67, 0.022) 0 2px, transparent 2px 22px),
+    repeating-linear-gradient(45deg, rgba(212, 169, 67, 0.018) 0 2px, transparent 2px 22px);
+}
+/* Content and chrome sit above the base scene */
+.header, .phone-content, .tab-bar { position: relative; z-index: 1; }
 @media (min-width: 520px) and (min-height: 700px) {
   .phone {
     height: min(92vh, 900px);

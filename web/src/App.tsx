@@ -10,6 +10,7 @@ import { RebrandScreen } from "./ui/Rebrand";
 import { EffectsLayer } from "./ui/Effects";
 import { IconEmpire, IconChat, IconSpark, IconProfile, IconLock, IconMap } from "./ui/Icons";
 import { Ic } from "./ui/Icon";
+import { Atmosphere } from "./ui/Atmosphere";
 import { money } from "./ui/format";
 import { LABELS, MISC } from "./theme/content";
 import { MapScreen } from "./map/MapScreen";
@@ -45,6 +46,7 @@ export function App() {
     <div className="stage">
       <div className="stage-glow" aria-hidden />
       <div className="phone">
+        <div className="phone-bg" aria-hidden />
         {(tab === "empire" || tab === "map") && (
           <Header onProfileTap={() => setTab("profile")} onHeatTap={() => setLawOpen(true)} />
         )}
@@ -76,6 +78,7 @@ export function App() {
           ))}
         </nav>
 
+        <Atmosphere />
         <EffectsLayer />
         <CheckpointPopup />
         {game.personaCreated && !game.inPrison && <GuideLayer onGoTab={setTab} />}
