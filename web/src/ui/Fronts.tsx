@@ -75,11 +75,9 @@ export function FrontsSection() {
             <div key={f.id} className="front-row">
               <FrontArt id={f.id} emoji={f.emoji} />
               <div className="front-info">
-                <div className="front-name">
-                  <span className="front-name-text">{f.name}</span>
-                  <span className="front-level">LV {level}</span>
-                </div>
+                <div className="front-name">{f.name}</div>
                 <div className="front-stats">
+                  <span className="front-level">LV {level}</span>
                   {LAUNDER.washing(money(game.frontThroughput(f)))} · {LAUNDER.keeps(Math.round((1 - game.frontCut(f)) * 100))}
                 </div>
               </div>
