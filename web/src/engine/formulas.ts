@@ -3,7 +3,7 @@
 export const COST_GROWTH = 1.14;
 export const MILESTONE_THRESHOLDS = [25, 50, 100, 200, 300, 400];
 export const CLOUT_DIVISOR = 25_000;
-export const CLOUT_BONUS_PER_POINT = 0.02;
+export const CLOUT_BONUS_PER_POINT = 0.03;
 
 export const LAMBO_VIRAL_CHANCE = 0.25;
 export const LAMBO_VIRAL_DURATION_MS = 60_000;

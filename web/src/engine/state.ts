@@ -116,9 +116,13 @@ export function newGame(): GameState {
 /// wipes everything else. Persona survives — the account gets deleted, the player doesn't.
 export function applyRebrand(state: GameState, gained: number): void {
   state.clout += gained;
+  // Burn the whole operation to the ground — this is why laundering starts
+  // fresh and dirty cash accumulates normally on the new run.
   state.cash = 0;
+  state.cleanCash = 0;
   state.hustles = freshHustles();
   state.hustles[0].unitsOwned = 1;
+  state.fronts = {}; // fronts reset too, or they'd instantly wash the new run's tiny income
   state.ownedItems = [];
   state.equippedWrist = null;
   state.equippedGarage = null;
@@ -127,7 +131,6 @@ export function applyRebrand(state: GameState, gained: number): void {
   state.rexPitchReplies = {};
   state.rexPitchFollowUp = {};
   state.rexDismissedPitches = [];
-  // Clean cash and the fronts' deeds survive — they're legitimate businesses.
   // The law forgets a Family that no longer exists:
   state.heat = 0;
   state.payrolls = [];
@@ -135,7 +138,8 @@ export function applyRebrand(state: GameState, gained: number): void {
   state.prisonUntil = null;
   state.raidedHustles = [];
   state.activeShipment = null;
-  // respectXP and milestones survive — the town remembers the name.
+  // Survives: Legacy (clout), lifetime fortune, respectXP, unlocked districts
+  // (map progress), lawyer perks, persona/wardrobe. The town remembers the name.
 }
 
 /** v1 (CloutEmpire) → v2 (Bootleg Empire): old cash becomes dirty cash. */

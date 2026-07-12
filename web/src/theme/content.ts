@@ -304,26 +304,36 @@ export const BOSS = {
 
 export const FAMILY = {
   title: "START A NEW FAMILY",
-  sub: "Burn the ledgers. Keep the name. Every Legacy token boosts all income by 2% — forever.",
+  sub: "Burn it all down. Keep the name. Every Legacy token makes every racket earn +3% more — forever.",
   statHeld: "LEGACY HELD",
   statBonus: "INCOME BONUS",
   statGain: "ON NEW FAMILY",
-  keepTitle: "✓ THE FAMILY KEEPS",
-  keeps: ["Legacy & its income bonus", "Respect & the fortune's record", "Your alias & wardrobe", "The Judge's favor"],
-  loseTitle: "✗ THE FAMILY LOSES",
-  loses: (cash: string) => [`Cash on hand (${cash})`, "All rackets & crews", "Sal's rented finery", "Heat, payrolls & buffs"],
+  keepTitle: "YOU KEEP",
+  keeps: [
+    "Legacy & its permanent income bonus",
+    "Your Respect level & the neighborhoods you control",
+    "Your alias, look & wardrobe",
+    "The Judge's favor",
+  ],
+  loseTitle: "YOU LOSE",
+  loses: (_cash: string) => [
+    "All your cash — dirty and clean",
+    "Every racket, crew and front",
+    "Sal's watches & motorcars",
+    "All heat, payoffs & buffs",
+  ],
   cta: "START A NEW FAMILY",
   ctaArmed: (gain: string) => `TAP AGAIN — GAIN ${gain} LEGACY`,
-  lockedTitle: "Grow the Family Fortune (clean cash) to earn the first Legacy token.",
-  perksTitle: "WHAT LEGACY BUYS",
+  lockedTitle: "Build up your Family Fortune (gold cash) to earn your first Legacy token.",
+  perksTitle: "WHAT LEGACY GIVES YOU",
   toastTitle: "A NEW FAMILY RISES",
   toastSub: (gain: string) => `+${gain} Legacy secured`,
   bonusNote: (pct: number, daytonas: number) =>
-    `🕰️ Legacy gain boosted +${pct}%${daytonas > 0 ? ` (Judge's Heirloom ×${daytonas})` : ""}`,
+    `Legacy gain boosted +${pct}%${daytonas > 0 ? ` (Judge's Heirloom ×${daytonas})` : ""}`,
 } as const;
 
 /** Family Fortune (lifetime clean) per √-step of Legacy. */
-export const LEGACY_DIVISOR = 10_000;
+export const LEGACY_DIVISOR = 2_500;
 
 // ---------------------------------------------------------------------------
 // Offline earnings & misc UI copy
@@ -712,15 +722,15 @@ export const RESPECT = {
 
 export const LEGACY = {
   label: "Legacy",
-  /** Each token: +2% income, −0.1% launder cut (cap 5%), −0.5 release heat. */
+  /** Each token: +3% income, −0.1% launder cut (cap 5%), −0.5 release heat. */
   cutPerToken: 0.001,
   cutCap: 0.05,
   releaseHeatPerToken: 0.5,
   releaseHeatFloor: 10,
   perks: (n: number) => [
-    `+${(n * 2).toLocaleString()}% all production`,
-    `−${Math.min(5, n * 0.1).toFixed(1)}% laundering cut`,
-    `Release heat ${Math.max(10, 30 - n * 0.5).toFixed(0)} instead of 30`,
+    `+${(n * 3).toLocaleString()}% money from every racket`,
+    `−${Math.min(5, n * 0.1).toFixed(1)}% lost in the wash`,
+    `Come out of jail at ${Math.max(10, 30 - n * 0.5).toFixed(0)} heat instead of 30`,
   ],
 } as const;
 
