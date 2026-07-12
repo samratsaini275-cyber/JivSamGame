@@ -280,6 +280,17 @@ export class Game {
     if (after > before) this.emit({ kind: "respectLevel", level: after });
   }
 
+  guideSeen(id: string): boolean {
+    return this.state.guideSeen.includes(id);
+  }
+
+  markGuideSeen(id: string): void {
+    if (this.guideSeen(id)) return;
+    this.state.guideSeen.push(id);
+    this.save();
+    this.notify();
+  }
+
   /** Fire a scripted headline exactly once, with its Respect reward. */
   private milestoneOnce(id: string): void {
     if (this.state.milestones.includes(id)) return;

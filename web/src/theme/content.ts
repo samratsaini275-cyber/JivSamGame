@@ -713,6 +713,55 @@ export const LAWYER_RESPECT: Record<string, number> = {
 };
 
 // ---------------------------------------------------------------------------
+// Enzo the Consigliere — the guide who pops up when something new unlocks,
+// so nobody has to guess what to do next. One tip at a time, each shown once.
+// ---------------------------------------------------------------------------
+
+export const GUIDE = {
+  name: "Enzo",
+  title: "CONSIGLIERE",
+  avatar: "👴",
+  dismiss: "GOT IT",
+  show: "SHOW ME",
+} as const;
+
+export interface GuideTipDef {
+  id: string;
+  text: string;
+  /** Tab the SHOW ME button jumps to. */
+  tab?: "map" | "empire" | "dms" | "rebrand" | "profile";
+}
+
+export const GUIDE_TIPS: GuideTipDef[] = [
+  { id: "welcome", tab: "empire",
+    text: "Welcome to New Carthage, boss. Tap the Corner Still to RUN A BATCH — every empire starts with grandma's recipe." },
+  { id: "first_expand", tab: "empire",
+    text: "Cash in the till. BUY more stills — every 25 you own doubles the take and halves the wait." },
+  { id: "laundromat_ready", tab: "empire",
+    text: "You can afford the Sunrise Laundromat. Buy the deed — dirty money in, respectable money out. Clean cash is what buys this city." },
+  { id: "first_clean", tab: "empire",
+    text: "That's clean money now, boss. Deeds, front upgrades, lawyers, bail — the legitimate world only takes clean." },
+  { id: "crew_ready", tab: "empire",
+    text: "You've got enough to put a Pot Watcher on the still. Crews run the racket so it earns while you sleep." },
+  { id: "shipment_ready", tab: "map",
+    text: "The Rusty Anchor's pouring. Run a SHIPMENT from the City map — big dirty payout, big heat. That's the trade." },
+  { id: "stockpile_warning", tab: "empire",
+    text: "That pile of dirty cash is drawing eyes. Wash it faster — expand the fronts — or the badge starts asking questions." },
+  { id: "heat_warning",
+    text: "Heat's climbing, boss. Tap the badge up top — grease a palm, or put the precinct captain on the payroll." },
+  { id: "investigation_help",
+    text: "The Feds are building a case! Get the heat under 60 — bribe, lie low, stop shipping — or they kick a door in." },
+  { id: "reopen_hint", tab: "empire",
+    text: "They boarded up our racket. Reopen it with clean cash — legal fees, new locks. It comes back a little smaller. The ward remembers." },
+  { id: "district_ready", tab: "map",
+    text: "We've got the Respect and the clean cash for the next ward. Tap it on the City map and buy in — new rackets, new fronts." },
+  { id: "velvet_ready", tab: "map",
+    text: "Downtown's ours — and The Velvet Room is for sale. The showpiece front: washes a river and earns its own clean take." },
+  { id: "prestige_ready", tab: "rebrand",
+    text: "The fortune's big enough to become a legend, boss. Start a New Family — burn it all for Legacy that boosts every family after." },
+];
+
+// ---------------------------------------------------------------------------
 // One-time milestone headlines — §6.
 // ---------------------------------------------------------------------------
 

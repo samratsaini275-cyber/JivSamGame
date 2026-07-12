@@ -1384,6 +1384,71 @@ img { -webkit-user-drag: none; }
 
 .legacy-perks { margin-top: -6px; flex: 0 0 auto; }
 
+/* ============ Enzo the Consigliere — the guide ============ */
+
+.guide-pop {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: calc(74px + env(safe-area-inset-bottom));
+  z-index: 46;
+  display: flex;
+  gap: 11px;
+  padding: 12px 13px;
+  border-radius: var(--r-m);
+  background: linear-gradient(180deg, #20283a, #141a26);
+  border: 1px solid var(--brass);
+  box-shadow:
+    inset 0 1px 0 rgba(236, 208, 138, 0.25),
+    0 10px 34px rgba(0, 0, 0, 0.6);
+  animation: guideIn 0.34s cubic-bezier(0.25, 1.4, 0.5, 1);
+}
+/* little pointer stub, like a speech bubble tail */
+.guide-pop::after {
+  content: "";
+  position: absolute;
+  left: 34px;
+  bottom: -8px;
+  width: 14px;
+  height: 14px;
+  background: #141a26;
+  border-right: 1px solid var(--brass);
+  border-bottom: 1px solid var(--brass);
+  transform: rotate(45deg);
+}
+@keyframes guideIn { from { transform: translateY(16px); opacity: 0; } }
+
+.guide-avatar {
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  font-size: 26px;
+  border-radius: 50%;
+  background: radial-gradient(120% 120% at 30% 20%, #38404f, #1a1f2a);
+  border: 2px solid var(--brass);
+  box-shadow: inset 0 -4px 8px rgba(0, 0, 0, 0.4);
+  animation: guideBob 2.4s ease-in-out infinite;
+}
+@keyframes guideBob { 50% { transform: translateY(-2px); } }
+.guide-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.guide-name {
+  font-family: var(--font-condensed);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: var(--brass);
+  text-transform: uppercase;
+}
+.guide-title { color: var(--faint); font-weight: 700; letter-spacing: 0.12em; }
+.guide-text { font-size: 12.5px; line-height: 1.45; color: var(--text); }
+.guide-actions { display: flex; gap: 7px; margin-top: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .guide-pop, .guide-avatar { animation: none; }
+}
+
 /* ============ The law (Phase 4) ============ */
 
 .heat-badge {

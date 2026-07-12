@@ -14,6 +14,7 @@ import { LABELS, MISC } from "./theme/content";
 import { MapScreen } from "./map/MapScreen";
 import { LawPanel, PrisonOverlay } from "./ui/Law";
 import { CheckpointPopup } from "./ui/Shipment";
+import { GuideLayer } from "./ui/Guide";
 
 type Tab = "map" | "empire" | "dms" | "rebrand" | "profile";
 
@@ -76,6 +77,7 @@ export function App() {
 
         <EffectsLayer />
         <CheckpointPopup />
+        {game.personaCreated && !game.inPrison && <GuideLayer onGoTab={setTab} />}
         {lawOpen && <LawPanel onClose={() => setLawOpen(false)} />}
         {game.inPrison && <PrisonOverlay />}
         {!game.personaCreated && <PersonaCreation />}

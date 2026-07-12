@@ -46,6 +46,8 @@ export interface GameState {
   respectXP: number;
   /** One-time milestone headline ids already fired. */
   milestones: string[];
+  /** Consigliere tips already shown (each fires once, ever). */
+  guideSeen: string[];
   /** The single in-flight shipment, or null. Timestamps epoch ms. */
   activeShipment: {
     routeID: string;
@@ -98,7 +100,7 @@ export function newGame(): GameState {
     clout: 0, hustles, fronts: {}, districtsUnlocked: ["docks"],
     heat: 0, payrolls: [], investigationEndsAt: null, prisonUntil: null,
     raidedHustles: [], lawyerPerks: [], lastCaseDismissedAt: null,
-    respectXP: 0, milestones: [], activeShipment: null,
+    respectXP: 0, milestones: [], guideSeen: [], activeShipment: null,
     lastSaved: null,
     ownedItems: [], equippedWrist: null, equippedGarage: null,
     daytonaPurchases: 0, rexMet: false,
