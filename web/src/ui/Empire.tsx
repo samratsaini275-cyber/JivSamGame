@@ -9,6 +9,7 @@ import { money, duration } from "./format";
 import { sfx } from "./sfx";
 import { LABELS, MISC, MYSTERY_CARD, DISTRICTS, HEAT_COPY } from "../theme/content";
 import { racketIcon } from "../theme/icons";
+import { Ic } from "./Icon";
 import { FrontsSection } from "./Fronts";
 
 export function Empire() {
@@ -45,7 +46,7 @@ export function Empire() {
         {HUSTLES.slice(0, visibleCount).map((h) => <HustleCard key={h.id} index={h.id} />)}
         {hiddenCount > 0 && (
           <div className="mystery-card">
-            <span className="mystery-icon">{MYSTERY_CARD.icon}</span>
+            <span className="mystery-icon"><Ic name="lock" size={20} /></span>
             <div>
               <div className="mystery-title">{MYSTERY_CARD.title(hiddenCount)}</div>
               <div className="mystery-sub">{MYSTERY_CARD.sub}</div>
@@ -97,7 +98,7 @@ export function HustleCard({ index }: { index: number }) {
       <div className="hustle-card raided" data-hustle-card={index}>
         <div className="hustle-art dim">
           <HustleArt index={index} />
-          <span className="lock-badge">🚧</span>
+          <span className="lock-badge raided"><Ic name="cross" size={16} /></span>
         </div>
         <div className="hustle-body">
           <div className="hustle-title-row">
@@ -127,7 +128,7 @@ export function HustleCard({ index }: { index: number }) {
       <div className={`hustle-card locked ${canUnlock ? "ready" : ""}`} data-hustle-card={index}>
         <div className="hustle-art dim">
           <HustleArt index={index} />
-          <span className="lock-badge">🔒</span>
+          <span className="lock-badge"><Ic name="lock" size={15} /></span>
         </div>
         <div className="hustle-body">
           <div className="hustle-name">{def.name}</div>
@@ -140,7 +141,7 @@ export function HustleCard({ index }: { index: number }) {
           disabled={!canUnlock}
           onClick={() => { game.buyOne(index); sfx.buy(); }}
         >
-          <span className="btn-buy-label">{available ? LABELS.start : "🔒"}</span>
+          <span className="btn-buy-label">{available ? LABELS.start : <Ic name="lock" size={13} />}</span>
           <span className="btn-buy-cost">{available ? money(firstCost) : districtName}</span>
         </button>
       </div>
@@ -204,9 +205,9 @@ export function HustleCard({ index }: { index: number }) {
             className={`btn-hire ${game.state.cash >= def.ghostwriterCost ? "" : "disabled"}`}
             disabled={game.state.cash < def.ghostwriterCost}
             onClick={() => { game.hireGhostwriter(index); sfx.hire(); }}
-            title={`${def.ghostwriterName} runs batches automatically`}
+            title={`Hire ${def.ghostwriterName} to run this automatically`}
           >
-            🤵 {def.ghostwriterName} · {money(def.ghostwriterCost)}
+            <Ic name="crew" size={14} /> HIRE {def.ghostwriterName} · {money(def.ghostwriterCost)}
           </button>
         )}
       </div>

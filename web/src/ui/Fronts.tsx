@@ -2,6 +2,7 @@
 import { useGame } from "./hooks";
 import { FRONTS, LAUNDER } from "../theme/content";
 import { frontIcon } from "../theme/icons";
+import { Ic } from "./Icon";
 import { money } from "./format";
 import { sfx } from "./sfx";
 
@@ -40,9 +41,9 @@ export function FrontsSection() {
           </div>
         </div>
         <div className="wash-flow" aria-hidden>
-          <span className="wash-dirty">$</span>
-          <span className="wash-arrow">→</span>
-          <span className="wash-clean">$</span>
+          <span className="wash-dirty"><Ic name="dirty" size={16} /></span>
+          <span className="wash-arrow"><Ic name="chevron" size={12} /></span>
+          <span className="wash-clean"><Ic name="clean" size={16} /></span>
         </div>
       </div>
 
@@ -63,7 +64,7 @@ export function FrontsSection() {
                   disabled={!afford}
                   onClick={() => { if (game.buyFront(f)) sfx.hire(); }}
                 >
-                  {f.priceCurrency === "clean" ? "🏦" : "💵"} {money(f.price)}
+                  <Ic name={f.priceCurrency === "clean" ? "clean" : "dirty"} size={13} /> {money(f.price)}
                 </button>
               </div>
             );

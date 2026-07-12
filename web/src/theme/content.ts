@@ -162,6 +162,25 @@ export const MYSTERY_CARD = {
 // Sal the Haberdasher (the Fixer) — flex economy reskin. IDs persisted.
 // ---------------------------------------------------------------------------
 
+export const SHOP = {
+  title: "SAL'S FINE GOODS",
+  sub: "Sal sells one thing: an edge. Wear a watch, earn more. Drive a motorcar, work faster.",
+  pitch: "Evenin', boss. Everything on this table makes your whole operation richer or faster. Pick your poison.",
+  wristTitle: "WATCHES",
+  wristSub: "Boost the money every racket earns",
+  garageTitle: "MOTORCARS",
+  garageSub: "Speed up every racket you run",
+  equipped: "WEARING",
+  wearing: "WEARING NOW",
+  equip: "WEAR THIS",
+  owned: "IN THE WARDROBE",
+  buy: "BUY",
+  bestOwned: "Your best is equipped automatically.",
+  lockedTitle: "Sal only deals with real operators",
+  lockedSub: "Open your second racket — The Rusty Anchor — and Sal comes calling with his catalog.",
+  lockedCta: "SHOW ME THE RACKETS",
+} as const;
+
 export const FIXER = {
   name: "Sal the Haberdasher",
   status: "around · probably at the cigar counter",
@@ -209,28 +228,28 @@ export const FIXER = {
 export const FIXER_ITEMS: Record<string, { name: string; blurb: string; boost: string; emoji: string }> = {
   fauxlex: { name: "Pawnshop Pocket Watch", emoji: "⌚",
     blurb: "Ticks loud enough to hear across the bar.",
-    boost: "+5% income, all rackets" },
+    boost: "Every racket earns +5% more money" },
   tagheuer: { name: "Swiss Chronometer", emoji: "⏱️",
     blurb: "Genuine. The customs stamp is the fake part.",
-    boost: "+15% income, established rackets (Tier 1+)" },
+    boost: "Your bigger rackets earn +15% more money" },
   daytona: { name: "The Judge's Heirloom", emoji: "🕰️",
     blurb: "Won in a card game the judge denies attending.",
-    boost: "+2% Legacy gain — permanent, survives a New Family" },
+    boost: "+2% Legacy forever — this one you keep after a reset" },
   mille: { name: "The Minute Repeater", emoji: "💎",
     blurb: "Chimes the hour. Nobody who owns one needs to know the hour.",
-    boost: "×2 income for 10s whenever you expand a racket" },
+    boost: "Double money for 10s every time you buy a racket" },
   civic: { name: "Rusty Flivver", emoji: "🚗",
     blurb: "Backfires like a starter pistol. Keeps meetings short.",
-    boost: "−5% batch time, all rackets" },
+    boost: "Every racket runs 5% faster" },
   charger: { name: "Bootlegger's Ford", emoji: "🚙",
     blurb: "Stock body, souped engine, false floor.",
-    boost: "−10% batch time, established rackets (Tier 1+)" },
+    boost: "Your bigger rackets run 10% faster" },
   lambo: { name: "Borrowed Duesenberg", emoji: "🏎️",
     blurb: "Borrowed indefinitely. The owner is very understanding.",
-    boost: "25% chance a milestone makes the FRONT PAGE early (×2, 60s)" },
+    boost: "Level-ups sometimes hit the front page — double money, 60s" },
   bugatti: { name: "The Silver Phantom", emoji: "🚘",
     blurb: "Paid in full. Do not ask in what.",
-    boost: "Your smallest racket runs at your best milestone tier" },
+    boost: "Your smallest racket runs at your best speed" },
 };
 
 // ---------------------------------------------------------------------------
@@ -719,46 +738,63 @@ export const LAWYER_RESPECT: Record<string, number> = {
 
 export const GUIDE = {
   name: "Enzo",
-  title: "CONSIGLIERE",
-  avatar: "👴",
+  title: "YOUR RIGHT HAND",
   dismiss: "GOT IT",
-  show: "SHOW ME",
+  show: "TAKE ME THERE",
 } as const;
 
 export interface GuideTipDef {
   id: string;
+  /** One short bold instruction — what to do, right now. */
+  headline: string;
+  /** One plain sentence of why. */
   text: string;
-  /** Tab the SHOW ME button jumps to. */
+  /** Tab the button jumps to. */
   tab?: "map" | "empire" | "dms" | "rebrand" | "profile";
 }
 
+// Direct, action-first, for someone who doesn't play games. Headline = the
+// verb. Text = the one-line reason. No jargon in the instruction itself.
 export const GUIDE_TIPS: GuideTipDef[] = [
   { id: "welcome", tab: "empire",
-    text: "Welcome to New Carthage, boss. Tap the Corner Still to RUN A BATCH — every empire starts with grandma's recipe." },
+    headline: "Tap the still to make your first dollar.",
+    text: "Hit the green RUN A BATCH bar. That's how you earn — do it a few times." },
   { id: "first_expand", tab: "empire",
-    text: "Cash in the till. BUY more stills — every 25 you own doubles the take and halves the wait." },
+    headline: "Now buy more stills with the BUY button.",
+    text: "The more you own, the more you earn. It gets faster the more you buy." },
   { id: "laundromat_ready", tab: "empire",
-    text: "You can afford the Sunrise Laundromat. Buy the deed — dirty money in, respectable money out. Clean cash is what buys this city." },
+    headline: "Buy the Laundromat at the top.",
+    text: "It turns your green cash into gold cash — and only gold cash buys property." },
   { id: "first_clean", tab: "empire",
-    text: "That's clean money now, boss. Deeds, front upgrades, lawyers, bail — the legitimate world only takes clean." },
+    headline: "That gold number is your real money.",
+    text: "Green pays for your business. Gold buys new places, lawyers, and your way out of jail." },
   { id: "crew_ready", tab: "empire",
-    text: "You've got enough to put a Pot Watcher on the still. Crews run the racket so it earns while you sleep." },
+    headline: "Hire a crew so it runs itself.",
+    text: "Tap the crew button on a business. Now it earns even when you're not tapping." },
   { id: "shipment_ready", tab: "map",
-    text: "The Rusty Anchor's pouring. Run a SHIPMENT from the City map — big dirty payout, big heat. That's the trade." },
+    headline: "Send a shipment for a big payday.",
+    text: "Hit SHIPMENT on the map. Bigger loads pay more but bring the cops sniffing." },
   { id: "stockpile_warning", tab: "empire",
-    text: "That pile of dirty cash is drawing eyes. Wash it faster — expand the fronts — or the badge starts asking questions." },
+    headline: "Your cash pile is getting risky.",
+    text: "Buy or upgrade Fronts to clean it faster, before the police notice." },
   { id: "heat_warning",
-    text: "Heat's climbing, boss. Tap the badge up top — grease a palm, or put the precinct captain on the payroll." },
+    headline: "Cops are watching. Tap the shield up top.",
+    text: "Pay them off, or put a captain on your payroll to keep the heat down." },
   { id: "investigation_help",
-    text: "The Feds are building a case! Get the heat under 60 — bribe, lie low, stop shipping — or they kick a door in." },
+    headline: "You're under investigation — act fast.",
+    text: "Cool the heat down: pay a bribe, or stop shipments for a bit. Or they raid you." },
   { id: "reopen_hint", tab: "empire",
-    text: "They boarded up our racket. Reopen it with clean cash — legal fees, new locks. It comes back a little smaller. The ward remembers." },
+    headline: "The cops shut a business. Reopen it.",
+    text: "Tap REOPEN and pay in gold cash. It comes back a little smaller — that's the price." },
   { id: "district_ready", tab: "map",
-    text: "We've got the Respect and the clean cash for the next ward. Tap it on the City map and buy in — new rackets, new fronts." },
+    headline: "You can claim a new neighborhood.",
+    text: "Tap the glowing district on the map and buy in. More neighborhoods, more money." },
   { id: "velvet_ready", tab: "map",
-    text: "Downtown's ours — and The Velvet Room is for sale. The showpiece front: washes a river and earns its own clean take." },
+    headline: "The Velvet Room is up for grabs.",
+    text: "It's your best money-cleaner and earns on its own. Grab it in Downtown." },
   { id: "prestige_ready", tab: "rebrand",
-    text: "The fortune's big enough to become a legend, boss. Start a New Family — burn it all for Legacy that boosts every family after." },
+    headline: "You're rich enough to start over stronger.",
+    text: "Start a New Family: reset for permanent bonuses that make every run faster." },
 ];
 
 // ---------------------------------------------------------------------------

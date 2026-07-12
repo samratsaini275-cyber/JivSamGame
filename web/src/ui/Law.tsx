@@ -1,6 +1,7 @@
 // The law: heat badge dial, precinct bribe/payroll panel, prison overlay.
 import { useEffect, useState } from "react";
 import { useGame } from "./hooks";
+import { Ic } from "./Icon";
 import { PRECINCTS } from "../engine/game";
 import { HEAT_COPY, LANDMARKS, PLOTS, districtByID } from "../theme/content";
 import { money, duration } from "./format";
@@ -91,7 +92,7 @@ export function LawPanel({ onClose }: { onClose: () => void }) {
     <div className="modal-backdrop" onClick={onClose}>
       <div className="law-card" onClick={(e) => e.stopPropagation()}>
         <div className="law-head">
-          <div className="sheet-title">🚨 {HEAT_COPY.panelTitle}</div>
+          <div className="sheet-title"><Ic name="badge" size={18} /> {HEAT_COPY.panelTitle}</div>
           <div className="law-status" style={{ color: heatColor(heat) }}>
             {game.underInvestigation
               ? `${HEAT_COPY.investigation} · ${Math.ceil(game.investigationSecondsLeft)}s`
@@ -103,7 +104,7 @@ export function LawPanel({ onClose }: { onClose: () => void }) {
         </div>
         <div className="law-rate">
           {rate >= 0 ? "▲" : "▼"} {Math.abs(rate * 60).toFixed(1)} heat/min
-          {stockpiled && <span className="law-warn"> · 💵 {HEAT_COPY.srcStockpile}!</span>}
+          {stockpiled && <span className="law-warn"> · <Ic name="warn" size={12} /> {HEAT_COPY.srcStockpile}!</span>}
           {game.state.payrolls.length > 0 && (
             <span className="law-ok"> · {HEAT_COPY.srcPayroll(game.state.payrolls.length)}</span>
           )}
@@ -131,7 +132,7 @@ export function PrecinctRow({ precinctID }: { precinctID: string }) {
   return (
     <div className="precinct-row">
       <div className="precinct-head">
-        <span className="precinct-name">{lm.emoji} {lm.name}</span>
+        <span className="precinct-name"><Ic name="precinct" size={15} /> {lm.name}</span>
         <span className="precinct-district">{districtName}</span>
       </div>
       <div className="precinct-actions">
@@ -150,7 +151,7 @@ export function PrecinctRow({ precinctID }: { precinctID: string }) {
           {onPayroll ? HEAT_COPY.payrollOff : HEAT_COPY.payrollOn(money(payrollCost))}
         </button>
       </div>
-      {onPayroll && <div className="precinct-note">✓ {HEAT_COPY.payrollActive}</div>}
+      {onPayroll && <div className="precinct-note"><Ic name="check" size={12} /> {HEAT_COPY.payrollActive}</div>}
     </div>
   );
 }
@@ -187,7 +188,7 @@ export function PrisonOverlay() {
             {HEAT_COPY.prisonBail(money(bail))}
           </button>
           <button className="btn-cta disabled prison-ad" disabled>
-            📻 {HEAT_COPY.prisonAd}
+            {HEAT_COPY.prisonAd}
           </button>
         </div>
         <div className="prison-note">{HEAT_COPY.prisonWait} — the clock does the rest.</div>

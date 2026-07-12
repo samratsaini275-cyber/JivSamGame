@@ -7,6 +7,7 @@ import { Game } from "../engine/game";
 import { FRONTS, GUIDE, GUIDE_TIPS, GuideTipDef } from "../theme/content";
 import { HUSTLES } from "../engine/data";
 import { sfx } from "./sfx";
+import { Portrait, Ic } from "./Icon";
 
 type Tab = "map" | "empire" | "dms" | "rebrand" | "profile";
 
@@ -78,12 +79,17 @@ export function GuideLayer({ onGoTab }: { onGoTab: (tab: Tab) => void }) {
 
   return (
     <div className="guide-pop" role="dialog" aria-label={`${GUIDE.name}, ${GUIDE.title}`}>
-      <div className="guide-avatar" aria-hidden>{GUIDE.avatar}</div>
+      <Portrait name="enzo" size={46} className="guide-avatar" />
       <div className="guide-body">
         <div className="guide-name">{GUIDE.name} <span className="guide-title">· {GUIDE.title}</span></div>
+        <div className="guide-headline">{active.headline}</div>
         <div className="guide-text">{active.text}</div>
         <div className="guide-actions">
-          {active.tab && <button className="btn-mini buy" onClick={showMe}>{GUIDE.show}</button>}
+          {active.tab && (
+            <button className="btn-mini buy" onClick={showMe}>
+              {GUIDE.show} <Ic name="chevron" size={13} />
+            </button>
+          )}
           <button className="btn-mini" onClick={dismiss}>{GUIDE.dismiss}</button>
         </div>
       </div>

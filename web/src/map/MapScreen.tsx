@@ -9,6 +9,8 @@ import {
 } from "../theme/content";
 import { money } from "../ui/format";
 import { sfx } from "../ui/sfx";
+import { Ic } from "../ui/Icon";
+import { frontIcon } from "../theme/icons";
 import { HustleCard } from "../ui/Empire";
 import { PrecinctRow } from "../ui/Law";
 import { ShipmentButton } from "../ui/Shipment";
@@ -51,7 +53,7 @@ function SheetContent({ sel, onClose }: { sel: MapSelection; onClose: () => void
         <div className="sheet-note">
           {needsRespect
             ? `Reach Respect L${d.respectLevel} — the family is L${level}. Run shipments, open rackets.`
-            : `Respect L${d.respectLevel} ✓ · pay the ward bosses in clean cash`}
+            : `Respect L${d.respectLevel} reached · pay the ward bosses in clean cash`}
         </div>
         <button
           className={`btn-cta ${afford ? "" : "disabled"}`}
@@ -82,7 +84,10 @@ function SheetContent({ sel, onClose }: { sel: MapSelection; onClose: () => void
     const upgradeCost = game.frontUpgradeCost(def);
     return (
       <div className="sheet-body">
-        <div className="sheet-title">{def.emoji} {def.name}</div>
+        <div className="sheet-title-row">
+          {frontIcon(def.id) && <img className="sheet-medallion" src={frontIcon(def.id)!} alt="" />}
+          <div className="sheet-title">{def.name}</div>
+        </div>
         <div className="sheet-flavor">{def.flavor}</div>
         {owned ? (
           <>
@@ -96,7 +101,7 @@ function SheetContent({ sel, onClose }: { sel: MapSelection; onClose: () => void
               disabled={game.state.cleanCash < upgradeCost}
               onClick={() => { if (game.upgradeFront(def)) sfx.buy(); }}
             >
-              {LAUNDER.upgrade} · 🏦 {money(upgradeCost)}
+              {LAUNDER.upgrade} · <Ic name="clean" size={14} /> {money(upgradeCost)}
             </button>
           </>
         ) : (
@@ -105,7 +110,7 @@ function SheetContent({ sel, onClose }: { sel: MapSelection; onClose: () => void
             disabled={!game.canAffordFront(def)}
             onClick={() => { if (game.buyFront(def)) sfx.hire(); }}
           >
-            {LAUNDER.buy} · {def.priceCurrency === "clean" ? "🏦" : "💵"} {money(def.price)}
+            {LAUNDER.buy} · <Ic name={def.priceCurrency === "clean" ? "clean" : "dirty"} size={14} /> {money(def.price)}
           </button>
         )}
       </div>
@@ -117,7 +122,10 @@ function SheetContent({ sel, onClose }: { sel: MapSelection; onClose: () => void
     const lm = LANDMARKS[plot.ref as string];
     return (
       <div className="sheet-body">
-        <div className="sheet-title">{lm.emoji} {lm.name}</div>
+        <div className="sheet-title-row">
+          <span className="sheet-glyph"><Ic name="precinct" size={20} /></span>
+          <div className="sheet-title">{lm.name}</div>
+        </div>
         <div className="sheet-flavor">{lm.blurb}</div>
         <PrecinctRow precinctID={plot.ref as string} />
       </div>
@@ -131,7 +139,10 @@ function SheetContent({ sel, onClose }: { sel: MapSelection; onClose: () => void
   const lm = LANDMARKS[plot.ref as string];
   return (
     <div className="sheet-body">
-      <div className="sheet-title">{lm.emoji} {lm.name}</div>
+      <div className="sheet-title-row">
+        <span className="sheet-glyph"><Ic name="cityhall" size={20} /></span>
+        <div className="sheet-title">{lm.name}</div>
+      </div>
       <div className="sheet-flavor">{lm.blurb}</div>
       <div className="sheet-note">{MAP_COPY.landmarkIdle}</div>
     </div>
@@ -142,14 +153,17 @@ function JudgeParlor() {
   const game = useGame();
   return (
     <div className="sheet-body">
-      <div className="sheet-title">⚖️ {HEAT_COPY.lawyerTitle}</div>
+      <div className="sheet-title-row">
+        <span className="sheet-glyph"><Ic name="gavel" size={20} /></span>
+        <div className="sheet-title">{HEAT_COPY.lawyerTitle}</div>
+      </div>
       <div className="sheet-flavor">{HEAT_COPY.lawyerSub}</div>
       {LAWYER_PERKS.map((perk) => {
         const owned = game.hasLawyerPerk(perk.id);
         const afford = game.state.cleanCash >= perk.cost;
         return (
           <div key={perk.id} className={`drip-row ${owned ? "equipped" : ""}`}>
-            <span className="drip-emoji">📜</span>
+            <span className="drip-icon t3"><Ic name="writ" size={18} /></span>
             <div className="drip-info">
               <div className="drip-name">{perk.name}</div>
               <div className="drip-tier t3">{perk.blurb}</div>
@@ -162,7 +176,7 @@ function JudgeParlor() {
                 disabled={!afford}
                 onClick={() => { if (game.buyLawyerPerk(perk.id)) sfx.rebrand(); }}
               >
-                🏦 {money(perk.cost)}
+                <Ic name="clean" size={12} /> {money(perk.cost)}
               </button>
             )}
           </div>

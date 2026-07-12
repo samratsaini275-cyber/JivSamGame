@@ -6,6 +6,7 @@ import { game as gameInstance } from "../engine/game";
 import { SHIPMENT_ROUTES, SHIPMENT_SIZES, SHIPMENT_COPY } from "../theme/content";
 import { money } from "./format";
 import { sfx } from "./sfx";
+import { Ic } from "./Icon";
 
 export function ShipmentButton() {
   const game = useGame();
@@ -18,11 +19,11 @@ export function ShipmentButton() {
     <>
       {sh ? (
         <div className="shipment-fab in-transit">
-          🚚 {SHIPMENT_COPY.inTransit(Math.max(0, Math.ceil((sh.arrivesAt - Date.now()) / 1000)))}
+          <Ic name="truck" size={17} /> {SHIPMENT_COPY.inTransit(Math.max(0, Math.ceil((sh.arrivesAt - Date.now()) / 1000)))}
         </div>
       ) : (
         <button className="shipment-fab" onClick={() => setOpen(true)}>
-          📦 {SHIPMENT_COPY.cta}
+          <Ic name="shipment" size={17} /> {SHIPMENT_COPY.cta}
         </button>
       )}
       {open && !sh && <ShipmentPanel onClose={() => setOpen(false)} />}
@@ -37,7 +38,7 @@ function ShipmentPanel({ onClose }: { onClose: () => void }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="law-card shipment-card" onClick={(e) => e.stopPropagation()}>
-        <div className="sheet-title">📦 {SHIPMENT_COPY.panelTitle}</div>
+        <div className="sheet-title"><Ic name="shipment" size={18} /> {SHIPMENT_COPY.panelTitle}</div>
         <div className="sheet-note">{SHIPMENT_COPY.panelSub}</div>
 
         <div className="segmented ship-sizes">
@@ -57,7 +58,7 @@ function ShipmentPanel({ onClose }: { onClose: () => void }) {
           const quote = game.shipmentQuote(route, sizeID);
           return (
             <div key={route.id} className={`route-row ${available ? "" : "unavailable"}`}>
-              <span className="front-emoji">{route.emoji}</span>
+              <span className="route-icon"><Ic name={route.vehicle === "boat" ? "boat" : "truck"} size={18} /></span>
               <div className="front-info">
                 <div className="front-name">{route.name}</div>
                 <div className="front-flavor">
@@ -107,7 +108,7 @@ export function CheckpointPopup() {
 
   return (
     <div className="checkpoint-pop">
-      <div className="checkpoint-title">🚨 {SHIPMENT_COPY.checkpointTitle}</div>
+      <div className="checkpoint-title"><Ic name="badge" size={16} /> {SHIPMENT_COPY.checkpointTitle}</div>
       <div className="checkpoint-sub">{SHIPMENT_COPY.checkpointSub}</div>
       <div className="checkpoint-actions">
         <button className="btn-mini buy" onClick={() => choose(true)}>

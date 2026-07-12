@@ -1,162 +1,95 @@
-// IG-style DMs with Rex Calloway — thread list + chat bubbles + reply chips.
-import { useEffect, useRef, useState } from "react";
+// THE FIXER — Sal's shop. A plain, readable storefront: two shelves of goods,
+// each item shows exactly what it does, what it costs, and one button. No chat,
+// no threads — a new player should get it in three seconds.
 import { useGame } from "./hooks";
-import {
-  unlockedThreads, threadMessages, pendingPitch, repliesFor, RexDMThread,
-} from "../engine/rexChat";
-import { rexItemByID, REX_TIER_NAMES } from "../engine/data";
+import { REX_ITEMS, REX_TIER_NAMES, RexItemDef, ItemSlot } from "../engine/data";
+import { SHOP } from "../theme/content";
 import { money } from "./format";
 import { sfx } from "./sfx";
-import { FIXER } from "../theme/content";
+import { Ic, Portrait } from "./Icon";
 
 export function RexScreen({ onGoEmpire }: { onGoEmpire: () => void }) {
   const game = useGame();
-  const [threadID, setThreadID] = useState<string | null>(null);
-
-  if (!game.rexUnlocked) return <DMsLocked onGoEmpire={onGoEmpire} />;
-
-  const threads = unlockedThreads(game);
-  const active = threads.find((t) => t.id === threadID) ?? null;
-
-  return active
-    ? <ChatView thread={active} onBack={() => setThreadID(null)} />
-    : <ThreadList threads={threads} onOpen={setThreadID} />;
+  if (!game.rexUnlocked) return <ShopLocked onGoEmpire={onGoEmpire} />;
+  return <Shop />;
 }
 
-function DMsLocked({ onGoEmpire }: { onGoEmpire: () => void }) {
+function ShopLocked({ onGoEmpire }: { onGoEmpire: () => void }) {
   return (
-    <div className="screen dms-locked">
-      <div className="ghost-thread">
-        <RexAvatar />
-        <div className="thread-info">
-          <div className="thread-title">{FIXER.name}</div>
-          <div className="thread-preview blurred">{FIXER.threads.intro.preview}</div>
-        </div>
-        <span className="ghost-lock">🔒</span>
-      </div>
-      <div className="lock-title">{FIXER.dmsLockedTitle}</div>
-      <div className="lock-sub" dangerouslySetInnerHTML={{ __html: FIXER.dmsLockedSub }} />
-      <button className="btn-cta lock-cta" onClick={onGoEmpire}>
-        {FIXER.dmsLockedCta}
-      </button>
+    <div className="screen shop-locked">
+      <Portrait name="sal" size={84} />
+      <div className="lock-title">{SHOP.lockedTitle}</div>
+      <div className="lock-sub">{SHOP.lockedSub}</div>
+      <button className="btn-cta lock-cta" onClick={onGoEmpire}>{SHOP.lockedCta}</button>
     </div>
   );
 }
 
-function ThreadList({ threads, onOpen }: { threads: RexDMThread[]; onOpen: (id: string) => void }) {
-  const game = useGame();
+function Shop() {
   return (
-    <div className="screen dms">
-      <div className="dms-header">
-        <div className="section-title">THE FIXER</div>
-        <div className="section-sub">{FIXER.name} · {FIXER.role}</div>
+    <div className="screen shop">
+      <div className="shop-hero">
+        <Portrait name="sal" size={54} />
+        <div>
+          <div className="section-title">{SHOP.title}</div>
+          <div className="shop-pitch">{SHOP.pitch}</div>
+        </div>
       </div>
-      <div className="thread-list">
-        {threads.map((t) => {
-          const unread = pendingPitch(threadMessages(t, game), game) !== null;
-          return (
-            <button key={t.id} className="thread-row" onClick={() => onOpen(t.id)}>
-              <RexAvatar />
-              <div className="thread-info">
-                <div className="thread-title">{t.title}</div>
-                <div className="thread-preview">{t.preview}</div>
-              </div>
-              {unread && <span className="unread-dot" />}
-            </button>
-          );
-        })}
+
+      <Shelf slot="wrist" icon="watch" title={SHOP.wristTitle} sub={SHOP.wristSub} />
+      <Shelf slot="garage" icon="car" title={SHOP.garageTitle} sub={SHOP.garageSub} />
+
+      <div className="shop-footnote">{SHOP.bestOwned}</div>
+    </div>
+  );
+}
+
+function Shelf({ slot, icon, title, sub }: { slot: ItemSlot; icon: "watch" | "car"; title: string; sub: string }) {
+  const items = REX_ITEMS.filter((i) => i.slot === slot).sort((a, b) => a.tier - b.tier);
+  return (
+    <div className="shop-shelf">
+      <div className="shelf-head">
+        <span className="shelf-icon"><Ic name={icon} size={18} /></span>
+        <div>
+          <div className="shelf-title">{title}</div>
+          <div className="shelf-sub">{sub}</div>
+        </div>
       </div>
-      <div className="dms-footnote">
-        Sal comes around with new offers as the fortune grows. His finery boosts the whole outfit.
+      <div className="ware-list">
+        {items.map((item) => <Ware key={item.id} item={item} />)}
       </div>
     </div>
   );
 }
 
-function RexAvatar({ size = 46 }: { size?: number }) {
-  return (
-    <span className="rex-avatar" style={{ width: size, height: size, fontSize: size * 0.42 }}>
-      🎩
-    </span>
-  );
-}
-
-function ChatView({ thread, onBack }: { thread: RexDMThread; onBack: () => void }) {
+function Ware({ item }: { item: RexItemDef }) {
   const game = useGame();
-  const messages = threadMessages(thread, game);
-  const pitch = pendingPitch(messages, game);
-  const replies = pitch ? repliesFor(pitch, game) : [];
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    game.markRexMet();
-  }, []);
-
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
-  }, [messages.length, replies.length]);
+  const owns = game.ownsItem(item);
+  const equipped = game.isItemEquipped(item);
+  const afford = game.state.cash >= item.cost;
 
   return (
-    <div className="screen chat">
-      <div className="chat-header">
-        <button className="back-btn" onClick={onBack} aria-label="Back">‹</button>
-        <RexAvatar size={38} />
-        <div className="chat-header-info">
-          <div className="chat-name">{thread.title}</div>
-          <div className="chat-status">{FIXER.status}</div>
-        </div>
+    <div className={`ware ${equipped ? "equipped" : ""}`}>
+      <div className="ware-top">
+        <span className={`ware-tier t${item.tier}`}>{REX_TIER_NAMES[item.tier]}</span>
+        <span className="ware-name">{item.name}</span>
       </div>
-
-      <div className="chat-scroll" ref={scrollRef}>
-        {messages.map((m) => {
-          const item = rexItemByID(m.itemID);
-          const isPitchCard = m.sender === "rex" && m.pitchID && item;
-          return (
-            <div key={m.id} className={`bubble-row ${m.sender}`}>
-              {isPitchCard ? (
-                <div className="bubble rex pitch-card">
-                  <div className="pitch-head">
-                    <span className="pitch-emoji">{item.emoji}</span>
-                    <div>
-                      <div className="pitch-name">{item.name}</div>
-                      <div className={`pitch-tier t${item.tier}`}>
-                        {REX_TIER_NAMES[item.tier]} · {money(item.cost)}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="pitch-blurb">{item.blurb}</div>
-                  <div className="pitch-boost">✨ {item.boostText}</div>
-                </div>
-              ) : (
-                <div className={`bubble ${m.sender}`}>{m.text}</div>
-              )}
-            </div>
-          );
-        })}
-        {pitch && replies.length > 0 && (
-          <div className="typing-hint">{FIXER.waiting}</div>
-        )}
-      </div>
-
-      <div className="reply-bar">
-        {pitch && replies.length > 0 ? (
-          replies.map((r, i) => {
-            const primary =
-              r.action.type === "buy" || r.action.type === "equip" ||
-              (r.action.type === "introAck" && i === 0);
-            return (
-              <button
-                key={r.id}
-                className={`reply-chip ${r.disabled ? "disabled" : ""} ${primary ? "primary" : ""}`}
-                disabled={r.disabled}
-                onClick={() => { game.handleRexReply(r.action, pitch); sfx.message(); }}
-              >
-                {r.label}
-              </button>
-            );
-          })
+      <div className="ware-effect"><Ic name="up" size={13} /> {item.boostText}</div>
+      <div className="ware-foot">
+        {equipped ? (
+          <span className="ware-state wearing"><Ic name="check" size={13} /> {SHOP.wearing}</span>
+        ) : owns ? (
+          <button className="btn-mini" onClick={() => { game.equipItem(item); sfx.post(); }}>
+            {SHOP.equip}
+          </button>
         ) : (
-          <div className="reply-idle">{FIXER.idleReply}</div>
+          <button
+            className={`btn-mini buy ${afford ? "" : "disabled"}`}
+            disabled={!afford}
+            onClick={() => { if (game.buyItem(item)) sfx.buy(); }}
+          >
+            {SHOP.buy} · <Ic name="dirty" size={12} /> {money(item.cost)}
+          </button>
         )}
       </div>
     </div>

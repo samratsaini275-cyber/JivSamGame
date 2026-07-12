@@ -37,6 +37,24 @@
   font-family: "Barlow", -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
 }
 
+/* Illustrated character busts */
+.portrait-frame {
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--ink-2);
+}
+.portrait-frame.ringed {
+  border: 2px solid var(--brass);
+  box-shadow: inset 0 -4px 8px rgba(0, 0, 0, 0.35), 0 0 10px rgba(212, 169, 67, 0.18);
+}
+.portrait-frame svg { display: block; }
+
+/* Inline line-glyphs sit on the text baseline */
+.ic { display: inline-block; vertical-align: -0.14em; }
+
 /* Letterpress kicker — every small label in the game speaks like this. */
 .kicker, .cash-tag, .field-label, .ledger-tag {
   font-family: var(--font-condensed);
@@ -992,7 +1010,6 @@ img { -webkit-user-drag: none; }
   place-items: center;
   background: radial-gradient(120% 120% at 30% 20%, #2c3242, #14171f);
 }
-.portrait-emoji { font-size: 44px; }
 .profile-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px; }
 .profile-handle { font-size: 17px; font-weight: 900; }
 .profile-stats { display: flex; gap: 7px; flex-wrap: wrap; }
@@ -1051,6 +1068,34 @@ img { -webkit-user-drag: none; }
   background: color-mix(in srgb, var(--accent) 7%, transparent);
 }
 .drip-emoji { font-size: 20px; width: 26px; text-align: center; }
+.drip-icon {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-s);
+  color: var(--brass);
+  background: rgba(212, 169, 67, 0.1);
+  border: 1px solid var(--hairline-dim);
+}
+.drip-icon.t1 { color: #b6bcc4; }
+.drip-icon.t2 { color: #7fb8b1; }
+.drip-icon.t3 { color: var(--violet); }
+.drip-icon.t4 { color: var(--brass); }
+.sheet-title-row { display: flex; align-items: center; gap: 10px; }
+.sheet-medallion { width: 34px; height: 34px; flex-shrink: 0; }
+.sheet-glyph {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-s);
+  color: var(--brass);
+  background: rgba(212, 169, 67, 0.1);
+  border: 1px solid var(--hairline);
+}
 .drip-info { flex: 1; min-width: 0; }
 .drip-name { font-size: 12.5px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .drip-tier { font-size: 9.5px; font-weight: 800; margin-top: 1px; }
@@ -1081,7 +1126,7 @@ img { -webkit-user-drag: none; }
 
 .rebrand { display: flex; flex-direction: column; gap: 14px; }
 .rebrand-hero { text-align: center; padding-top: 16px; }
-.rebrand-icon { font-size: 46px; display: inline-block; filter: drop-shadow(0 0 18px rgba(61, 122, 116, 0.6)); }
+.rebrand-icon { display: inline-flex; color: var(--brass); filter: drop-shadow(0 0 18px rgba(212, 169, 67, 0.45)); }
 .rebrand-title {
   font-family: var(--font-display);
   font-size: 22px;
@@ -1294,7 +1339,7 @@ img { -webkit-user-drag: none; }
 .creation-card .btn-cta { margin-top: 20px; }
 
 .offline-card { text-align: center; }
-.offline-emoji { font-size: 44px; }
+.offline-emoji { display: inline-flex; color: var(--green); }
 .offline-title { font-family: var(--font-display); font-size: 18px; margin-top: 10px; }
 .offline-sub { font-size: 12px; color: rgba(42, 32, 24, 0.65); margin-top: 4px; font-style: italic; }
 .offline-amount {
@@ -1384,6 +1429,103 @@ img { -webkit-user-drag: none; }
 
 .legacy-perks { margin-top: -6px; flex: 0 0 auto; }
 
+/* ============ The Fixer — Sal's shop ============ */
+
+.shop { display: flex; flex-direction: column; gap: 16px; }
+.shop-hero {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border-radius: var(--r-m);
+  background: linear-gradient(180deg, var(--ink-raised), var(--ink-2));
+  border: 1px solid var(--card-border);
+}
+.shop-pitch { font-size: 12px; color: var(--muted); line-height: 1.4; margin-top: 3px; font-style: italic; }
+
+.shop-shelf { display: flex; flex-direction: column; gap: 9px; }
+.shelf-head { display: flex; align-items: center; gap: 10px; }
+.shelf-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-s);
+  color: var(--brass);
+  background: rgba(212, 169, 67, 0.1);
+  border: 1px solid var(--hairline);
+}
+.shelf-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0.1em;
+  color: var(--paper);
+}
+.shelf-sub { font-size: 11px; color: var(--muted); font-weight: 600; }
+
+.ware-list { display: flex; flex-direction: column; gap: 8px; }
+.ware {
+  padding: 11px 12px;
+  border-radius: var(--r-m);
+  background: linear-gradient(180deg, var(--ink-raised), var(--ink-2));
+  border: 1px solid rgba(232, 220, 195, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.ware.equipped {
+  border-color: color-mix(in srgb, var(--brass) 55%, transparent);
+  background: linear-gradient(180deg, rgba(212, 169, 67, 0.1), var(--ink-2));
+}
+.ware-top { display: flex; align-items: center; gap: 8px; }
+.ware-name { font-size: 14px; font-weight: 800; color: var(--paper); }
+.ware-tier {
+  flex-shrink: 0;
+  font-family: var(--font-condensed);
+  font-size: 8.5px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 2px;
+  color: var(--ink);
+  background: linear-gradient(180deg, var(--brass-bright), var(--brass) 60%, #a5822c);
+}
+.ware-tier.t1 { background: #b6bcc4; }
+.ware-tier.t2 { background: #7fb8b1; color: var(--ink); }
+.ware-tier.t3 { background: var(--violet); color: var(--ink); }
+.ware-effect {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #a9c795;
+  line-height: 1.35;
+}
+.ware-foot { display: flex; justify-content: flex-end; }
+.ware-foot .btn-mini { display: inline-flex; align-items: center; gap: 4px; }
+.ware-state.wearing {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-condensed);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: var(--brass);
+}
+.shop-footnote { font-size: 11px; color: var(--faint); text-align: center; font-style: italic; }
+
+.shop-locked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+}
+
 /* ============ Enzo the Consigliere — the guide ============ */
 
 .guide-pop {
@@ -1419,31 +1561,24 @@ img { -webkit-user-drag: none; }
 @keyframes guideIn { from { transform: translateY(16px); opacity: 0; } }
 
 .guide-avatar {
-  flex-shrink: 0;
-  width: 46px;
-  height: 46px;
-  display: grid;
-  place-items: center;
-  font-size: 26px;
-  border-radius: 50%;
-  background: radial-gradient(120% 120% at 30% 20%, #38404f, #1a1f2a);
-  border: 2px solid var(--brass);
-  box-shadow: inset 0 -4px 8px rgba(0, 0, 0, 0.4);
+  align-self: flex-start;
   animation: guideBob 2.4s ease-in-out infinite;
 }
 @keyframes guideBob { 50% { transform: translateY(-2px); } }
-.guide-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.guide-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .guide-name {
   font-family: var(--font-condensed);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.08em;
   color: var(--brass);
   text-transform: uppercase;
 }
-.guide-title { color: var(--faint); font-weight: 700; letter-spacing: 0.12em; }
-.guide-text { font-size: 12.5px; line-height: 1.45; color: var(--text); }
-.guide-actions { display: flex; gap: 7px; margin-top: 3px; }
+.guide-title { color: var(--faint); font-weight: 700; letter-spacing: 0.1em; }
+.guide-headline { font-size: 14px; font-weight: 800; line-height: 1.3; color: var(--paper); }
+.guide-text { font-size: 12px; line-height: 1.42; color: var(--muted); }
+.guide-actions { display: flex; gap: 7px; margin-top: 6px; }
+.guide-actions .btn-mini { display: inline-flex; align-items: center; gap: 4px; }
 
 @media (prefers-reduced-motion: reduce) {
   .guide-pop, .guide-avatar { animation: none; }
@@ -1800,7 +1935,7 @@ img { -webkit-user-drag: none; }
     radial-gradient(circle at right center, var(--bg) 7px, transparent 7.5px) right center / 14px 100% no-repeat,
     linear-gradient(180deg, rgba(212, 169, 67, 0.06), rgba(212, 169, 67, 0.02));
 }
-.mystery-icon { font-size: 22px; filter: saturate(0.75); }
+.mystery-icon { display: inline-flex; color: var(--faint); }
 .mystery-title {
   font-family: var(--font-condensed);
   font-size: 13px;

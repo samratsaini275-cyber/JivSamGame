@@ -9,6 +9,7 @@ import { PersonaScreen, PersonaCreation } from "./ui/Persona";
 import { RebrandScreen } from "./ui/Rebrand";
 import { EffectsLayer } from "./ui/Effects";
 import { IconEmpire, IconChat, IconSpark, IconProfile, IconLock, IconMap } from "./ui/Icons";
+import { Ic } from "./ui/Icon";
 import { money } from "./ui/format";
 import { LABELS, MISC } from "./theme/content";
 import { MapScreen } from "./map/MapScreen";
@@ -92,7 +93,7 @@ function OfflineModal() {
   return (
     <div className="modal-backdrop">
       <div className="offline-card">
-        <div className="offline-emoji">🕰️</div>
+        <div className="offline-emoji"><Ic name="dirty" size={38} /></div>
         <div className="offline-title">{MISC.offlineTitle}</div>
         <div className="offline-sub">{MISC.offlineSub}</div>
         <div className="offline-amount">+{money(game.offlineEarnings)}</div>

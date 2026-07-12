@@ -1,6 +1,7 @@
 // Prestige screen: Start a New Family — burn the ledgers, keep the Respect.
 import { useEffect, useState } from "react";
 import { useGame } from "./hooks";
+import { Ic } from "./Icon";
 import { cloutMultiplier } from "../engine/formulas";
 import { money } from "./format";
 import { FAMILY, LABELS, LEGACY, LEGACY_DIVISOR } from "../theme/content";
@@ -20,7 +21,7 @@ export function RebrandScreen() {
   return (
     <div className="screen rebrand">
       <div className="rebrand-hero">
-        <span className="rebrand-icon">🤝</span>
+        <span className="rebrand-icon"><Ic name="legacy" size={44} /></span>
         <div className="rebrand-title">{FAMILY.title}</div>
         <div className="rebrand-sub">{FAMILY.sub}</div>
       </div>

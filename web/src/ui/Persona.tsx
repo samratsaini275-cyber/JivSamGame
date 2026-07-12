@@ -8,6 +8,12 @@ import {
 import { money } from "./format";
 import { sfx } from "./sfx";
 import { BOSS, LABELS } from "../theme/content";
+import { Ic, IconName, Portrait, PortraitName } from "./Icon";
+
+const LOOK_PORTRAIT: Record<string, PortraitName> = {
+  hoodie: "look-hoodie", bizcaz: "look-bizcaz", street: "look-street", gym: "look-gym",
+};
+const SLOT_ICON: Record<string, IconName> = { Clothes: "suit", Jewelry: "ring", Watch: "watch" };
 
 export function PersonaScreen() {
   const game = useGame();
@@ -16,22 +22,20 @@ export function PersonaScreen() {
   return (
     <div className="screen persona">
       <div className="profile-card">
-        <div className="profile-portrait">
-          <span className="portrait-emoji">{look.emoji}</span>
-        </div>
+        <Portrait name={LOOK_PORTRAIT[look.id] ?? "look-hoodie"} size={84} className="profile-portrait" />
         <div className="profile-info">
           <div className="profile-handle">"{game.state.handle}"</div>
           <div className="profile-stats">
-            <span className="stat">🤝 {LABELS.respect} L{game.respectLevel}</span>
-            <span className="stat">👑 {game.state.clout.toLocaleString()} {LABELS.legacy}</span>
-            <span className="stat">💰 {money(game.state.lifetimeClean)} {BOSS.lifetimeStat}</span>
+            <span className="stat"><Ic name="respect" size={13} /> {LABELS.respect} L{game.respectLevel}</span>
+            <span className="stat"><Ic name="legacy" size={13} /> {game.state.clout.toLocaleString()} {LABELS.legacy}</span>
+            <span className="stat"><Ic name="clean" size={13} /> {money(game.state.lifetimeClean)} {BOSS.lifetimeStat}</span>
           </div>
           <div className="profile-slots">
             {PERSONA_SLOTS.map((slot) => {
               const item = game.equippedCosmetic(slot);
               return (
                 <span key={slot} className={`slot-chip ${item ? `t${item.tier}` : "empty"}`}>
-                  {item ? `${item.emoji} ${PERSONA_TIER_NAMES[item.tier]}` : `${BOSS.slots[slot]}: —`}
+                  <Ic name={SLOT_ICON[slot]} size={12} /> {item ? PERSONA_TIER_NAMES[item.tier] : "—"}
                 </span>
               );
             })}
@@ -50,7 +54,7 @@ export function PersonaScreen() {
               onClick={() => game.setColorway(c.id)}
               aria-label={c.name}
             >
-              {game.state.colorway === c.id && "✓"}
+              {game.state.colorway === c.id && <Ic name="check" size={16} />}
             </button>
           ))}
         </div>
@@ -66,7 +70,7 @@ export function PersonaScreen() {
               const afford = game.state.cleanCash >= item.cost;
               return (
                 <div key={item.id} className={`drip-row ${equipped ? "equipped" : ""}`}>
-                  <span className="drip-emoji">{item.emoji}</span>
+                  <span className={`drip-icon t${item.tier}`}><Ic name={SLOT_ICON[slot]} size={18} /></span>
                   <div className="drip-info">
                     <div className="drip-name">{item.name}</div>
                     <div className={`drip-tier t${item.tier}`}>
@@ -83,7 +87,7 @@ export function PersonaScreen() {
                       disabled={!afford}
                       onClick={() => { game.buyCosmetic(item); sfx.buy(); }}
                     >
-                      🏦 {money(item.cost)}
+                      <Ic name="clean" size={12} /> {money(item.cost)}
                     </button>
                   )}
                 </div>
@@ -135,7 +139,7 @@ export function PersonaCreation() {
               className={`look-tile ${look === l.id ? "active" : ""}`}
               onClick={() => setLook(l.id)}
             >
-              <span className="look-emoji">{l.emoji}</span>
+              <Portrait name={LOOK_PORTRAIT[l.id] ?? "look-hoodie"} size={52} ring={false} />
               <span>{l.name}</span>
             </button>
           ))}
@@ -151,7 +155,7 @@ export function PersonaCreation() {
               onClick={() => setColorway(c.id)}
               aria-label={c.name}
             >
-              {colorway === c.id && "✓"}
+              {colorway === c.id && <Ic name="check" size={16} />}
             </button>
           ))}
         </div>
