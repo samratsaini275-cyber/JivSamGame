@@ -132,8 +132,19 @@ export function drawScene(
 ): void {
   const night = reducedMotion ? 0.25 : nightFactor(now);
 
+  // The harbor: a lit sea, deep at the horizon, warm brass glimmer up top.
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.fillStyle = WATER;
+  const sea = ctx.createLinearGradient(0, 0, 0, viewH);
+  sea.addColorStop(0, "#1a3339");
+  sea.addColorStop(0.45, "#132a30");
+  sea.addColorStop(1, "#0c1c22");
+  ctx.fillStyle = sea;
+  ctx.fillRect(0, 0, viewW, viewH);
+  // brass light reflecting off the top of the water
+  const glim = ctx.createRadialGradient(viewW * 0.5, -viewH * 0.15, 0, viewW * 0.5, -viewH * 0.15, viewH * 0.9);
+  glim.addColorStop(0, "rgba(212, 169, 67, 0.14)");
+  glim.addColorStop(1, "transparent");
+  ctx.fillStyle = glim;
   ctx.fillRect(0, 0, viewW, viewH);
 
   // world transform
@@ -348,39 +359,92 @@ function drawDistrict(
   night: number,
 ): void {
   const { x, y, w, h } = d.rect;
+
+  // Coastline glow — the land catches the harbor light at its edge.
+  ctx.save();
+  ctx.shadowColor = unlocked ? "rgba(0, 0, 0, 0.55)" : "rgba(0, 0, 0, 0.4)";
+  ctx.shadowBlur = 28;
+  ctx.shadowOffsetY = 10;
   ctx.fillStyle = unlocked ? d.tint : LOCKED_LAND;
   ctx.beginPath();
   ctx.roundRect(x, y, w, h, 26);
   ctx.fill();
+  ctx.restore();
 
-  // deco double border
-  ctx.strokeStyle = unlocked ? "rgba(224, 182, 79, 0.55)" : "rgba(232, 220, 195, 0.2)";
+  // Parchment shading on the land: warm top light, cool at the water's edge.
+  const land = ctx.createLinearGradient(x, y, x, y + h);
+  if (unlocked) {
+    land.addColorStop(0, "rgba(255, 240, 205, 0.14)");
+    land.addColorStop(0.5, "rgba(0, 0, 0, 0)");
+    land.addColorStop(1, "rgba(10, 20, 24, 0.28)");
+  } else {
+    land.addColorStop(0, "rgba(255, 240, 205, 0.05)");
+    land.addColorStop(1, "rgba(10, 20, 24, 0.35)");
+  }
+  ctx.fillStyle = land;
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, 26);
+  ctx.fill();
+
+  // City blocks: a road grid with subtly shaded block interiors.
+  if (unlocked) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(x + 6, y + 6, w - 12, h - 12, 20);
+    ctx.clip();
+    const cols = 3, rows = 3;
+    const cw = w / cols, ch = h / rows;
+    ctx.fillStyle = "rgba(0, 0, 0, 0.08)";
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        if ((r + c) % 2 === 0) ctx.fillRect(x + c * cw, y + r * ch, cw, ch);
+      }
+    }
+    ctx.strokeStyle = ROAD;
+    ctx.lineWidth = 9;
+    ctx.beginPath();
+    for (let c = 1; c < cols; c++) { ctx.moveTo(x + c * cw, y); ctx.lineTo(x + c * cw, y + h); }
+    for (let r = 1; r < rows; r++) { ctx.moveTo(x, y + r * ch); ctx.lineTo(x + w, y + r * ch); }
+    ctx.stroke();
+    // road centre-lines
+    ctx.strokeStyle = "rgba(224, 200, 150, 0.14)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([8, 10]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  // deco double keyline border
+  ctx.strokeStyle = unlocked ? "rgba(224, 182, 79, 0.6)" : "rgba(232, 220, 195, 0.2)";
   ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, 26);
   ctx.stroke();
-  ctx.strokeStyle = unlocked ? "rgba(42, 32, 24, 0.5)" : "rgba(0, 0, 0, 0.35)";
+  ctx.strokeStyle = unlocked ? "rgba(42, 32, 24, 0.55)" : "rgba(0, 0, 0, 0.35)";
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.roundRect(x + 7, y + 7, w - 14, h - 14, 20);
   ctx.stroke();
 
-  // inner street grid
   if (unlocked) {
-    ctx.strokeStyle = ROAD;
-    ctx.lineWidth = 10;
+    // Engraved name plate riveted to the district's top edge.
+    const label = d.name.toUpperCase();
+    ctx.font = "15px Limelight, serif";
+    const pw = Math.max(ctx.measureText(label).width + 34, 120);
+    const px = x + w / 2 - pw / 2, py = y - 15, ph = 28;
+    ctx.fillStyle = "rgba(14, 18, 24, 0.94)";
     ctx.beginPath();
-    ctx.moveTo(x + w * 0.5, y + 14);
-    ctx.lineTo(x + w * 0.5, y + h - 14);
-    ctx.moveTo(x + 14, y + h * 0.55);
-    ctx.lineTo(x + w - 14, y + h * 0.55);
+    ctx.roundRect(px, py, pw, ph, 5);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(212, 169, 67, 0.65)";
+    ctx.lineWidth = 1.5;
     ctx.stroke();
-  }
-
-  // label plate
-  ctx.textAlign = "center";
-  ctx.font = "16px Limelight, serif";
-  if (unlocked) {
-    ctx.fillStyle = "rgba(42, 32, 24, 0.75)";
-    ctx.fillText(d.name.toUpperCase(), x + w / 2, y + 26);
+    ctx.fillStyle = PALETTE.gold;
+    ctx.fillText("◆", px + 13, py + 19);
+    ctx.fillText("◆", px + pw - 13, py + 19);
+    ctx.fillStyle = "#efe4c8";
+    ctx.fillText(label, x + w / 2, py + 19);
   } else {
     // sepia silhouette + ribbon
     ctx.fillStyle = "rgba(232, 220, 195, 0.5)";
@@ -445,19 +509,45 @@ function drawPlot(
   }
 
   const state = plotState(def, game);
+  const owned = state === "owned";
 
-  // base body
-  const body = state === "owned" ? "#3a3448" : "#312d2b";
-  ctx.fillStyle = state === "for_sale" ? "#3d382f" : body;
+  // Ground shadow so the building sits on the land, not floats.
+  ctx.save();
+  ctx.fillStyle = "rgba(0, 0, 0, 0.32)";
+  ctx.beginPath();
+  ctx.ellipse(def.x, y + h * 0.99, w * 0.52, h * 0.12, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // Owned buildings throw a warm pool of lamplight onto the street.
+  if (owned) {
+    ctx.save();
+    const halo = ctx.createRadialGradient(def.x, y + h * 0.5, 2, def.x, y + h * 0.5, w * 0.95);
+    halo.addColorStop(0, "rgba(255, 205, 120, 0.16)");
+    halo.addColorStop(1, "transparent");
+    ctx.fillStyle = halo;
+    ctx.fillRect(def.x - w, y - h * 0.3, w * 2, h * 1.8);
+    ctx.restore();
+  }
+
+  // base body, lit down its face
+  const bodyGrad = ctx.createLinearGradient(x, y, x + w, y);
+  if (owned) { bodyGrad.addColorStop(0, "#453d55"); bodyGrad.addColorStop(1, "#2c2739"); }
+  else if (state === "for_sale") { bodyGrad.addColorStop(0, "#443f34"); bodyGrad.addColorStop(1, "#302c24"); }
+  else { bodyGrad.addColorStop(0, "#38332f"); bodyGrad.addColorStop(1, "#252220"); }
+  ctx.fillStyle = bodyGrad;
   ctx.beginPath();
   ctx.roundRect(x, y + h * 0.22, w, h * 0.78, 6);
   ctx.fill();
-  ctx.strokeStyle = state === "owned" ? "rgba(224, 182, 79, 0.65)" : "rgba(0,0,0,0.4)";
+  ctx.strokeStyle = owned ? "rgba(224, 182, 79, 0.7)" : "rgba(0,0,0,0.4)";
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  // roof
-  ctx.fillStyle = state === "owned" ? "#241f30" : "#221f1d";
+  // roof, catching top light
+  const roofGrad = ctx.createLinearGradient(x, y, x, y + h * 0.25);
+  if (owned) { roofGrad.addColorStop(0, "#332b44"); roofGrad.addColorStop(1, "#1e1a29"); }
+  else { roofGrad.addColorStop(0, "#2c2925"); roofGrad.addColorStop(1, "#1c1a17"); }
+  ctx.fillStyle = roofGrad;
   ctx.beginPath();
   ctx.moveTo(x - 4, y + h * 0.25);
   ctx.lineTo(x + w * 0.5, y);
