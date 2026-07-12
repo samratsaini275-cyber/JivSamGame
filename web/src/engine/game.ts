@@ -6,6 +6,10 @@ import {
 } from "./data";
 import { GameState, newGame, loadState, saveState, applyRebrand } from "./state";
 import {
+  Round, validateWager, WagerCheck, shuffledDeck, startRound, newRoundId,
+  playerHit as bjHit, playerStand as bjStand,
+} from "./blackjack";
+import {
   FIXER, FRONTS, FrontDef, VELVET_CLEAN_INCOME_PER_LEVEL,
   DISTRICTS, DistrictDef, PLOTS,
   HEAT_TUNING as HT, LAWYER_PERKS,
@@ -36,7 +40,13 @@ export type GameEvent =
   | { kind: "shipmentArrived"; amount: number }
   | { kind: "shipmentSeized" }
   | { kind: "respectLevel"; level: number }
-  | { kind: "headline"; title: string; sub: string };
+  | { kind: "headline"; title: string; sub: string }
+  | { kind: "casinoUnlocked" };
+
+/** The Gilded Ace unlock price — exactly one billion clean dollars. */
+export const CASINO_COST = 1_000_000_000;
+/** A wager above this fraction of balance asks for confirmation in the UI. */
+export const CASINO_BIG_BET_FRACTION = 0.25;
 
 /** Precinct landmark ids in payroll-cost order (matches district order). */
 export const PRECINCTS = [
@@ -62,6 +72,7 @@ export class Game {
   constructor(state: GameState) {
     this.state = state;
     this.grantOfflineEarnings();
+    this.recoverCasinoRound();
     setInterval(() => this.tick(TICK_MS / 1000), TICK_MS);
   }
 
@@ -910,6 +921,103 @@ export class Game {
   dismissOfflineEarnings(): void {
     this.offlineEarnings = 0;
     this.notify();
+  }
+
+  // MARK: The Gilded Ace — casino (blackjack). Uses CLEAN cash only, and its
+  // wins/losses never touch lifetimeClean/Respect: gambling is walled off from
+  // progression. All wager money moves through `cleanCash`, settled exactly once.
+
+  get casinoUnlocked(): boolean {
+    return this.state.casino.unlocked;
+  }
+
+  get canUnlockCasino(): boolean {
+    return !this.state.casino.unlocked && this.state.cleanCash >= CASINO_COST;
+  }
+
+  /** Open the casino for exactly $1B clean, once. Guarded against double-spend. */
+  unlockCasino(): boolean {
+    if (this.state.casino.unlocked) return false;
+    if (this.state.cleanCash < CASINO_COST) return false;
+    this.state.cleanCash -= CASINO_COST;
+    this.state.casino.unlocked = true;
+    this.emit({ kind: "casinoUnlocked" });
+    this.save();
+    this.notify();
+    return true;
+  }
+
+  get casinoRound(): Round | null {
+    return this.state.casino.round;
+  }
+
+  /** Largest whole-dollar wager the player can currently make. */
+  get maxWager(): number {
+    return Math.max(0, Math.floor(this.state.cleanCash));
+  }
+
+  checkWager(raw: number): WagerCheck {
+    return validateWager(raw, this.state.cleanCash);
+  }
+
+  /**
+   * Deal a new blackjack hand. Reserves the (validated) wager from clean cash
+   * so it can't be double-spent, then deals from a freshly shuffled deck.
+   * Refuses if the casino is locked or a hand is already in progress.
+   */
+  startBlackjack(raw: number): WagerCheck {
+    if (!this.state.casino.unlocked) return { ok: false, error: "invalid" };
+    const existing = this.state.casino.round;
+    if (existing && existing.state !== "completed") return { ok: false, error: "invalid" };
+    const check = validateWager(raw, this.state.cleanCash);
+    if (!check.ok) return check;
+
+    this.state.cleanCash -= check.wager; // reserve
+    this.state.casino.round = startRound(check.wager, shuffledDeck(), newRoundId());
+    this.settleCasinoRound(); // resolves & pays out immediately on a natural
+    this.save();
+    this.notify();
+    return check;
+  }
+
+  blackjackHit(): void {
+    const r = this.state.casino.round;
+    if (!r || r.state !== "playerTurn") return;
+    bjHit(r);
+    this.settleCasinoRound();
+    this.save();
+    this.notify();
+  }
+
+  blackjackStand(): void {
+    const r = this.state.casino.round;
+    if (!r || r.state !== "playerTurn") return;
+    bjStand(r);
+    this.settleCasinoRound();
+    this.save();
+    this.notify();
+  }
+
+  /** Clear a finished, acknowledged hand so a new one can begin. */
+  acknowledgeBlackjack(): void {
+    const r = this.state.casino.round;
+    if (!r || r.state !== "completed") return;
+    this.state.casino.round = null;
+    this.save();
+    this.notify();
+  }
+
+  /** Apply a completed round's payout to clean cash exactly once. */
+  private settleCasinoRound(): void {
+    const r = this.state.casino.round;
+    if (!r || r.state !== "completed" || r.settled) return;
+    this.state.cleanCash += r.payout ?? 0; // wager was reserved at deal
+    r.settled = true;
+  }
+
+  /** On load: pay out any finished-but-unsettled hand; leave live hands to resume. */
+  private recoverCasinoRound(): void {
+    this.settleCasinoRound();
   }
 
   // MARK: Rex replies

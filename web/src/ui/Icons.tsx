@@ -56,6 +56,14 @@ export function IconProfile({ size }: { size?: number }) {
   );
 }
 
+export function IconCasino({ size }: { size?: number }) {
+  return (
+    <Svg size={size}>
+      <path d="M12 3s7 5.6 7 9.6A3 3 0 0 1 13 14c.1 1.7.8 2.6 2 3.2H9c1.2-.6 1.9-1.5 2-3.2A3 3 0 0 1 5 12.6C5 8.6 12 3 12 3Z" />
+    </Svg>
+  );
+}
+
 export function IconMap({ size }: { size?: number }) {
   return (
     <Svg size={size}>

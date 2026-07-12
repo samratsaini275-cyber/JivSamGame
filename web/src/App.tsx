@@ -17,14 +17,18 @@ import { MapScreen } from "./map/MapScreen";
 import { LawPanel, PrisonOverlay } from "./ui/Law";
 import { CheckpointPopup } from "./ui/Shipment";
 import { GuideLayer } from "./ui/Guide";
+import { CasinoScreen } from "./ui/Casino";
+import { IconCasino } from "./ui/Icons";
+import { CASINO } from "./theme/content";
 
-type Tab = "map" | "empire" | "dms" | "rebrand" | "profile";
+type Tab = "map" | "empire" | "dms" | "rebrand" | "casino" | "profile";
 
 const TABS: { id: Tab; label: string; Icon: (p: { size?: number }) => JSX.Element }[] = [
   { id: "map", label: LABELS.tabs.map, Icon: IconMap },
   { id: "empire", label: LABELS.tabs.ledger, Icon: IconEmpire },
   { id: "dms", label: LABELS.tabs.fixer, Icon: IconChat },
   { id: "rebrand", label: LABELS.tabs.family, Icon: IconSpark },
+  { id: "casino", label: CASINO.tabLabel, Icon: IconCasino },
   { id: "profile", label: LABELS.tabs.boss, Icon: IconProfile },
 ];
 
@@ -56,6 +60,7 @@ export function App() {
           {tab === "empire" && <Empire />}
           {tab === "dms" && <RexScreen onGoEmpire={() => setTab("map")} />}
           {tab === "rebrand" && <RebrandScreen />}
+          {tab === "casino" && <CasinoScreen />}
           {tab === "profile" && <PersonaScreen />}
         </main>
 

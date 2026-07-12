@@ -1,6 +1,14 @@
 // Persisted game snapshot — port of Model/GameState.swift + Game/Persistence.swift.
 import { HUSTLES } from "./data";
 import { PLOTS } from "../theme/content";
+import { Round } from "./blackjack";
+
+/** The Gilded Ace casino. `unlocked` is permanent; `round` is the in-flight
+ *  blackjack hand (persisted so a reload can restore it exactly). */
+export interface CasinoState {
+  unlocked: boolean;
+  round: Round | null;
+}
 
 export interface HustleState {
   unitsOwned: number;
@@ -48,6 +56,8 @@ export interface GameState {
   milestones: string[];
   /** Consigliere tips already shown (each fires once, ever). */
   guideSeen: string[];
+  /** The Gilded Ace — unlock state + any in-flight blackjack round. */
+  casino: CasinoState;
   /** The single in-flight shipment, or null. Timestamps epoch ms. */
   activeShipment: {
     routeID: string;
@@ -101,6 +111,7 @@ export function newGame(): GameState {
     heat: 0, payrolls: [], investigationEndsAt: null, prisonUntil: null,
     raidedHustles: [], lawyerPerks: [], lastCaseDismissedAt: null,
     respectXP: 0, milestones: [], guideSeen: [], activeShipment: null,
+    casino: { unlocked: false, round: null },
     lastSaved: null,
     ownedItems: [], equippedWrist: null, equippedGarage: null,
     daytonaPurchases: 0, rexMet: false,
@@ -138,8 +149,12 @@ export function applyRebrand(state: GameState, gained: number): void {
   state.prisonUntil = null;
   state.raidedHustles = [];
   state.activeShipment = null;
+  // The casino stays open (a permanent unlock), but any in-flight hand is
+  // cleared — its reserved clean cash is being zeroed with everything else.
+  state.casino.round = null;
   // Survives: Legacy (clout), lifetime fortune, respectXP, unlocked districts
-  // (map progress), lawyer perks, persona/wardrobe. The town remembers the name.
+  // (map progress), lawyer perks, persona/wardrobe, an open casino. The town
+  // remembers the name.
 }
 
 /** v1 (CloutEmpire) → v2 (Bootleg Empire): old cash becomes dirty cash. */
@@ -165,6 +180,10 @@ function migrate(parsed: Partial<GameState>): Partial<GameState> {
   }
   if (!parsed.districtsUnlocked?.includes("docks")) {
     parsed.districtsUnlocked = ["docks", ...(parsed.districtsUnlocked ?? [])];
+  }
+  // Casino was added after launch — old saves lack it entirely.
+  if (!parsed.casino || typeof parsed.casino.unlocked !== "boolean") {
+    parsed.casino = { unlocked: false, round: null };
   }
   return parsed;
 }

@@ -808,6 +808,68 @@ export const GUIDE_TIPS: GuideTipDef[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// The Gilded Ace — the casino (blackjack). Simulated gambling, fictional money.
+// ---------------------------------------------------------------------------
+
+export const CASINO = {
+  name: "The Gilded Ace",
+  sub: "Private Gaming Club",
+  tabLabel: "Casino",
+  notice: "SIMULATED GAMBLING · FICTIONAL IN-GAME MONEY · NO REAL-WORLD VALUE",
+  // Locked entrance
+  lockedKicker: "MEMBERS ONLY",
+  lockedTitle: "The Gilded Ace",
+  lockedBlurb: "Behind a nameless brass door on Downtown's quietest block: green felt, crystal, and the softest jazz in New Carthage. Buy in and the family plays where the money is made — and lost.",
+  lockedFeature: "Blackjack, dealt straight. Bet your clean fortune, win it back double — or watch the house take it.",
+  unlockCta: "BUY THE DEED",
+  unlockConfirm: "Open The Gilded Ace for $1 billion clean?",
+  unlockConfirmYes: "OPEN THE CLUB",
+  cantAfford: "Grow your Family Fortune to $1 billion clean to buy in.",
+  unlockToast: "THE GILDED ACE OPENS",
+  unlockToastSub: "The finest table in New Carthage is yours",
+  // Table
+  enter: "ENTER THE TABLE",
+  dealerLabel: "DEALER",
+  youLabel: "YOU",
+  balanceLabel: "YOUR CHIPS",
+  betLabel: "YOUR BET",
+  payoutLabel: "TO WIN",
+  customBet: "Custom bet",
+  deal: "DEAL",
+  hit: "HIT",
+  stand: "STAND",
+  newHand: "NEW HAND",
+  soft: "soft",
+  bigBetConfirm: (amt: string) => `Bet ${amt} on one hand?`,
+  bigBetYes: "LET IT RIDE",
+  cancel: "CANCEL",
+  // Result banners
+  resultBlackjack: "BLACKJACK!",
+  resultBlackjackSub: "Paid 3 to 2",
+  resultWin: "YOU WIN",
+  resultDealerBust: "DEALER BUSTS",
+  resultPush: "PUSH",
+  resultPushSub: "Bet returned",
+  resultBust: "BUST",
+  resultLose: "HOUSE WINS",
+  wonAmount: (amt: string) => `+${amt}`,
+  lostAmount: (amt: string) => `−${amt}`,
+  // Rules / help
+  rulesTitle: "HOW TO PLAY BLACKJACK",
+  rules: [
+    "Get closer to 21 than the dealer — without going over.",
+    "Number cards are face value; J/Q/K are 10; an Ace is 1 or 11.",
+    "You and the dealer each get two cards. One dealer card stays face-down.",
+    "HIT to take another card, STAND to hold. Over 21 and you bust.",
+    "The dealer must draw until 17, then stops — even on a soft 17.",
+    "A win pays even money. A two-card 21 (blackjack) pays 3 to 2.",
+    "A tie returns your bet (a push). The house never changes the odds.",
+  ],
+  rulesClose: "GOT IT",
+  helpButton: "Rules",
+} as const;
+
+// ---------------------------------------------------------------------------
 // One-time milestone headlines — §6.
 // ---------------------------------------------------------------------------
 
