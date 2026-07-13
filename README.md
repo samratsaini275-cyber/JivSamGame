@@ -1,4 +1,4 @@
-# JivSamGame
+# Drug Empire
 
 Two idle/incremental games live in this repo. They share the same DNA — geometric cost scaling, milestone tiers, a prestige loop — but are separate codebases with separate save formats.
 
