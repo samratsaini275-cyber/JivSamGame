@@ -1,5 +1,11 @@
 # Bootleg Empire — Premium Art Direction
 
+> **Historical note (July 2026):** the game has since been re-themed to
+> "Drug Empire" — a modern-day street-to-cartel tycoon set in Eastport
+> (see `src/theme/content.ts`). The craft rules below (ink field, gold =
+> money, red = heat, motion discipline) still govern the UI; the
+> Prohibition-era fiction and Limelight display font do not.
+
 ## Player fantasy
 You are a Prohibition-era crime boss quietly buying a city. The feeling is
 *command over a glittering, dangerous underworld* — a ledger of secrets, brass

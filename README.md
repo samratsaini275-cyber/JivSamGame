@@ -4,36 +4,26 @@ Two idle/incremental games live in this repo. They share the same DNA — geomet
 
 | | Path | Stack | Theme |
 |---|---|---|---|
-| **Bootleg Empire** | [`web/`](web/) | Vite + React 18 + TypeScript | 1926 Prohibition mob tycoon |
+| **Drug Empire** | [`web/`](web/) | Vite + React 18 + TypeScript | Modern-day street-to-cartel drug tycoon |
 | **Drip Empire** | [`Sources/`](Sources/) | SwiftPM, SwiftUI (macOS 13+) | Streetwear/influencer idle game |
 
 ---
 
-## Bootleg Empire (`web/`)
+## Drug Empire (`web/`)
 
-A mobile-first web idle game: run a bootlegging operation in "New Carthage," 1926 — buy rackets, launder dirty cash into clean, dodge police heat, and prestige ("start a new Family") for permanent Legacy bonuses.
+A mobile-first web idle game: build a modern drug operation in the port city of "Eastport" — start slinging weed on a corner, climb to coke-money hustles and the cartel table, launder dirty cash into clean, dodge police heat, and prestige ("start a New Operation") for permanent Legacy bonuses.
 
-### Latest push — The Gilded Ace (Mini Casino)
+### Latest push — guided onboarding
 
-The newest feature is a **6th "Casino" tab**: a premium late-game blackjack table.
-
-- Locked behind a dramatic entrance — buy the deed for exactly **$1B clean cash** (with a confirm dialog) to open it.
-- Traditional single-deck blackjack: Fisher–Yates shuffle, ace best-total (1/11) scoring, natural blackjack (3:2), dealer stands on all 17 including soft 17.
-- Wagers are **clean cash only**, and winnings never touch `lifetimeClean` — gambling is walled off from Respect/Legacy prestige, by design.
-- Wager reserved at deal, settled exactly once (idempotent), and the full round (incl. remaining deck) is persisted so a reload resumes the same hand — no refresh-for-better-cards exploit.
-- Chip presets (1/5/10/25%/Max), big-bet confirmation, hand-drawn SVG cards, casino sound effects, and a persistent "simulated gambling / fictional money" notice.
-- Unlock survives prestige; an in-progress round clears on a new Family.
-
-See `web/CASINO_PLAN.md` for the full spec and `web/src/engine/blackjack.ts` / `web/src/engine/__tests__/blackjack.test.ts` for the implementation and tests.
+The UI now uses **progressive disclosure**: only the Hustles and Boss tabs exist at first. The City map, Sosa (the fixer), and the Empire (prestige) tabs appear as the run earns them, and Von — your right hand — introduces each one. (The former mini casino was removed.)
 
 ### Core loop
 
-1. **Buy rackets** — stills, breweries, casinos, racetracks, and more across four districts
+1. **Buy hustles** — corner spots, grow houses, go-fast boats, superlabs, and more across five districts, telling a weed → cocaine → cartel progression
 2. **Launder** dirty cash into clean cash through fronts (the economy's core bottleneck)
 3. **Manage heat** — police investigations, bribes, and a prison mechanic push back against unchecked growth
 4. **Ship** product, level up **Respect**, and unlock landmarks
-5. **Start a new Family** (prestige) — reset your run for permanent **Legacy** bonuses
-6. **Gamble** at The Gilded Ace once you've made your first billion (optional, clean-cash sink)
+5. **Start a New Operation** (prestige) — reset your run for permanent **Legacy** bonuses
 
 ### Run it
 
@@ -49,7 +39,7 @@ npm run build    # tsc + vite build
 
 ```
 web/src/
-├── engine/           # formulas.ts (pure math), state.ts (save snapshot), game.ts (10 Hz tick loop), blackjack.ts
+├── engine/           # formulas.ts (pure math), state.ts (save snapshot), game.ts (10 Hz tick loop)
 ├── theme/content.ts  # every player-facing string, palette, business/district/plot definition — single source of truth
 ├── map/              # procedural vector canvas city map, camera/pan/pinch
 └── ui/               # React screens, hooks, HUD

@@ -20,6 +20,7 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
+  Game.persistenceEnabled = false; // don't leak the save-integrity opt-in
 });
 
 function fresh(): Game {
@@ -148,6 +149,9 @@ describe("heat", () => {
 
 describe("save integrity", () => {
   it("round-trips mid-prison state through the save layer", async () => {
+    // Autosave is behind a dev toggle (off while iterating on the UI);
+    // this test exercises the real save path, so switch it on.
+    Game.persistenceEnabled = true;
     const g = fresh();
     g.state.hustles[0].unitsOwned = 30;
     g.state.heat = 100;

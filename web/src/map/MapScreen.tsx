@@ -52,8 +52,8 @@ function SheetContent({ sel, onClose }: { sel: MapSelection; onClose: () => void
         <div className="sheet-flavor">{d.blurb}</div>
         <div className="sheet-note">
           {needsRespect
-            ? `Reach Respect L${d.respectLevel} — the family is L${level}. Run shipments, open rackets.`
-            : `Respect L${d.respectLevel} reached · pay the ward bosses in clean cash`}
+            ? `Reach Respect L${d.respectLevel} — the crew is L${level}. Run shipments, open hustles.`
+            : `Respect L${d.respectLevel} reached · buy in with clean cash`}
         </div>
         <button
           className={`btn-cta ${afford ? "" : "disabled"}`}

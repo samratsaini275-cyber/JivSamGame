@@ -1,17 +1,17 @@
 // ============================================================================
-// Hand-authored "luxury render" marks — Pulp Deco medallions, pure SVG.
-// Brass linework on ink inside an octagonal engraved frame. No bitmaps,
+// Hand-authored "luxury render" marks — Street Noir medallions, pure SVG.
+// Gold linework on ink inside an octagonal engraved frame. No bitmaps,
 // no external services: these are the game's icon plates, minted in code.
 // ============================================================================
 
 const BRASS = "#d4a943";
 const BRASS_BRIGHT = "#ecd08a";
 const BRASS_DEEP = "#8a6a1d";
-const PAPER = "#e8dcc3";
+const PAPER = "#e7ebf2";
 const INK = "#10141d";
 const INK_2 = "#1a202c";
 
-/** Octagonal deco plate that frames every mark. `art` draws in a 64×64 box. */
+/** Octagonal plate that frames every mark. `art` draws in a 64×64 box. */
 function medallion(art: string): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
 <defs>
@@ -32,84 +32,88 @@ const S = `fill="none" stroke="url(#b)" stroke-width="2.4" stroke-linecap="round
 const SF = `fill="url(#b)"`;
 const ST = `fill="none" stroke="${PAPER}" stroke-opacity=".8" stroke-width="1.6" stroke-linecap="round"`;
 
-/** The rackets, by index — one deco mark each. */
+/** The hustles, by index — one mark each. */
 const RACKET_ART: string[] = [
-  // 0 Corner Still — mason jar, XXX label
-  `<path d="M24 18h16M25 18v-4h14v4" ${S}/>
-   <path d="M23 18c-2 3-2 6-2 9v14c0 4 3 6 6 6h10c3 0 6-2 6-6V27c0-3 0-6-2-9" ${S}/>
-   <path d="M27 30h10M27 36h10" ${ST}/>
-   <text x="32" y="34.5" text-anchor="middle" font-family="serif" font-weight="bold" font-size="7" fill="${PAPER}">XXX</text>`,
-  // 1 The Rusty Anchor
-  `<circle cx="32" cy="17" r="4" ${S}/>
-   <path d="M32 21v26M22 30h20" ${S}/>
-   <path d="M16 38c2 7 8 11 16 11s14-4 16-11" ${S}/>
-   <path d="M16 38l-3 6M16 38l6 2M48 38l3 6M48 38l-6 2" ${S}/>`,
-  // 2 Bathtub Gin Works — clawfoot tub + bubbles
-  `<path d="M14 34h36v4c0 6-5 10-11 10H25c-6 0-11-4-11-10Z" ${S}/>
-   <path d="M14 34v-8c0-3 2-5 5-5s5 2 5 5" ${S}/>
-   <path d="M22 48l-3 5M42 48l3 5" ${S}/>
-   <circle cx="34" cy="26" r="2.5" ${ST}/><circle cx="41" cy="22" r="1.8" ${ST}/><circle cx="38" cy="29" r="1.4" ${ST}/>`,
-  // 3 Basement Brewery — barrel
-  `<path d="M22 14c-3 5-4 11-4 18s1 13 4 18M42 14c3 5 4 11 4 18s-1 13-4 18" ${S}/>
-   <path d="M22 14h20M22 50h20" ${S}/>
-   <path d="M19 24h26M19 40h26" ${S}/>
-   <path d="M32 14v50" stroke="${BRASS}" stroke-opacity=".4" stroke-width="1.4"/>`,
-  // 4 Smuggling Route — sloop under sail
+  // 0 Corner Spot — stylized leaf
+  `<path d="M32 50V20" ${S}/>
+   <path d="M32 14c3 4 3 9 0 13-3-4-3-9 0-13Z" ${S}/>
+   <path d="M32 27c7-7 14-8 19-5-4 6-11 9-19 8" ${S}/>
+   <path d="M32 27c-7-7-14-8-19-5 4 6 11 9 19 8" ${S}/>
+   <path d="M32 38c6-4 12-4 16-1-4 4-10 5-16 4" ${S}/>
+   <path d="M32 38c-6-4-12-4-16-1 4 4 10 5 16 4" ${S}/>`,
+  // 1 Smoke Shop — storefront with striped awning
+  `<path d="M16 26h32v24H16Z" ${S}/>
+   <path d="M14 26l4-8h28l4 8Z" ${S}/>
+   <path d="M22 50V38h8v12" ${S}/>
+   <rect x="34" y="36" width="10" height="8" ${S}/>
+   <path d="M19 22h4M27 22h4M35 22h4M43 22h4" ${ST}/>`,
+  // 2 Grow House — potted plant under a grow lamp
+  `<path d="M20 14h24l-4 5H24Z" ${SF} fill-opacity=".9"/>
+   <path d="M32 10v4" ${S}/>
+   <path d="M25 23l-2 3M32 23v4M39 23l2 3" ${ST}/>
+   <path d="M32 44V32" ${S}/>
+   <path d="M32 34c-5-4-10-4-13-1 4 3 8 4 13 3M32 34c5-4 10-4 13-1-4 3-8 4-13 3" ${S}/>
+   <path d="M24 44h16l-2 8H26Z" ${S}/>`,
+  // 3 Pill Mill — capsule and loose pills
+  `<g transform="rotate(-25 30 27)"><rect x="16" y="21" width="28" height="13" rx="6.5" ${S}/><path d="M30 21v13" ${S}/></g>
+   <circle cx="22" cy="46" r="4" ${S}/><path d="M19 46h6" ${ST}/>
+   <circle cx="38" cy="48" r="4" ${S}/><path d="M35 48h6" ${ST}/>`,
+  // 4 Smuggling Route — fishing boat under way
   `<path d="M14 44h36l-5 8H19Z" ${SF} fill-opacity=".9"/>
    <path d="M31 40V14M31 14c9 4 12 14 12 26H31M29 22c-6 4-8 10-8 18h8" ${S}/>
    <path d="M12 57c3-2 5-2 8 0s5 2 8 0 5-2 8 0 5 2 8 0 5-2 8 0" ${ST}/>`,
-  // 5 Whiskey Warehouse — crate stack, "molasses"
+  // 5 Stash Warehouse — crate stack, "office furniture"
   `<rect x="15" y="34" width="16" height="14" ${S}/>
    <rect x="33" y="34" width="16" height="14" ${S}/>
    <rect x="24" y="18" width="16" height="14" ${S}/>
    <path d="M24 18l16 14M40 18L24 32" stroke="${BRASS}" stroke-opacity=".5" stroke-width="1.6"/>
    <path d="M15 34l16 14M31 34L15 48M33 34l16 14M49 34L33 48" stroke="${BRASS}" stroke-opacity=".5" stroke-width="1.6"/>`,
-  // 6 The Broken Clock — two minutes to midnight, cracked
-  `<circle cx="32" cy="32" r="17" ${S}/>
-   <circle cx="32" cy="32" r="13" fill="none" stroke="${BRASS}" stroke-opacity=".35" stroke-width="1"/>
-   <path d="M32 22v-3M32 45v-3M22 32h-3M45 32h-3" ${ST}/>
-   <path d="M32 32V23M32 32l-4-6" stroke="${PAPER}" stroke-width="2.2" stroke-linecap="round"/>
-   <path d="M40 20l-4 7 5 4-3 6" ${ST}/>`,
-  // 7 Casino Back Room — poker chip & pips
+  // 6 After-Hours Club — speaker cabinet, sound waves
+  `<rect x="16" y="14" width="24" height="36" rx="2" ${S}/>
+   <circle cx="28" cy="38" r="7.5" ${S}/><circle cx="28" cy="38" r="2.5" ${SF}/>
+   <circle cx="28" cy="22" r="4" ${S}/>
+   <path d="M46 26c2 2 2 6 0 8M50 22c3 4 3 12 0 16" ${ST}/>`,
+  // 7 Underground Casino — poker chip & pips
   `<circle cx="32" cy="32" r="16" ${S}/>
    <circle cx="32" cy="32" r="10" fill="none" stroke="${BRASS}" stroke-opacity=".5" stroke-width="1.6"/>
    <path d="M32 16v6M32 42v6M16 32h6M42 32h6M21 21l4 4M39 39l4 4M43 21l-4 4M25 39l-4 4" stroke="${PAPER}" stroke-opacity=".85" stroke-width="2.4" stroke-linecap="round"/>
    <path d="M32 27l4 5-4 5-4-5Z" ${SF}/>`,
-  // 8 Rum-Running Fleet — speedboat, wake
+  // 8 Go-Fast Fleet — speedboat, wake
   `<path d="M12 38c14-3 26-3 40-7l-6 10c-10 2-20 2-28 1Z" ${SF} fill-opacity=".9"/>
    <path d="M34 31v-6h8l4 6" ${S}/>
    <path d="M10 48c4-2 7-2 11 0s7 2 11 0 7-2 11 0 7 2 11 0" ${ST}/>`,
-  // 9 Racetrack Fix — lucky horseshoe, fixed star
-  `<path d="M20 46V26c0-7 5-12 12-12s12 5 12 12v20" ${S}/>
-   <path d="M17 46h9M38 46h9" ${S}/>
-   <circle cx="21.5" cy="30" r="1.3" ${SF}/><circle cx="42.5" cy="30" r="1.3" ${SF}/>
-   <circle cx="23" cy="22" r="1.3" ${SF}/><circle cx="41" cy="22" r="1.3" ${SF}/>
-   <path d="M32 28l1.8 3.6 4 .6-2.9 2.8.7 4-3.6-1.9-3.6 1.9.7-4-2.9-2.8 4-.6Z" ${SF}/>`,
-  // 10 Uptown Supper Club — champagne coupe
+  // 9 Chop Shop — car up on a jack, wheel off
+  `<path d="M16 36l5-10h20l7 10" ${S}/>
+   <path d="M12 36h40v7h-6v-3H20v3h-8Z" ${S}/>
+   <circle cx="42" cy="47" r="3.5" ${S}/>
+   <path d="M19 43v6M15 49h8" ${S}/>
+   <path d="M24 30h14" ${ST}/>`,
+  // 10 Uptown Nightclub — champagne coupe
   `<path d="M18 16h28c0 9-6 14-14 14s-14-5-14-14Z" ${S}/>
    <path d="M32 30v16M22 52h20M26 46h12" ${S}/>
    <circle cx="26" cy="12" r="1.4" ${ST}/><circle cx="33" cy="9" r="1.8" ${ST}/><circle cx="40" cy="12" r="1.4" ${ST}/>`,
-  // 11 Country Club Cellar — flag in cup, cellar hatch
+  // 11 Country Club Connect — flag in cup, clubhouse deal
   `<path d="M30 44V16l14 5-14 5" ${S}/>
    <path d="M22 44h20l-3 8H25Z" ${S}/>
    <path d="M25 48h14" stroke="${BRASS}" stroke-opacity=".5" stroke-width="1.4"/>`,
-  // 12 Mega-Distillery — sawtooth roofline + chimneys
-  `<path d="M14 50V30l8-6v6l8-6v6l8-6v20" ${S}/>
-   <path d="M14 50h36" ${S}/>
-   <path d="M42 44V22h6v28" ${S}/>
-   <circle cx="45" cy="16" r="2.2" ${ST}/><circle cx="49" cy="11" r="1.6" ${ST}/>
-   <path d="M19 42h4M27 42h4" ${ST}/>`,
-  // 13 Harbor Freight Co. — freighter, stacked crates
+  // 12 The Superlab — flask on the burner
+  `<path d="M27 12h10" ${S}/>
+   <path d="M29 12v12L18 44c-2 4 1 8 5 8h18c4 0 7-4 5-8L35 24V12" ${S}/>
+   <path d="M24 38h16" ${ST}/>
+   <circle cx="30" cy="44" r="1.6" ${ST}/><circle cx="36" cy="46" r="1.2" ${ST}/>`,
+  // 13 Container Line — freighter, stacked containers
   `<path d="M12 42h40l-6 9H17Z" ${SF} fill-opacity=".9"/>
    <rect x="20" y="34" width="9" height="8" ${S}/><rect x="30" y="34" width="9" height="8" ${S}/><rect x="25" y="26" width="9" height="8" ${S}/>
    <path d="M44 42V30h4" ${S}/>
    <circle cx="50" cy="24" r="1.8" ${ST}/>`,
-  // 14 Railroad Skim — locomotive head-on
-  `<circle cx="32" cy="28" r="12" ${S}/>
-   <circle cx="32" cy="28" r="4" ${SF}/>
-   <path d="M32 12v-4M20 44l-6 8M44 44l6 8M18 52h28" ${S}/>
-   <path d="M22 38l10 14 10-14" ${S}/>`,
-  // 15 The Syndicate — deco crown over the five families
+  // 14 Trucking Network — semi cab head-on
+  `<rect x="18" y="16" width="28" height="18" rx="2" ${S}/>
+   <rect x="23" y="20" width="18" height="8" ${S}/>
+   <path d="M18 34h28v8H18Z" ${S}/>
+   <path d="M22 38h20" ${ST}/>
+   <circle cx="22" cy="48" r="3.5" ${S}/><circle cx="42" cy="48" r="3.5" ${S}/>
+   <path d="M20 16v-5M44 16v-5" ${ST}/>`,
+  // 15 The Cartel — crown over the five crews
   `<path d="M16 40V24l8 7 8-13 8 13 8-7v16Z" ${S}/>
    <path d="M16 44h32v4H16Z" ${SF}/>
    <circle cx="16" cy="20" r="2" ${SF}/><circle cx="32" cy="14" r="2.4" ${SF}/><circle cx="48" cy="20" r="2" ${SF}/>
@@ -128,10 +132,10 @@ const FRONT_ART: Record<string, string> = {
    <path d="M26 20l12 7M26 30l12 7M26 40l12 7" stroke="${PAPER}" stroke-opacity=".85" stroke-width="3" stroke-linecap="round"/>
    <path d="M24 12h16M24 52h16" ${S}/>`,
   velvet:
-  `<path d="M32 10c-4 10-4 20 0 30M32 10c4 10 4 20 0 30" ${S}/>
-   <path d="M32 40v10M26 52h12" ${S}/>
-   <path d="M20 16c6 2 8 8 6 14M44 16c-6 2-8 8-6 14" fill="none" stroke="${BRASS}" stroke-opacity=".55" stroke-width="1.8" stroke-linecap="round"/>
-   <circle cx="32" cy="24" r="2" fill="${PAPER}"/>`,
+  `<circle cx="32" cy="28" r="12" ${S}/>
+   <path d="M32 10v6" ${S}/>
+   <path d="M20 28h24M32 16v24M23 21c5 4 13 4 18 0M23 35c5-4 13-4 18 0" fill="none" stroke="${BRASS}" stroke-opacity=".5" stroke-width="1.6"/>
+   <path d="M22 46l-2 5M32 44v7M42 46l2 5" ${ST}/>`,
   hotel:
   `<circle cx="32" cy="21" r="8" ${S}/>
    <circle cx="32" cy="21" r="3.4" fill="none" stroke="${PAPER}" stroke-opacity=".75" stroke-width="1.6"/>
@@ -141,7 +145,7 @@ const FRONT_ART: Record<string, string> = {
   `<rect x="18" y="26" width="28" height="22" ${S}/>
    <path d="M18 33h28M32 26v22" stroke="${BRASS}" stroke-opacity=".5" stroke-width="1.6"/>
    <path d="M24 26v-6c0-4 3-7 8-7s8 3 8 7" ${S}/>
-   <text x="32" y="44" text-anchor="middle" font-family="serif" font-size="6.5" letter-spacing="1" fill="${PAPER}">OIL</text>`,
+   <text x="32" y="44" text-anchor="middle" font-family="serif" font-size="6.5" letter-spacing="1" fill="${PAPER}">TVS</text>`,
 };
 
 function toDataURI(svg: string): string {

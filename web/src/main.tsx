@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { App } from "./App";
-import "@fontsource/limelight";
+import "@fontsource/anton";
 import "@fontsource/barlow/400.css";
 import "@fontsource/barlow/700.css";
 import "@fontsource/barlow/900.css";

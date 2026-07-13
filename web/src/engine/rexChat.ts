@@ -132,8 +132,8 @@ function introMessages(game: Game): RexChatMessage[] {
 function slotMessages(slot: ItemSlot, game: Game): RexChatMessage[] {
   const msgs: RexChatMessage[] = [];
   const opener = slot === "wrist"
-    ? "Alright. A watch chain separates citizens from operators. Pick your lane."
-    : "Garage talk. The car doesn't matter — where the papers see it parked does.";
+    ? "Alright. A watch separates citizens from operators. Pick your lane."
+    : "Garage talk. The car doesn't matter — where people see it parked does.";
   msgs.push({ id: `${slot}_opener`, sender: "rex", text: opener, itemID: null, pitchID: null });
 
   for (const item of rexItemsForSlot(slot)) {

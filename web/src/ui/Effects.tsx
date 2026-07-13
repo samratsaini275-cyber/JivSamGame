@@ -6,7 +6,7 @@ import { money } from "./format";
 import { sfx } from "./sfx";
 import {
   PRESS, FAMILY, MAP_COPY, HEAT_COPY, SHIPMENT_COPY, SHIPMENT_ROUTES, RESPECT,
-  CASINO, districtByID,
+  districtByID,
 } from "../theme/content";
 
 interface Pop { id: number; x: number; y: number; text: string }
@@ -82,10 +82,6 @@ export function EffectsLayer() {
         title = MAP_COPY.unlockToast(districtByID(e.districtID).name);
         sub = MAP_COPY.unlockToastSub;
         sfx.viral();
-      } else if (e.kind === "casinoUnlocked") {
-        title = CASINO.unlockToast;
-        sub = CASINO.unlockToastSub;
-        sfx.rebrand();
       } else if (e.kind === "investigation") {
         title = HEAT_COPY.investigation;
         sub = HEAT_COPY.investigationSub;

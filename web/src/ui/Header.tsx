@@ -44,7 +44,7 @@ export function Header({ onProfileTap, onHeatTap }: { onProfileTap: () => void; 
         </button>
         <div className="header-id">
           <div className="header-handle">"{game.state.handle || "the new face"}"</div>
-          <div className="header-brand">{GAME.title} · {GAME.year}</div>
+          <div className="header-brand">{GAME.title} · {GAME.city}</div>
         </div>
         <HeatBadge onTap={onHeatTap} />
         <button
@@ -71,8 +71,6 @@ export function Header({ onProfileTap, onHeatTap }: { onProfileTap: () => void; 
         </div>
         <div className="plate-divider" aria-hidden>
           <span className="plate-rule" />
-          <span className="plate-diamond">◆</span>
-          <span className="plate-rule" />
         </div>
         <div className="plate-col" title={LAUNDER.cleanHint}>
           <div className="ledger-tag clean"><Ic name="clean" size={12} /> {LAUNDER.cleanLabel}</div>
@@ -86,7 +84,7 @@ export function Header({ onProfileTap, onHeatTap }: { onProfileTap: () => void; 
         </div>
       </div>
 
-      <div className="viral-track" title="Grow every racket to make the front page">
+      <div className="viral-track" title="Grow every hustle to make the news">
         <span className="viral-track-label">{PRESS.tracker}</span>
         <div className="viral-bar">
           <div

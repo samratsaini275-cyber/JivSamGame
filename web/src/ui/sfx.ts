@@ -63,19 +63,4 @@ export const sfx = {
   },
   /** Investigation opened: low warning. */
   warning() { tone(220, 0, 0.25, "square", 0.05); tone(196, 0.22, 0.3, "square", 0.05); },
-  // --- Casino ---
-  /** A card dealt onto the felt: soft flick. */
-  card() { tone(660, 0, 0.04, "triangle", 0.05); tone(440, 0.02, 0.05, "sine", 0.03); },
-  /** Dealer hole card flipped. */
-  flip() { tone(520, 0, 0.05, "triangle", 0.06); tone(720, 0.04, 0.06, "triangle", 0.05); },
-  /** Chips pushed in on a bet. */
-  chip() { tone(900, 0, 0.03, "sine", 0.05); tone(760, 0.03, 0.04, "sine", 0.04); tone(640, 0.06, 0.05, "sine", 0.03); },
-  /** Blackjack — a bright fanfare. */
-  blackjack() { [659, 831, 988, 1319].forEach((f, i) => tone(f, i * 0.09, 0.26, "sine", 0.11)); },
-  /** Won a hand. */
-  win() { [659, 988].forEach((f, i) => tone(f, i * 0.1, 0.22, "sine", 0.1)); },
-  /** Lost a hand: soft descending. */
-  lose() { tone(392, 0, 0.18, "sine", 0.07); tone(311, 0.16, 0.24, "sine", 0.07); },
-  /** Push — a neutral tick. */
-  push() { tone(523, 0, 0.12, "sine", 0.06); },
 };

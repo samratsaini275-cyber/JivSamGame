@@ -1,7 +1,7 @@
 // ============================================================================
-// BOOTLEG EMPIRE — theme config. THE single source of truth for every
-// player-facing name, string, and color. New Carthage, 1926. Fictional city,
-// fictional people, alcohol prohibition only, bloodless pulp tone.
+// DRUG EMPIRE — theme config. THE single source of truth for every
+// player-facing name, string, and color. Eastport, present day. Fictional
+// city, fictional people, bloodless crime-drama tone (The Wire, not slapstick).
 // If a store review ever demands changes, this is the only file to edit.
 // ============================================================================
 
@@ -10,31 +10,32 @@
 // ---------------------------------------------------------------------------
 
 export const GAME = {
-  title: "BOOTLEG EMPIRE",
-  city: "New Carthage",
-  year: "1926",
-  tagline: "Wet the city's whistle. Keep the badge off your door.",
-  masthead: "THE NEW CARTHAGE HERALD", // newspaper toasts
+  title: "DRUG EMPIRE",
+  city: "Eastport",
+  year: "Present Day",
+  tagline: "Own every corner. Keep the heat off your back.",
+  masthead: "EASTPORT BREAKING NEWS", // news toasts
 } as const;
 
 // ---------------------------------------------------------------------------
-// Palette — Pulp Deco. Gold is EXCLUSIVELY money; red is EXCLUSIVELY heat.
+// Palette — Street Noir: cold concrete + night ink. Gold is EXCLUSIVELY money;
+// red is EXCLUSIVELY heat.
 // ---------------------------------------------------------------------------
 
 export const PALETTE = {
   ink: "#10131a",
   inkRaised: "#1a1f2a",
   inkDeep: "#0a0c11",
-  paper: "#e8dcc3",
-  paperDark: "#d5c5a3",
-  paperInk: "#2a2018", // text on paper
+  paper: "#e7ebf2",
+  paperDark: "#c7cdd8",
+  paperInk: "#12161e", // text on light surfaces
   gold: "#e0b64f",
   goldDeep: "#8a6a1d",
   heatRed: "#c22a33",
-  teal: "#3d7a74",
+  teal: "#3a7080",
   dirtyGreen: "#7ca163",
-  textMuted: "rgba(232, 220, 195, 0.55)",
-  textFaint: "rgba(232, 220, 195, 0.32)",
+  textMuted: "rgba(231, 235, 242, 0.55)",
+  textFaint: "rgba(231, 235, 242, 0.32)",
 } as const;
 
 /** Player-picked accent — identity moments only (avatar ring, wardrobe). */
@@ -46,11 +47,11 @@ export interface ColorwayDef {
 }
 
 export const COLORWAYS: ColorwayDef[] = [
-  { id: "gold", name: "Brass", accent: "#e0b64f", accentDeep: "#8a6a1d" },
-  { id: "volt", name: "Absinthe", accent: "#9fc86a", accentDeep: "#3f6023" },
-  { id: "ice", name: "Gin Ice", accent: "#a8d5e2", accentDeep: "#39708a" },
-  { id: "crimson", name: "Bordeaux", accent: "#c65a5a", accentDeep: "#5c1420" },
-  { id: "amethyst", name: "Velvet", accent: "#b58ed0", accentDeep: "#4a2a66" },
+  { id: "gold", name: "24K", accent: "#e0b64f", accentDeep: "#8a6a1d" },
+  { id: "volt", name: "Volt", accent: "#9fc86a", accentDeep: "#3f6023" },
+  { id: "ice", name: "Ice", accent: "#a8d5e2", accentDeep: "#39708a" },
+  { id: "crimson", name: "Blood", accent: "#c65a5a", accentDeep: "#5c1420" },
+  { id: "amethyst", name: "Purp", accent: "#b58ed0", accentDeep: "#4a2a66" },
 ];
 
 export function colorwayByID(id: string): ColorwayDef {
@@ -65,29 +66,29 @@ export const LABELS = {
   cash: "Cash",
   dirtyCash: "Dirty Cash",
   cleanCash: "Clean Cash",
-  fortune: "Family Fortune",
+  fortune: "Net Worth",
   respect: "Respect",
   legacy: "Legacy",
   heat: "Heat",
   perSec: "/sec",
   buy: "BUY",
   start: "OPEN",
-  runBatch: "RUN A BATCH",
+  runBatch: "MOVE A PACK",
   shipment: "SHIPMENT",
   automated: "CREW",
-  maxed: "LEGENDARY",
-  tabs: { map: "City", ledger: "Rackets", fixer: "The Fixer", family: "Family", boss: "The Boss" },
+  maxed: "KINGPIN",
+  tabs: { map: "City", ledger: "Hustles", fixer: "The Fixer", family: "Empire", boss: "The Boss" },
 } as const;
 
 /** Milestone tier names (25/50/100/200/300/400 units). */
 export const TIER_NAMES = [
   "Unknown",
-  "Corner Rumors",
-  "Neighborhood Fixture",
-  "Ward Boss",
+  "Corner Talk",
+  "Block Famous",
+  "Hood Legend",
   "City Legend",
   "State Menace",
-  "Front-Page Story",
+  "Prime-Time News",
   "Untouchable",
 ];
 
@@ -97,17 +98,18 @@ export function tierName(tier: number): string {
 
 /** The old "viral moment" — the whole city talks, income ×2^tier. */
 export const PRESS = {
-  chip: "PRESS",
-  tracker: "Next Front Page",
-  toastTitle: "EXTRA! EXTRA!",
-  toastSub: (mult: number) => `The whole city's talking — every racket earns ×${mult}`,
+  chip: "NEWS",
+  tracker: "Next Headline",
+  toastTitle: "BREAKING NEWS",
+  toastSub: (mult: number) => `The whole city's talking — every hustle earns ×${mult}`,
   milestoneToast: (name: string, tier: string) => `${name} is now a ${tier}!`,
-  milestoneSub: "Income ×2, batches twice as fast",
+  milestoneSub: "Income ×2, packs move twice as fast",
 } as const;
 
 // ---------------------------------------------------------------------------
-// Rackets (illegal producers) — indices are load-bearing: they map 1:1 onto
+// Hustles (illegal producers) — indices are load-bearing: they map 1:1 onto
 // the original tuned stat rows (baseCost/baseIncome/baseCycle) and old saves.
+// The ladder tells the story: weed corners → coke money → the cartel table.
 // ---------------------------------------------------------------------------
 
 export interface BizContent {
@@ -118,138 +120,138 @@ export interface BizContent {
 }
 
 export const BIZ: BizContent[] = [
-  { name: "Corner Still", emoji: "🫙",
-    flavor: "Grandma's cough remedy. Cures sobriety.", crew: "Pot Watcher" },
-  { name: "The Rusty Anchor", emoji: "⚓",
-    flavor: "A bait shop out front. Nobody has ever bought bait.", crew: "Barkeep" },
-  { name: "Bathtub Gin Works", emoji: "🛁",
-    flavor: "Small batch. Very small. It's one bathtub.", crew: "Tub Chemist" },
-  { name: "Basement Brewery", emoji: "🛢️",
-    flavor: "Under the bakery. The bread smells suspiciously of hops.", crew: "Brewmaster" },
-  { name: "Smuggling Route", emoji: "⛵",
-    flavor: "Canadian whiskey takes the scenic route south.", crew: "Boat Captain" },
-  { name: "Whiskey Warehouse", emoji: "🥃",
-    flavor: "The ledger says 'molasses.' Everything says molasses.", crew: "Night Foreman" },
-  { name: "The Broken Clock", emoji: "🎷",
-    flavor: "Knock twice, hum a bar of jazz, know the word.", crew: "Door Man" },
-  { name: "Casino Back Room", emoji: "🎰",
-    flavor: "The roulette wheel is honest. The room isn't.", crew: "Pit Boss" },
-  { name: "Rum-Running Fleet", emoji: "🚤",
-    flavor: "Twelve boats. Zero fishing licenses.", crew: "Fleet Commodore" },
-  { name: "Racetrack Fix", emoji: "🐎",
-    flavor: "The horses are fast. The results are faster.", crew: "Track Insider" },
-  { name: "Uptown Supper Club", emoji: "🥂",
-    flavor: "The soup course is soup. The 'tea' course isn't.", crew: "Maître d'" },
-  { name: "Country Club Cellar", emoji: "⛳",
-    flavor: "Eighteen holes, one very deep wine cellar.", crew: "Club Steward" },
-  { name: "Mega-Distillery", emoji: "🏭",
-    flavor: "Industrial-grade 'vinegar' by the tanker car.", crew: "Plant Overseer" },
-  { name: "Harbor Freight Co.", emoji: "🚢",
-    flavor: "Crates labeled BIBLES. Heavy, clinking bibles.", crew: "Harbor Master" },
-  { name: "Railroad Skim", emoji: "🚂",
-    flavor: "Every boxcar through New Carthage tithes to the family.", crew: "Rail Agent" },
-  { name: "The Syndicate", emoji: "👑",
-    flavor: "Five families, one table, your chair at the head.", crew: "Consigliere" },
+  { name: "Corner Spot", emoji: "🌿",
+    flavor: "Dime bags and hand signals. Everybody starts somewhere.", crew: "Lookout" },
+  { name: "Smoke Shop", emoji: "🏪",
+    flavor: "Sells rolling papers out front. The back room sells the reason.", crew: "Counter Guy" },
+  { name: "Grow House", emoji: "🏠",
+    flavor: "A rented two-bed with blacked-out windows and a stadium light bill.", crew: "Grower" },
+  { name: "Pill Mill", emoji: "💊",
+    flavor: "A strip-mall clinic. The doctor's pen never runs dry.", crew: "Crooked Doc" },
+  { name: "Smuggling Route", emoji: "🎣",
+    flavor: "Product comes up the coast in fishing boats. The catch is never fish.", crew: "Skipper" },
+  { name: "Stash Warehouse", emoji: "📦",
+    flavor: "The manifest says office furniture. Everything says office furniture.", crew: "Night Foreman" },
+  { name: "After-Hours Club", emoji: "🔊",
+    flavor: "No sign, no listing. Bass you feel through the sidewalk.", crew: "Door Man" },
+  { name: "Underground Casino", emoji: "🎰",
+    flavor: "The tables are honest. The room isn't.", crew: "Pit Boss" },
+  { name: "Go-Fast Fleet", emoji: "🚤",
+    flavor: "Twelve cigarette boats. Zero fishing licenses.", crew: "Fleet Captain" },
+  { name: "Chop Shop", emoji: "🔧",
+    flavor: "Cars come in. VIN numbers don't come out.", crew: "Shop Foreman" },
+  { name: "Uptown Nightclub", emoji: "🍾",
+    flavor: "Bottle service out front. The office safe does the real volume.", crew: "Club Manager" },
+  { name: "Country Club Connect", emoji: "⛳",
+    flavor: "Eighteen holes, one very discreet clientele.", crew: "Club Steward" },
+  { name: "The Superlab", emoji: "⚗️",
+    flavor: "Industrial-grade product by the pallet.", crew: "Head Chemist" },
+  { name: "Container Line", emoji: "🚢",
+    flavor: "One container in ten thousand gets opened. Yours never is.", crew: "Harbor Master" },
+  { name: "Trucking Network", emoji: "🚛",
+    flavor: "Every eighteen-wheeler through Eastport tithes to the operation.", crew: "Dispatcher" },
+  { name: "The Cartel", emoji: "👑",
+    flavor: "Five crews, one table, your chair at the head.", crew: "The Underboss" },
 ];
 
 export const MYSTERY_CARD = {
-  title: (n: number) => `${n} more rackets in the wings`,
-  sub: "Grow the family to see what New Carthage offers next.",
-  icon: "🗞️",
+  title: (n: number) => `${n} more hustles in the wings`,
+  sub: "Grow the operation to see what Eastport offers next.",
+  icon: "💼",
 } as const;
 
 // ---------------------------------------------------------------------------
-// Sal the Haberdasher (the Fixer) — flex economy reskin. IDs persisted.
+// Sosa the Fixer — flex economy reskin. IDs persisted.
 // ---------------------------------------------------------------------------
 
 export const SHOP = {
-  title: "SAL'S FINE GOODS",
-  sub: "Sal sells one thing: an edge. Wear a watch, earn more. Drive a motorcar, work faster.",
-  pitch: "Evenin', boss. Everything on this table makes your whole operation richer or faster. Pick your poison.",
+  title: "SOSA'S IMPORTS",
+  sub: "Sosa sells one thing: an edge. Wear a watch, earn more. Drive right, work faster.",
+  pitch: "Evening, boss. Everything on this table makes your whole operation richer or faster. Pick your poison.",
   wristTitle: "WATCHES",
-  wristSub: "Boost the money every racket earns",
-  garageTitle: "MOTORCARS",
-  garageSub: "Speed up every racket you run",
+  wristSub: "Boost the money every hustle earns",
+  garageTitle: "CARS",
+  garageSub: "Speed up every hustle you run",
   equipped: "WEARING",
   wearing: "WEARING NOW",
   equip: "WEAR THIS",
-  owned: "IN THE WARDROBE",
+  owned: "IN THE STASH",
   buy: "BUY",
   bestOwned: "Your best is equipped automatically.",
-  lockedTitle: "Sal only deals with real operators",
-  lockedSub: "Open your second racket — The Rusty Anchor — and Sal comes calling with his catalog.",
-  lockedCta: "SHOW ME THE RACKETS",
+  lockedTitle: "Sosa only deals with real operators",
+  lockedSub: "Open your second hustle — the Smoke Shop — and Sosa comes calling with his catalog.",
+  lockedCta: "SHOW ME THE HUSTLES",
 } as const;
 
 export const FIXER = {
-  name: "Sal the Haberdasher",
-  status: "around · probably at the cigar counter",
+  name: "Sosa the Fixer",
+  status: "around · probably in the parking garage",
   role: "procurer of fine things",
-  greeting: "Evenin'. Been hearing your name in the good rooms. Let me dress the part for you — that's just good business.",
-  introFollowYes: "That's the spirit. Check my other lines — pocket and garage — when you're ready to look the part.",
-  introFollowWho: "Sal. I make serious people look serious. Stick around.",
+  greeting: "Evening. Been hearing your name in the right rooms. Let me put you in something that fits the résumé — that's just good business.",
+  introFollowYes: "That's the spirit. Check my other lines — wrist and garage — when you're ready to look the part.",
+  introFollowWho: "Sosa. I make serious people look serious. Stick around.",
   purchaseBarks: [
     "That's not a purchase. That's a reputation.",
-    "Receipts are for citizens.",
+    "Receipts are for civilians.",
     "We don't buy things. We buy respect.",
-    "An heirloom now. Historically significant.",
+    "Instant classic. Museum grade.",
   ],
   downgradeBark: "The street didn't understand my vision.",
-  brokeBark: "Come back when the till's heavier.",
+  brokeBark: "Come back when the count's heavier.",
   idleCarBarks: [
     "I don't drive to work. I drive to be seen not working.",
-    "Mileage? Kings don't read odometers.",
+    "Mileage? Bosses don't read odometers.",
   ],
   idleWatchBarks: [
-    "Time is money. That's why I keep it in my pocket.",
+    "Time is money. Mine's iced.",
     "It loses four minutes a day. So do I.",
   ],
   idleBarks: [
     "Rise and grind. Mostly rise.",
-    "My morning routine is forty minutes of hat angles.",
+    "My morning routine is forty minutes of mirror.",
   ],
   tier4Bark: "The hangar is rented. The altitude is real.",
-  stashBark: "It's in the wardrobe. Wear it when you want to be seen.",
+  stashBark: "It's in the stash. Wear it when you want to be seen.",
   passBark: "Fair. Class waits for cash.",
   dmsLockedTitle: "Someone's asking about you",
-  dmsLockedSub: "A certain haberdasher only calls on operators who move product. Open <b>The Rusty Anchor</b> to get his attention.",
-  dmsLockedCta: "SHOW ME THE RACKETS",
-  waiting: "Sal is waiting on you…",
-  idleReply: "Keep stacking — Sal will come around.",
+  dmsLockedSub: "A certain fixer only calls on operators who move product. Open the <b>Smoke Shop</b> to get his attention.",
+  dmsLockedCta: "SHOW ME THE HUSTLES",
+  waiting: "Sosa is waiting on you…",
+  idleReply: "Keep stacking — Sosa will come around.",
   threads: {
-    intro: { title: "Sal the Haberdasher", preview: "Evenin'. Been hearing your name…" },
-    wrist: { title: "Sal · Pocket Watches", preview: "The watch chain is the whole argument." },
-    garage: { title: "Sal · Garage", preview: "You don't drive it. You park it where the papers eat lunch." },
+    intro: { title: "Sosa the Fixer", preview: "Evening. Been hearing your name…" },
+    wrist: { title: "Sosa · Watches", preview: "The wrist is the whole argument." },
+    garage: { title: "Sosa · Garage", preview: "You don't drive it. You park it where everyone eats lunch." },
   },
-  tierNames: ["", "Knockoff", "Genuine", "Heirloom", "Legend"],
+  tierNames: ["", "Knockoff", "Genuine", "Collector", "Legend"],
 } as const;
 
 /** Fixer item display content, keyed by persisted item id. */
 export const FIXER_ITEMS: Record<string, { name: string; blurb: string; boost: string; emoji: string }> = {
-  fauxlex: { name: "Pawnshop Pocket Watch", emoji: "⌚",
-    blurb: "Ticks loud enough to hear across the bar.",
-    boost: "Every racket earns +5% more money" },
-  tagheuer: { name: "Swiss Chronometer", emoji: "⏱️",
-    blurb: "Genuine. The customs stamp is the fake part.",
-    boost: "Your bigger rackets earn +15% more money" },
-  daytona: { name: "The Judge's Heirloom", emoji: "🕰️",
-    blurb: "Won in a card game the judge denies attending.",
+  fauxlex: { name: "Canal Street Rolex", emoji: "⌚",
+    blurb: "Ticks loud enough to hear across the club.",
+    boost: "Every hustle earns +5% more money" },
+  tagheuer: { name: "TAG Heuer Carrera", emoji: "⏱️",
+    blurb: "Genuine. The customs paperwork is the fake part.",
+    boost: "Your bigger hustles earn +15% more money" },
+  daytona: { name: "The Steel Daytona", emoji: "🕰️",
+    blurb: "Ten-year waitlist. Sosa's list took ten minutes.",
     boost: "+2% Legacy forever — this one you keep after a reset" },
-  mille: { name: "The Minute Repeater", emoji: "💎",
-    blurb: "Chimes the hour. Nobody who owns one needs to know the hour.",
-    boost: "Double money for 10s every time you buy a racket" },
-  civic: { name: "Rusty Flivver", emoji: "🚗",
-    blurb: "Backfires like a starter pistol. Keeps meetings short.",
-    boost: "Every racket runs 5% faster" },
-  charger: { name: "Bootlegger's Ford", emoji: "🚙",
-    blurb: "Stock body, souped engine, false floor.",
-    boost: "Your bigger rackets run 10% faster" },
-  lambo: { name: "Borrowed Duesenberg", emoji: "🏎️",
-    blurb: "Borrowed indefinitely. The owner is very understanding.",
-    boost: "Level-ups sometimes hit the front page — double money, 60s" },
-  bugatti: { name: "The Silver Phantom", emoji: "🚘",
+  mille: { name: "The Richard Mille", emoji: "💎",
+    blurb: "Costs more than the building. Tells worse time.",
+    boost: "Double money for 10s every time you buy a hustle" },
+  civic: { name: "Beater Civic", emoji: "🚗",
+    blurb: "A quarter-million miles and invisible to police.",
+    boost: "Every hustle runs 5% faster" },
+  charger: { name: "Blacked-Out Charger", emoji: "🚙",
+    blurb: "Stock body, built motor, false floor.",
+    boost: "Your bigger hustles run 10% faster" },
+  lambo: { name: "Leased Lambo", emoji: "🏎️",
+    blurb: "The lease is in someone else's name. So are the tickets.",
+    boost: "Level-ups sometimes make the news — double money, 60s" },
+  bugatti: { name: "The Bugatti", emoji: "🚘",
     blurb: "Paid in full. Do not ask in what.",
-    boost: "Your smallest racket runs at your best speed" },
+    boost: "Your smallest hustle runs at your best speed" },
 };
 
 // ---------------------------------------------------------------------------
@@ -258,81 +260,81 @@ export const FIXER_ITEMS: Record<string, { name: string; blurb: string; boost: s
 
 export const BOSS = {
   screenTitle: "THE BOSS",
-  colorwayLabel: "FAMILY COLORS",
+  colorwayLabel: "CREW COLORS",
   wardrobeLabel: "WARDROBE",
-  lifetimeStat: "fortune",
-  footnote: "Style is forever — your alias, look and wardrobe survive a New Family.",
+  lifetimeStat: "net worth",
+  footnote: "Style is forever — your alias, look and wardrobe survive a New Operation.",
   creation: {
-    kicker: "NEW CARTHAGE · 1926",
-    title: "BOOTLEG EMPIRE",
-    sub: "Build the outfit. Wet the city's whistle.",
+    kicker: "EASTPORT · PRESENT DAY",
+    title: "DRUG EMPIRE",
+    sub: "Build the operation. Own every corner.",
     handleLabel: "YOUR ALIAS",
-    handlePlaceholder: "lucky",
+    handlePlaceholder: "ghost",
     lookLabel: "PICK YOUR LOOK",
-    colorLabel: "FAMILY COLORS",
+    colorLabel: "CREW COLORS",
     cta: "OPEN FOR BUSINESS",
   },
   looks: {
     // ids persisted from the old game — display only here
-    hoodie: { name: "Flat Cap & Suspenders", emoji: "🧢" },
-    bizcaz: { name: "Three-Piece Suit", emoji: "🎩" },
-    street: { name: "Dockworker Denim", emoji: "⚓" },
-    gym: { name: "Silk Robe & Slippers", emoji: "🥂" },
+    hoodie: { name: "Hoodie & Joggers", emoji: "🧢" },
+    bizcaz: { name: "Business Casual", emoji: "💼" },
+    street: { name: "Head-to-Toe Streetwear", emoji: "👟" },
+    gym: { name: "Designer Tracksuit", emoji: "🕶️" },
   } as Record<string, { name: string; emoji: string }>,
-  slots: { Clothes: "Suits", Jewelry: "Rings", Watch: "Watches" } as Record<string, string>,
-  tierNames: ["", "Modest", "Sharp", "Stately", "Heirloom"],
-  grailNote: " · +0.5% Legacy on New Family",
+  slots: { Clothes: "Fits", Jewelry: "Chains", Watch: "Watches" } as Record<string, string>,
+  tierNames: ["", "Basic", "Fresh", "Designer", "Grail"],
+  grailNote: " · +0.5% Legacy on New Operation",
   items: {
-    thrifted: { name: "Secondhand Tweed", emoji: "🧥" },
-    streetdrop: { name: "Tailored Pinstripe", emoji: "🤵" },
-    designer: { name: "Paris Import Suit", emoji: "🎩" },
-    couture: { name: "Bespoke White Tuxedo", emoji: "🕊️" },
-    fakechain: { name: "Brass Ring", emoji: "💍" },
-    realchain: { name: "Gold Signet Ring", emoji: "🪙" },
-    grill: { name: "Diamond Stickpin", emoji: "📌" },
-    iced: { name: "Ruby Everything", emoji: "♦️" },
-    p_fauxlex: { name: "Pawnshop Pocket Watch", emoji: "⌚" },
-    p_tagheuer: { name: "Swiss Chronometer", emoji: "⏱️" },
-    p_daytona: { name: "The Judge's Heirloom", emoji: "🕰️" },
-    p_mille: { name: "The Minute Repeater", emoji: "💎" },
+    thrifted: { name: "Thrift-Store Fit", emoji: "🧥" },
+    streetdrop: { name: "Limited Drop", emoji: "🤵" },
+    designer: { name: "Designer Head-to-Toe", emoji: "🕶️" },
+    couture: { name: "Custom Couture", emoji: "🕊️" },
+    fakechain: { name: "Fake Cuban Link", emoji: "💍" },
+    realchain: { name: "Solid Gold Cuban", emoji: "🪙" },
+    grill: { name: "Diamond Grill", emoji: "😬" },
+    iced: { name: "Iced-Out Everything", emoji: "♦️" },
+    p_fauxlex: { name: "Canal Street Rolex", emoji: "⌚" },
+    p_tagheuer: { name: "TAG Heuer Carrera", emoji: "⏱️" },
+    p_daytona: { name: "The Steel Daytona", emoji: "🕰️" },
+    p_mille: { name: "The Richard Mille", emoji: "💎" },
   } as Record<string, { name: string; emoji: string }>,
 } as const;
 
 // ---------------------------------------------------------------------------
-// New Family (prestige)
+// New Operation (prestige)
 // ---------------------------------------------------------------------------
 
 export const FAMILY = {
-  title: "START A NEW FAMILY",
-  sub: "Burn it all down. Keep the name. Every Legacy token makes every racket earn +3% more — forever.",
+  title: "START A NEW OPERATION",
+  sub: "Burn it all down. Keep the name. Every Legacy token makes every hustle earn +3% more — forever.",
   statHeld: "LEGACY HELD",
   statBonus: "INCOME BONUS",
-  statGain: "ON NEW FAMILY",
+  statGain: "ON NEW OPERATION",
   keepTitle: "YOU KEEP",
   keeps: [
     "Legacy & its permanent income bonus",
-    "Your Respect level & the neighborhoods you control",
+    "Your Respect level & the turf you control",
     "Your alias, look & wardrobe",
     "The Judge's favor",
   ],
   loseTitle: "YOU LOSE",
   loses: (_cash: string) => [
     "All your cash — dirty and clean",
-    "Every racket, crew and front",
-    "Sal's watches & motorcars",
+    "Every hustle, crew and front",
+    "Sosa's watches & cars",
     "All heat, payoffs & buffs",
   ],
-  cta: "START A NEW FAMILY",
+  cta: "START A NEW OPERATION",
   ctaArmed: (gain: string) => `TAP AGAIN — GAIN ${gain} LEGACY`,
-  lockedTitle: "Build up your Family Fortune (gold cash) to earn your first Legacy token.",
+  lockedTitle: "Build up your Net Worth (gold cash) to earn your first Legacy token.",
   perksTitle: "WHAT LEGACY GIVES YOU",
-  toastTitle: "A NEW FAMILY RISES",
+  toastTitle: "A NEW OPERATION RISES",
   toastSub: (gain: string) => `+${gain} Legacy secured`,
   bonusNote: (pct: number, daytonas: number) =>
-    `Legacy gain boosted +${pct}%${daytonas > 0 ? ` (Judge's Heirloom ×${daytonas})` : ""}`,
+    `Legacy gain boosted +${pct}%${daytonas > 0 ? ` (Steel Daytona ×${daytonas})` : ""}`,
 } as const;
 
-/** Family Fortune (lifetime clean) per √-step of Legacy. */
+/** Net Worth (lifetime clean) per √-step of Legacy. */
 export const LEGACY_DIVISOR = 2_500;
 
 // ---------------------------------------------------------------------------
@@ -341,10 +343,10 @@ export const LEGACY_DIVISOR = 2_500;
 
 export const MISC = {
   offlineTitle: "While you were lying low…",
-  offlineSub: "The crews kept the stills warm.",
+  offlineSub: "The crew kept the corners moving.",
   offlineCta: "COLLECT THE TAKE",
-  portfolio: "THE RACKETS",
-  running: (a: number, b: number) => `${a}/${b} rackets running`,
+  portfolio: "THE HUSTLES",
+  running: (a: number, b: number) => `${a}/${b} hustles running`,
   soundOn: "Sound on",
   soundOff: "Sound off",
 } as const;
@@ -380,36 +382,36 @@ export interface FrontDef {
 }
 
 export const FRONTS: FrontDef[] = [
-  { id: "laundromat", name: "Sunrise Laundromat", emoji: "🧺",
-    flavor: "We clean shirts. Mostly shirts. Some paper.",
+  { id: "laundromat", name: "Sunrise Coin Laundry", emoji: "🧺",
+    flavor: "We clean clothes. Mostly clothes. Some paper.",
     district: "docks", price: 600, priceCurrency: "dirty",
     baseThroughput: 26, baseCut: 0.35, cutPerLevel: 0.012, cutFloor: 0.2,
     throughputGrowth: 1.55, upgradeBase: 1_400, upgradeGrowth: 1.85 },
-  { id: "barber", name: "Kowalski's Barber Shop", emoji: "💈",
-    flavor: "Two chairs, one till, zero questions.",
+  { id: "barber", name: "Fadeaway Barbershop", emoji: "💈",
+    flavor: "Two chairs, one register, zero questions.",
     district: "warsaw", price: 30_000, priceCurrency: "clean",
     baseThroughput: 140, baseCut: 0.32, cutPerLevel: 0.012, cutFloor: 0.18,
     throughputGrowth: 1.55, upgradeBase: 45_000, upgradeGrowth: 1.85 },
-  { id: "velvet", name: "The Velvet Room", emoji: "🎷",
-    flavor: "Feathers, brass, a band that never sleeps — and a very busy till.",
+  { id: "velvet", name: "Club Velour", emoji: "🪩",
+    flavor: "Velvet ropes, bottle service, and a very busy register.",
     district: "downtown", price: 900_000, priceCurrency: "clean",
     baseThroughput: 1_100, baseCut: 0.28, cutPerLevel: 0.01, cutFloor: 0.16,
     throughputGrowth: 1.55, upgradeBase: 1_300_000, upgradeGrowth: 1.85,
     perk: "velvet_income" },
-  { id: "hotel", name: "The Grand Carthage Hotel", emoji: "🏨",
-    flavor: "Four stars in the paper. Five ledgers in the safe.",
+  { id: "hotel", name: "The Grandview Hotel", emoji: "🏨",
+    flavor: "Four stars online. Five ledgers in the safe.",
     district: "row", price: 75_000_000, priceCurrency: "clean",
     baseThroughput: 11_000, baseCut: 0.25, cutPerLevel: 0.01, cutFloor: 0.14,
     throughputGrowth: 1.55, upgradeBase: 100_000_000, upgradeGrowth: 1.85 },
-  { id: "importexport", name: "Meridian Import/Export Co.", emoji: "🚢",
-    flavor: "Everything is 'olive oil.' The manifests are works of art.",
+  { id: "importexport", name: "Meridian Logistics", emoji: "🚢",
+    flavor: "Everything is 'flat-screen TVs.' The manifests are works of art.",
     district: "islands", price: 4_000_000_000, priceCurrency: "clean",
     baseThroughput: 120_000, baseCut: 0.22, cutPerLevel: 0.008, cutFloor: 0.12,
     throughputGrowth: 1.55, upgradeBase: 5_500_000_000, upgradeGrowth: 1.85,
     perk: "less_shipment_heat" },
 ];
 
-/** The Velvet Room's own legit take, per level, per second (clean). */
+/** Club Velour's own legit take, per level, per second (clean). */
 export const VELVET_CLEAN_INCOME_PER_LEVEL = 45;
 
 export const LAUNDER = {
@@ -417,12 +419,12 @@ export const LAUNDER = {
   sectionSub: "Dirty money goes in. Respectable money comes out. Some evaporates.",
   washing: (rate: string) => `washing ${rate}/s`,
   keeps: (pct: number) => `keeps ${pct}%`,
-  idle: "till is quiet — no dirty cash to wash",
+  idle: "register is quiet — no dirty cash to wash",
   buy: "BUY THE DEED",
   upgrade: "EXPAND",
   dirtyLabel: "DIRTY",
   cleanLabel: "CLEAN",
-  dirtyHint: "Dirty cash runs the rackets: expansions, crews, bribes, Sal.",
+  dirtyHint: "Dirty cash runs the hustles: expansions, crews, payoffs, Sosa.",
   cleanHint: "Clean cash buys deeds, front upgrades, lawyers and bail.",
 } as const;
 
@@ -447,21 +449,21 @@ export interface DistrictDef {
 export const WORLD = { w: 2000, h: 1400 } as const;
 
 export const DISTRICTS: DistrictDef[] = [
-  { id: "docks", name: "The Docks", price: 0, respectLevel: 0,
-    blurb: "Salt air, crooked cranes, and everything falls off a truck eventually.",
-    rect: { x: 110, y: 860, w: 580, h: 420 }, tint: "#8f8672" },
-  { id: "warsaw", name: "Little Warsaw", price: 15_000, respectLevel: 3,
-    blurb: "Working folk, warm kitchens, basements with very thick doors.",
-    rect: { x: 110, y: 390, w: 580, h: 420 }, tint: "#948a70" },
+  { id: "docks", name: "The Terminal", price: 0, respectLevel: 0,
+    blurb: "Container cranes, chain-link, and everything falls off a truck eventually.",
+    rect: { x: 110, y: 860, w: 580, h: 420 }, tint: "#848b95" },
+  { id: "warsaw", name: "O'Block", price: 15_000, respectLevel: 3,
+    blurb: "Every window watching, every corner spoken for.",
+    rect: { x: 110, y: 390, w: 580, h: 420 }, tint: "#8a9099" },
   { id: "downtown", name: "Downtown", price: 1_500_000, respectLevel: 6,
-    blurb: "Neon, brass, and City Hall — everything here has a price tag.",
-    rect: { x: 750, y: 340, w: 540, h: 540 }, tint: "#9a8e74" },
-  { id: "row", name: "Millionaire's Row", price: 100_000_000, respectLevel: 10,
-    blurb: "Old money, new friends. The Judge takes his tea at four.",
-    rect: { x: 1350, y: 150, w: 540, h: 430 }, tint: "#a29677" },
-  { id: "islands", name: "The Harbor Islands", price: 5_000_000_000, respectLevel: 14,
+    blurb: "Glass towers, City Hall — everything here has a price tag.",
+    rect: { x: 750, y: 340, w: 540, h: 540 }, tint: "#9199a4" },
+  { id: "row", name: "Crestwood Hills", price: 100_000_000, respectLevel: 10,
+    blurb: "Old money, new friends. The Judge plays golf at four.",
+    rect: { x: 1350, y: 150, w: 540, h: 430 }, tint: "#99a1ad" },
+  { id: "islands", name: "The Keys", price: 5_000_000_000, respectLevel: 14,
     blurb: "Past the breakwater, past the law. The empire's blue-water edge.",
-    rect: { x: 1400, y: 950, w: 480, h: 360 }, tint: "#8a8168" },
+    rect: { x: 1400, y: 950, w: 480, h: 360 }, tint: "#7f868f" },
 ];
 
 export function districtByID(id: string): DistrictDef {
@@ -484,14 +486,14 @@ export interface PlotDef {
 }
 
 export const PLOTS: PlotDef[] = [
-  // The Docks
+  // The Terminal
   { id: "p_still", kind: "racket", ref: 0, district: "docks", x: 220, y: 1010 },
   { id: "p_anchor", kind: "racket", ref: 1, district: "docks", x: 440, y: 1155 },
   { id: "p_gin", kind: "racket", ref: 2, district: "docks", x: 615, y: 1010 },
   { id: "p_smuggle", kind: "racket", ref: 4, district: "docks", x: 590, y: 1230, size: 1.1 },
   { id: "p_laundromat", kind: "front", ref: "laundromat", district: "docks", x: 235, y: 1160 },
   { id: "pr_docks", kind: "precinct", ref: "precinct_docks", district: "docks", x: 425, y: 1010, size: 0.9 },
-  // Little Warsaw
+  // O'Block
   { id: "p_brewery", kind: "racket", ref: 3, district: "warsaw", x: 240, y: 520 },
   { id: "p_warehouse", kind: "racket", ref: 5, district: "warsaw", x: 560, y: 500, size: 1.15 },
   { id: "p_clock", kind: "racket", ref: 6, district: "warsaw", x: 300, y: 690 },
@@ -504,13 +506,13 @@ export const PLOTS: PlotDef[] = [
   { id: "p_velvet", kind: "front", ref: "velvet", district: "downtown", x: 1050, y: 700, size: 1.25 },
   { id: "lm_cityhall", kind: "landmark", ref: "cityhall", district: "downtown", x: 1010, y: 430, size: 1.2 },
   { id: "pr_downtown", kind: "precinct", ref: "precinct_downtown", district: "downtown", x: 1190, y: 800 },
-  // Millionaire's Row
+  // Crestwood Hills
   { id: "p_country", kind: "racket", ref: 11, district: "row", x: 1480, y: 270 },
   { id: "p_railroad", kind: "racket", ref: 14, district: "row", x: 1760, y: 240, size: 1.15 },
   { id: "p_hotel", kind: "front", ref: "hotel", district: "row", x: 1550, y: 450, size: 1.3 },
   { id: "lm_judge", kind: "landmark", ref: "judge", district: "row", x: 1780, y: 430, size: 1.1 },
   { id: "pr_row", kind: "precinct", ref: "precinct_row", district: "row", x: 1650, y: 320, size: 0.9 },
-  // The Harbor Islands
+  // The Keys
   { id: "p_fleet", kind: "racket", ref: 8, district: "islands", x: 1500, y: 1040 },
   { id: "p_distillery", kind: "racket", ref: 12, district: "islands", x: 1730, y: 1030, size: 1.2 },
   { id: "p_freight", kind: "racket", ref: 13, district: "islands", x: 1500, y: 1210 },
@@ -522,14 +524,14 @@ export const LANDMARKS: Record<string, { name: string; emoji: string; blurb: str
   cityhall: { name: "City Hall", emoji: "🏛️",
     blurb: "Marble halls, flexible morals. Late-game friends live here." },
   judge: { name: "The Judge's Mansion", emoji: "⚖️",
-    blurb: "The Judge takes his tea at four. Lawyer favors, coming soon." },
-  precinct_docks: { name: "Precinct No. 1", emoji: "🚓",
+    blurb: "The Judge plays golf at four. Lawyer favors, coming soon." },
+  precinct_docks: { name: "1st Precinct", emoji: "🚓",
     blurb: "The desk sergeant enjoys long lunches. Noted." },
-  precinct_warsaw: { name: "Precinct No. 2", emoji: "🚓",
-    blurb: "The captain admires a well-pressed suit. Noted." },
+  precinct_warsaw: { name: "2nd Precinct", emoji: "🚓",
+    blurb: "The captain drives a nicer car than a captain should. Noted." },
   precinct_downtown: { name: "Police Headquarters", emoji: "🚓",
-    blurb: "Marble lobby. Everyone watches everyone." },
-  precinct_row: { name: "Precinct No. 4", emoji: "🚓",
+    blurb: "Glass lobby. Everyone watches everyone." },
+  precinct_row: { name: "4th Precinct", emoji: "🚓",
     blurb: "Quiet streets. Expensive quiet." },
 };
 
@@ -537,7 +539,7 @@ export const MAP_COPY = {
   forSale: "FOR SALE",
   locked: (name: string, respect: number) =>
     `${name} — Reach Respect ${respect}`,
-  unlockCta: (price: string) => `BUY INTO THE WARD · ${price}`,
+  unlockCta: (price: string) => `BUY THE TURF · ${price}`,
   unlockToast: (name: string) => `${name.toUpperCase()} JOINS THE EMPIRE`,
   unlockToastSub: "New plots just hit the market",
   comingSoon: "COMING SOON",
@@ -550,7 +552,7 @@ export const MAP_COPY = {
 // ---------------------------------------------------------------------------
 
 export const HEAT_TUNING = {
-  /** Passive heat/sec per racket unit, scaled up for later rackets. */
+  /** Passive heat/sec per hustle unit, scaled up for later hustles. */
   passivePerUnit: 0.0008,
   racketWeight: (index: number) => 1 + index * 0.35,
   /** Dirty stockpile above this many seconds of laundering capacity heats up. */
@@ -574,10 +576,10 @@ export const HEAT_TUNING = {
   investigationSecondsWithLawyer: 200,
   prisonBaseSeconds: 90,
   prisonMaxSeconds: 300,
-  bailRate: 0.04, // × Family Fortune (lifetime clean)
+  bailRate: 0.04, // × Net Worth (lifetime clean)
   bailFloor: 500,
   heatAfterRelease: 30,
-  /** Reopen fee: multiple of the racket's next-unit price (clean). */
+  /** Reopen fee: multiple of the hustle's next-unit price (clean). */
   reopenFeeUnits: 2.5,
   caseDismissCooldownMs: 3_600_000,
 } as const;
@@ -599,17 +601,17 @@ export const HEAT_COPY = {
   safe: "The badge is bored",
   warm: "Eyes on the street",
   investigation: "UNDER INVESTIGATION",
-  investigationSub: "The Feds are building a case…",
-  raidToast: "RAID! FEDS SEIZE",
-  raidToastSub: (name: string) => `${name} boarded up — the boss is downtown`,
+  investigationSub: "The DEA is building a case…",
+  raidToast: "RAID! DEA SEIZES",
+  raidToastSub: (name: string) => `${name} taped off — the boss is downtown`,
   dismissToast: "CASE THROWN OUT!",
   dismissSub: "The Judge's favor holds. The file is lost.",
-  releaseToast: "THE BOSS WALKS",
+  releaseToast: "FIRST DAY OUT",
   releaseSub: "Heat settles to a simmer. You're a known face now.",
   panelTitle: "THE LAW",
-  panelSub: "Heat rises with rackets, shipments and idle dirty cash. Pay it down or lie low.",
+  panelSub: "Heat rises with hustles, shipments and idle dirty cash. Pay it down or lie low.",
   sourcesTitle: "WHY THEY'RE WATCHING",
-  srcRackets: "Rackets running",
+  srcRackets: "Hustles running",
   srcStockpile: "Dirty cash stockpile",
   srcPayroll: (n: number) => `${n} precinct${n === 1 ? "" : "s"} on payroll`,
   bribeCta: (cost: string) => `GREASE PALMS · ${cost}`,
@@ -618,14 +620,14 @@ export const HEAT_COPY = {
   payrollActive: "CAPTAIN'S ON THE PAYROLL",
   payrollOff: "STOP PAYMENTS",
   prisonTitle: "COUNTY LOCKUP",
-  prisonSub: "The family keeps the fronts washing at half speed. The rackets run without you.",
+  prisonSub: "The crew keeps the fronts washing at half speed. The hustles run without you.",
   prisonWait: "Sit tight",
   prisonBail: (cost: string) => `POST BAIL · ${cost}`,
-  prisonAd: "TELL IT TO THE PAPERS (soon)",
+  prisonAd: "CALL A PRESS CONFERENCE (soon)",
   raidedTag: "RAIDED",
   reopenCta: (cost: string) => `REOPEN · ${cost}`,
-  reopenNote: "Legal fees, new locks, a fresh coat of paint — and the ward remembers.",
-  lawyerTitle: "THE JUDGE'S PARLOR",
+  reopenNote: "Legal fees, new locks, a fresh coat of paint — and the block remembers.",
+  lawyerTitle: "THE LAW OFFICE",
   lawyerSub: "Favors, retainers, and a very understanding legal system.",
   owned: "SECURED",
 } as const;
@@ -640,7 +642,7 @@ export interface ShipmentRouteDef {
   blurb: string;
   emoji: string;
   vehicle: "truck" | "boat";
-  /** Racket indices that must be owned (and not raided). */
+  /** Hustle indices that must be owned (and not raided). */
   requires: number[];
   /** Plot ids the vehicle travels between. */
   fromPlot: string;
@@ -652,43 +654,43 @@ export interface ShipmentRouteDef {
 }
 
 export const SHIPMENT_ROUTES: ShipmentRouteDef[] = [
-  { id: "still_run", name: "Still Run", emoji: "🚚", vehicle: "truck",
-    blurb: "Mason jars under flour sacks, back roads the whole way.",
+  { id: "still_run", name: "City Run", emoji: "🚚", vehicle: "truck",
+    blurb: "Vacuum-sealed packs under pizza boxes, side streets the whole way.",
     requires: [0, 1], fromPlot: "p_still", toPlot: "p_anchor",
     payoutMult: 1, heatMult: 1, travelSeconds: 12 },
-  { id: "rum_run", name: "Rum Run", emoji: "⛵", vehicle: "boat",
+  { id: "rum_run", name: "Coast Run", emoji: "🚤", vehicle: "boat",
     blurb: "Twelve miles out, the law ends. The ledger doesn't.",
     requires: [4], fromPlot: "p_smuggle", toPlot: "p_anchor",
     payoutMult: 2.2, heatMult: 1.5, travelSeconds: 16 },
-  { id: "harbor_convoy", name: "Harbor Convoy", emoji: "🚢", vehicle: "boat",
-    blurb: "Three freighters of 'olive oil.' The manifests sing.",
+  { id: "harbor_convoy", name: "Container Run", emoji: "🚢", vehicle: "boat",
+    blurb: "Three containers of 'flat-screen TVs.' The manifests sing.",
     requires: [13], fromPlot: "p_freight", toPlot: "p_smuggle",
     payoutMult: 5, heatMult: 2.2, travelSeconds: 18 },
 ];
 
 export const SHIPMENT_SIZES = [
-  { id: "small", name: "Light Load", seconds: 25, heat: 3, floor: 120 },
-  { id: "medium", name: "Full Truck", seconds: 75, heat: 7, floor: 600 },
-  { id: "large", name: "The Works", seconds: 200, heat: 12, floor: 2_600 },
+  { id: "small", name: "Light Pack", seconds: 25, heat: 3, floor: 120 },
+  { id: "medium", name: "Full Trunk", seconds: 75, heat: 7, floor: 600 },
+  { id: "large", name: "The Motherlode", seconds: 200, heat: 12, floor: 2_600 },
 ] as const;
 
 export const SHIPMENT_COPY = {
   cta: "SHIPMENT",
   panelTitle: "SEND A SHIPMENT",
-  panelSub: "Big loads pay big and draw eyes. The badge is watching the roads.",
+  panelSub: "Big loads pay big and draw eyes. The cops are watching the roads.",
   confirm: (pay: string, heat: number) => `+${pay} · +${heat} HEAT`,
   departed: "SHIPMENT ROLLING",
   departedSub: (name: string) => `${name} is on the move`,
   arrivedToast: "SHIPMENT LANDS!",
-  arrivedSub: (pay: string) => `${pay} in dirty cash hits the till`,
+  arrivedSub: (pay: string) => `${pay} in dirty cash hits the count`,
   seizedToast: "SHIPMENT SEIZED!",
   seizedSub: "The raid caught the load on the road.",
   inTransit: (s: number) => `IN TRANSIT · ${s}s`,
   checkpointTitle: "CHECKPOINT AHEAD!",
-  checkpointSub: "A badge waves the traffic down.",
+  checkpointSub: "A cruiser waves the traffic down.",
   detour: (s: number) => `TAKE THE DETOUR · +${s}s, −half heat`,
-  barrel: "BARREL THROUGH · +2 heat",
-  needRoute: "Open the right rackets to run this route.",
+  barrel: "BLOW THROUGH · +2 heat",
+  needRoute: "Open the right hustles to run this route.",
   onlyOne: "One load at a time — the roads have eyes.",
 } as const;
 
@@ -717,7 +719,7 @@ export const RESPECT = {
   },
   levelChip: (level: number) => `🤝 L${level}`,
   levelUpToast: (level: number) => `RESPECT RISES — LEVEL ${level}`,
-  levelUpSub: "New doors open across New Carthage",
+  levelUpSub: "New doors open across Eastport",
 } as const;
 
 export const LEGACY = {
@@ -728,7 +730,7 @@ export const LEGACY = {
   releaseHeatPerToken: 0.5,
   releaseHeatFloor: 10,
   perks: (n: number) => [
-    `+${(n * 3).toLocaleString()}% money from every racket`,
+    `+${(n * 3).toLocaleString()}% money from every hustle`,
     `−${Math.min(5, n * 0.1).toFixed(1)}% lost in the wash`,
     `Come out of jail at ${Math.max(10, 30 - n * 0.5).toFixed(0)} heat instead of 30`,
   ],
@@ -742,12 +744,12 @@ export const LAWYER_RESPECT: Record<string, number> = {
 };
 
 // ---------------------------------------------------------------------------
-// Enzo the Consigliere — the guide who pops up when something new unlocks,
+// Von, your right hand — the guide who pops up when something new unlocks,
 // so nobody has to guess what to do next. One tip at a time, each shown once.
 // ---------------------------------------------------------------------------
 
 export const GUIDE = {
-  name: "Enzo",
+  name: "Von",
   title: "YOUR RIGHT HAND",
   dismiss: "GOT IT",
   show: "TAKE ME THERE",
@@ -764,110 +766,64 @@ export interface GuideTipDef {
 }
 
 // Direct, action-first, for someone who doesn't play games. Headline = the
-// verb. Text = the one-line reason. No jargon in the instruction itself.
+// verb. Text = the full explanation of the mechanic, taught the moment it
+// first matters. Von is the tutorial — every system gets its own tip.
 export const GUIDE_TIPS: GuideTipDef[] = [
   { id: "welcome", tab: "empire",
-    headline: "Tap the still to make your first dollar.",
-    text: "Hit the green RUN A BATCH bar. That's how you earn — do it a few times." },
+    headline: "Tap the corner spot to make your first dollar.",
+    text: "Hit the green MOVE A PACK bar and the meter fills — when it lands, the money's yours. Keep tapping; every pack builds the pile." },
   { id: "first_expand", tab: "empire",
-    headline: "Now buy more stills with the BUY button.",
-    text: "The more you own, the more you earn. It gets faster the more you buy." },
+    headline: "Now buy more corners with the BUY button.",
+    text: "Every corner you own adds money to each pack you move. Prices climb as you buy — the ×10, ×100 and MAX buttons up top buy in bulk when you're rich enough." },
   { id: "laundromat_ready", tab: "empire",
-    headline: "Buy the Laundromat at the top.",
-    text: "It turns your green cash into gold cash — and only gold cash buys property." },
+    headline: "Buy the Coin Laundry at the top.",
+    text: "Everything you earn is dirty green cash — cops can smell it. The laundry washes it into clean gold cash for a small cut, and only gold buys property." },
   { id: "first_clean", tab: "empire",
     headline: "That gold number is your real money.",
-    text: "Green pays for your business. Gold buys new places, lawyers, and your way out of jail." },
+    text: "Green (dirty) pays for hustles, crew and payoffs. Gold (clean) buys deeds, turf, lawyers and bail. The laundry converts on its own — you just keep earning." },
   { id: "crew_ready", tab: "empire",
-    headline: "Hire a crew so it runs itself.",
-    text: "Tap the crew button on a business. Now it earns even when you're not tapping." },
+    headline: "Hire a Lookout so the corner runs itself.",
+    text: "The HIRE button is a one-time fee for crew who move packs for you — no more tapping that hustle, and it keeps earning even while you're away." },
+  { id: "front_upgrade_ready", tab: "empire",
+    headline: "EXPAND the laundry with gold cash.",
+    text: "Every front level washes dirty cash faster and skims a smaller cut. Washing speed is your whole operation's bottleneck — never stop growing it." },
+  { id: "milestone_hint", tab: "empire",
+    headline: "25 corners — you hit a milestone.",
+    text: "At 25, 50, 100, 200+ units a hustle doubles its income and moves packs twice as fast. And when EVERY hustle levels up evenly, the NEWS bar up top doubles everything." },
   { id: "shipment_ready", tab: "map",
-    headline: "Send a shipment for a big payday.",
-    text: "Hit SHIPMENT on the map. Bigger loads pay more but bring the cops sniffing." },
+    headline: "The city just opened up.",
+    text: "Your operation is on the map now. Hit the gold SHIPMENT button there to send a load: pick a route and a size. Bigger loads pay way more dirty cash — and draw way more heat." },
+  { id: "shipment_live", tab: "map",
+    headline: "Your load is rolling. Watch the road.",
+    text: "If a checkpoint pops up, you choose: the detour is slower but cuts the heat in half, blowing through is fast but the cops remember. One load at a time." },
+  { id: "fixer_ready", tab: "dms",
+    headline: "Sosa's been asking about you.",
+    text: "He sells edges, not product: watches make every hustle earn more, cars make them run faster. Pricey — and it all burns on a New Operation. Check your messages." },
   { id: "stockpile_warning", tab: "empire",
-    headline: "Your cash pile is getting risky.",
-    text: "Buy or upgrade Fronts to clean it faster, before the police notice." },
+    headline: "That green pile is evidence.",
+    text: "When dirty cash stacks up faster than the laundry can wash it, heat starts climbing on its own. Buy or EXPAND fronts to raise your washing speed." },
   { id: "heat_warning",
-    headline: "Cops are watching. Tap the shield up top.",
-    text: "Pay them off, or put a captain on your payroll to keep the heat down." },
+    headline: "Cops are watching — tap the shield up top.",
+    text: "Heat rises from hustles, shipments and idle dirty cash. In THE LAW you can grease palms (a one-time bribe) or put a precinct captain on payroll — dirty cash every minute, but all heat builds slower." },
   { id: "investigation_help",
     headline: "You're under investigation — act fast.",
-    text: "Cool the heat down: pay a bribe, or stop shipments for a bit. Or they raid you." },
+    text: "The DEA is building a case. Push heat back down before the clock runs out — bribe, pause shipments, lie low — or they raid a hustle and the boss does time." },
   { id: "reopen_hint", tab: "empire",
-    headline: "The cops shut a business. Reopen it.",
-    text: "Tap REOPEN and pay in gold cash. It comes back a little smaller — that's the price." },
+    headline: "The DEA taped off a business. Reopen it.",
+    text: "Tap REOPEN and pay the legal fees in gold cash. It comes back one unit smaller — that's the price of getting caught. Keep the heat lower this time." },
+  { id: "respect_hint",
+    headline: "Respect opens doors.",
+    text: "That L badge up top grows from buying hustles, hiring crew and landing shipments. Higher levels unlock new turf on the map — and eventually serious lawyers." },
   { id: "district_ready", tab: "map",
-    headline: "You can claim a new neighborhood.",
-    text: "Tap the glowing district on the map and buy in. More neighborhoods, more money." },
+    headline: "You can claim new turf.",
+    text: "Tap the glowing district on the map and buy it with gold cash. New turf means new hustles to open, new fronts to wash with, and a bigger operation." },
   { id: "velvet_ready", tab: "map",
-    headline: "The Velvet Room is up for grabs.",
-    text: "It's your best money-cleaner and earns on its own. Grab it in Downtown." },
+    headline: "Club Velour is up for grabs.",
+    text: "The best front in Eastport: it washes huge volume AND its bottle service earns clean cash on its own. Grab the deed Downtown before you spend that gold." },
   { id: "prestige_ready", tab: "rebrand",
     headline: "You're rich enough to start over stronger.",
-    text: "Start a New Family: reset for permanent bonuses that make every run faster." },
+    text: "A New Operation burns your cash, hustles, crew and Sosa's toys — but each Legacy token pays +3% on everything, forever. Turf, Respect and your wardrobe stay." },
 ];
-
-// ---------------------------------------------------------------------------
-// The Gilded Ace — the casino (blackjack). Simulated gambling, fictional money.
-// ---------------------------------------------------------------------------
-
-export const CASINO = {
-  name: "The Gilded Ace",
-  sub: "Private Gaming Club",
-  tabLabel: "Casino",
-  notice: "SIMULATED GAMBLING · FICTIONAL IN-GAME MONEY · NO REAL-WORLD VALUE",
-  // Locked entrance
-  lockedKicker: "MEMBERS ONLY",
-  lockedTitle: "The Gilded Ace",
-  lockedBlurb: "Behind a nameless brass door on Downtown's quietest block: green felt, crystal, and the softest jazz in New Carthage. Buy in and the family plays where the money is made — and lost.",
-  lockedFeature: "Blackjack, dealt straight. Bet your clean fortune, win it back double — or watch the house take it.",
-  unlockCta: "BUY THE DEED",
-  unlockConfirm: "Open The Gilded Ace for $1 billion clean?",
-  unlockConfirmYes: "OPEN THE CLUB",
-  cantAfford: "Grow your Family Fortune to $1 billion clean to buy in.",
-  unlockToast: "THE GILDED ACE OPENS",
-  unlockToastSub: "The finest table in New Carthage is yours",
-  // Table
-  enter: "ENTER THE TABLE",
-  dealerLabel: "DEALER",
-  youLabel: "YOU",
-  balanceLabel: "YOUR CHIPS",
-  betLabel: "YOUR BET",
-  payoutLabel: "TO WIN",
-  customBet: "Custom bet",
-  deal: "DEAL",
-  hit: "HIT",
-  stand: "STAND",
-  newHand: "NEW HAND",
-  soft: "soft",
-  bigBetConfirm: (amt: string) => `Bet ${amt} on one hand?`,
-  bigBetYes: "LET IT RIDE",
-  cancel: "CANCEL",
-  // Result banners
-  resultBlackjack: "BLACKJACK!",
-  resultBlackjackSub: "Paid 3 to 2",
-  resultWin: "YOU WIN",
-  resultDealerBust: "DEALER BUSTS",
-  resultPush: "PUSH",
-  resultPushSub: "Bet returned",
-  resultBust: "BUST",
-  resultLose: "HOUSE WINS",
-  wonAmount: (amt: string) => `+${amt}`,
-  lostAmount: (amt: string) => `−${amt}`,
-  // Rules / help
-  rulesTitle: "HOW TO PLAY BLACKJACK",
-  rules: [
-    "Get closer to 21 than the dealer — without going over.",
-    "Number cards are face value; J/Q/K are 10; an Ace is 1 or 11.",
-    "You and the dealer each get two cards. One dealer card stays face-down.",
-    "HIT to take another card, STAND to hold. Over 21 and you bust.",
-    "The dealer must draw until 17, then stops — even on a soft 17.",
-    "A win pays even money. A two-card 21 (blackjack) pays 3 to 2.",
-    "A tie returns your bet (a push). The house never changes the odds.",
-  ],
-  rulesClose: "GOT IT",
-  helpButton: "Rules",
-} as const;
 
 // ---------------------------------------------------------------------------
 // One-time milestone headlines — §6.
@@ -876,14 +832,14 @@ export const CASINO = {
 export const MILESTONES: Record<string, { title: string; sub: string; xp: number }> = {
   first_shipment: {
     title: "FIRST LOAD DELIVERED",
-    sub: "Somewhere, a thirsty city sighs with relief", xp: 50 },
+    sub: "Somewhere, a hungry city exhales", xp: 50 },
   velvet_open: {
-    title: "THE VELVET ROOM OPENS ITS DOORS",
-    sub: "Feathers! Brass! A trumpet solo the papers call 'indecently good'", xp: 150 },
+    title: "CLUB VELOUR OPENS ITS DOORS",
+    sub: "Velvet ropes! Bass! A line around the block by midnight", xp: 150 },
   first_raid_survived: {
     title: "THE BOSS WALKS FREE",
-    sub: "Reporters swarm the courthouse steps. The city takes notes", xp: 100 },
+    sub: "News vans swarm the courthouse steps. The city takes notes", xp: 100 },
   bridge_islands: {
-    title: "BRIDGE TO THE HARBOR ISLANDS COMPLETE",
+    title: "BRIDGE TO THE KEYS COMPLETE",
     sub: "The empire reaches blue water at last", xp: 250 },
 };

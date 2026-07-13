@@ -1,5 +1,5 @@
 // ============================================================================
-// The icon system. Every player-visible mark is drawn here in one deco line
+// The icon system. Every player-visible mark is drawn here in one shared line
 // style — no OS emoji anywhere. `Ic` = a currentColor line glyph for UI;
 // `Portrait` = a small illustrated character bust.
 // ============================================================================
@@ -23,7 +23,7 @@ const G: Record<IconName, string> = {
     `<path d="M4 18V9l4 3 4-6 4 6 4-3v9Z"/><path d="M4 20h16"/>`,
   lock:
     `<rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>`,
-  crew: // person in a flat cap
+  crew: // person in a cap
     `<path d="M6 8.5c1-2.5 4-3.5 6-3.5s5 1 6 3.5"/><path d="M5 8.5h14"/><circle cx="12" cy="13" r="2.6"/><path d="M6 21c1-3.5 3.6-5 6-5s5 1.5 6 5"/>`,
   post: // paper going out
     `<path d="M4 5h11l5 5v9H4Z"/><path d="M15 5v5h5"/><path d="M8 13h7M8 16h5"/>`,
@@ -115,18 +115,18 @@ const INK = "#171d29";
 
 /** Bust artwork drawn in a 48×48 box (frame added by wrapper). */
 const BUST: Record<PortraitName, string> = {
-  // Enzo — old consigliere: bald pate, grey moustache, waistcoat
+  // Von — the right hand: bald, grey beard, dark crewneck, gold chain
   enzo: `
     <rect width="48" height="48" fill="${INK}"/>
     <path d="M12 48c1-9 6-13 12-13s11 4 12 13Z" fill="#2b3446"/>
-    <path d="M17 40h14l-2 8H19Z" fill="#e8dcc3"/>
+    <path d="M18 41c4 3 8 3 12 0" stroke="#d4a943" stroke-width="1.8" fill="none" stroke-linecap="round"/>
     <path d="M24 20c5 0 8 3 8 8s-3 9-8 9-8-4-8-9 3-8 8-8Z" fill="${SKIN}"/>
     <path d="M16 27c0-6 3-10 8-10s8 4 8 10c1-8-3-12-8-12s-9 4-8 12Z" fill="${SKIN_D}"/>
     <path d="M18 30c1.5-1.5 4-1.5 5 0M25 30c1.5-1.5 4-1.5 5 0" stroke="#5a4636" stroke-width="1.4" fill="none" stroke-linecap="round"/>
-    <path d="M19 33c2 2 8 2 10 0" stroke="#c9c4bb" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <path d="M19 32c2 4 8 4 10 0M22 36c1.5 1.5 4.5 1.5 6 0" stroke="#c9c4bb" stroke-width="2" fill="none" stroke-linecap="round"/>
     <circle cx="20.5" cy="30" r="1" fill="#2b2118"/><circle cx="27.5" cy="30" r="1" fill="#2b2118"/>
   `,
-  // Sal — sharp fixer: fedora, thin moustache, pinstripe collar
+  // Ray — sharp fixer: fresh fade, thin beard, gold-trimmed collar
   sal: `
     <rect width="48" height="48" fill="${INK}"/>
     <path d="M12 48c1-8 6-12 12-12s11 4 12 12Z" fill="#20283a"/>
@@ -134,28 +134,26 @@ const BUST: Record<PortraitName, string> = {
     <path d="M24 22c5 0 7 3 7 7s-3 8-7 8-7-4-7-8 2-7 7-7Z" fill="${SKIN}"/>
     <path d="M22 32c1.5 1 3.5 1 5 0" stroke="#4a3a28" stroke-width="1.4" fill="none" stroke-linecap="round"/>
     <circle cx="21" cy="29" r="1" fill="#2b2118"/><circle cx="27" cy="29" r="1" fill="#2b2118"/>
-    <path d="M13 20c0-4 5-6 11-6s11 2 11 6l-3 1c-2-2-5-3-8-3s-6 1-8 3Z" fill="#2b2118"/>
-    <ellipse cx="24" cy="20" rx="15" ry="2.6" fill="#1a1108"/>
+    <path d="M15 25c0-6 4-10 9-10s9 4 9 10l-2 1c-1-4-3-6-7-6s-6 2-7 6Z" fill="#1a1108"/>
   `,
-  // Boss looks — flat cap
+  // Boss looks — hood up
   "look-hoodie": `
     <rect width="48" height="48" fill="${INK}"/>
     <path d="M13 48c1-8 5-12 11-12s10 4 11 12Z" fill="#3a3f4a"/>
     <path d="M24 22c5 0 7 3 7 8s-3 8-7 8-7-3-7-8 2-8 7-8Z" fill="${SKIN}"/>
-    <path d="M14 20c0-4 4-7 10-7s10 3 10 7l-2 1H16Z" fill="#5a4a2e"/>
-    <path d="M14 21c-2 0-3 1-3 2h8Z" fill="#4a3c24"/>
+    <path d="M13 24c0-8 5-13 11-13s11 5 11 13l-3 1c0-6-3-10-8-10s-8 4-8 10Z" fill="#3a3f4a"/>
     <circle cx="21" cy="30" r="1" fill="#2b2118"/><circle cx="27" cy="30" r="1" fill="#2b2118"/>
   `,
-  // Boss looks — top hat / three-piece
+  // Boss looks — business casual, open collar
   "look-bizcaz": `
     <rect width="48" height="48" fill="${INK}"/>
     <path d="M14 48c1-8 5-11 10-11s9 3 10 11Z" fill="#1c2230"/>
-    <path d="M18 40h12l-1 8H19Z" fill="#e8dcc3"/>
+    <path d="M18 40h12l-1 8H19Z" fill="#e7ebf2"/>
     <path d="M24 23c4 0 6 3 6 7s-2 7-6 7-6-3-6-7 2-7 6-7Z" fill="${SKIN}"/>
-    <path d="M17 18h14v-9h-14Z" fill="#20242e"/><ellipse cx="24" cy="18" rx="11" ry="2.4" fill="#141821"/>
+    <path d="M17 24c0-5 3-9 7-9s7 4 7 9l-2 1c-1-4-2-6-5-6s-4 2-5 6Z" fill="#1c1610"/>
     <circle cx="21.5" cy="30" r="1" fill="#2b2118"/><circle cx="26.5" cy="30" r="1" fill="#2b2118"/>
   `,
-  // Boss looks — dockworker denim
+  // Boss looks — streetwear, beanie
   "look-street": `
     <rect width="48" height="48" fill="${INK}"/>
     <path d="M12 48c1-8 6-12 12-12s11 4 12 12Z" fill="#2e4257"/>
@@ -163,11 +161,11 @@ const BUST: Record<PortraitName, string> = {
     <path d="M15 18c1-4 5-6 9-6s8 2 9 6l-2 2c-2-2-4-3-7-3s-5 1-7 3Z" fill="#3a3020"/>
     <circle cx="21" cy="30" r="1" fill="#2b2118"/><circle cx="27" cy="30" r="1" fill="#2b2118"/>
   `,
-  // Boss looks — silk robe
+  // Boss looks — designer tracksuit, zipped
   "look-gym": `
     <rect width="48" height="48" fill="${INK}"/>
     <path d="M12 48c1-9 6-12 12-12s11 3 12 12Z" fill="#5a2140"/>
-    <path d="M20 38l4 5 4-5" stroke="#e8dcc3" stroke-width="2" fill="none"/>
+    <path d="M24 38v9" stroke="#e7ebf2" stroke-width="1.8" fill="none"/>
     <path d="M24 22c5 0 7 3 7 8s-3 8-7 8-7-3-7-8 2-8 7-8Z" fill="${SKIN}"/>
     <path d="M17 26c0-6 3-10 7-10s7 4 7 10c1-7-2-11-7-11s-8 4-7 11Z" fill="#3a2c22"/>
     <circle cx="21" cy="30" r="1" fill="#2b2118"/><circle cx="27" cy="30" r="1" fill="#2b2118"/>

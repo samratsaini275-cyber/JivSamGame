@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useGame } from "./ui/hooks";
+import { Game } from "./engine/game";
 import { colorwayByID } from "./engine/data";
 import { rexUnreadCount } from "./engine/rexChat";
 import { Header } from "./ui/Header";
@@ -8,7 +9,7 @@ import { RexScreen } from "./ui/RexChat";
 import { PersonaScreen, PersonaCreation } from "./ui/Persona";
 import { RebrandScreen } from "./ui/Rebrand";
 import { EffectsLayer } from "./ui/Effects";
-import { IconEmpire, IconChat, IconSpark, IconProfile, IconLock, IconMap } from "./ui/Icons";
+import { IconEmpire, IconChat, IconSpark, IconProfile, IconMap } from "./ui/Icons";
 import { Ic } from "./ui/Icon";
 import { Atmosphere } from "./ui/Atmosphere";
 import { money } from "./ui/format";
@@ -17,27 +18,42 @@ import { MapScreen } from "./map/MapScreen";
 import { LawPanel, PrisonOverlay } from "./ui/Law";
 import { CheckpointPopup } from "./ui/Shipment";
 import { GuideLayer } from "./ui/Guide";
-import { CasinoScreen } from "./ui/Casino";
-import { IconCasino } from "./ui/Icons";
-import { CASINO } from "./theme/content";
 
-type Tab = "map" | "empire" | "dms" | "rebrand" | "casino" | "profile";
+type Tab = "map" | "empire" | "dms" | "rebrand" | "profile";
 
 const TABS: { id: Tab; label: string; Icon: (p: { size?: number }) => JSX.Element }[] = [
-  { id: "map", label: LABELS.tabs.map, Icon: IconMap },
   { id: "empire", label: LABELS.tabs.ledger, Icon: IconEmpire },
+  { id: "map", label: LABELS.tabs.map, Icon: IconMap },
   { id: "dms", label: LABELS.tabs.fixer, Icon: IconChat },
   { id: "rebrand", label: LABELS.tabs.family, Icon: IconSpark },
-  { id: "casino", label: CASINO.tabLabel, Icon: IconCasino },
   { id: "profile", label: LABELS.tabs.boss, Icon: IconProfile },
 ];
 
+/** Progressive disclosure: a tab exists only once the game has earned it,
+ *  so Von's guidance carries the early run instead of a wall of chrome. */
+function tabUnlocked(id: Tab, game: Game): boolean {
+  const st = game.state;
+  switch (id) {
+    case "empire":
+    case "profile":
+      return true;
+    case "map": // the operation goes city-scale with a second hustle or a deed
+      return st.hustles[1].unitsOwned > 0 || game.frontLevel("laundromat") > 0 ||
+        st.clout > 0 || st.districtsUnlocked.length > 1;
+    case "dms":
+      return game.rexUnlocked;
+    case "rebrand": // prestige appears once it means something
+      return game.cloutOnRebrand > 0 || st.clout > 0;
+  }
+}
+
 export function App() {
   const game = useGame();
-  const [tab, setTab] = useState<Tab>("map");
+  const [tab, setTab] = useState<Tab>("empire");
   const [lawOpen, setLawOpen] = useState(false);
   const colorway = colorwayByID(game.state.colorway);
   const unread = rexUnreadCount(game);
+  const visibleTabs = TABS.filter(({ id }) => tabUnlocked(id, game));
 
   // Colorway tints the whole UI via CSS variables.
   useEffect(() => {
@@ -45,6 +61,11 @@ export function App() {
     root.style.setProperty("--accent", colorway.accent);
     root.style.setProperty("--accent-deep", colorway.accentDeep);
   }, [colorway.id]);
+
+  // If the active tab disappears (e.g. a fresh run re-locks it), fall home.
+  useEffect(() => {
+    if (!tabUnlocked(tab, game)) setTab("empire");
+  }, [tab, game.version]);
 
   return (
     <div className="stage">
@@ -60,12 +81,11 @@ export function App() {
           {tab === "empire" && <Empire />}
           {tab === "dms" && <RexScreen onGoEmpire={() => setTab("map")} />}
           {tab === "rebrand" && <RebrandScreen />}
-          {tab === "casino" && <CasinoScreen />}
           {tab === "profile" && <PersonaScreen />}
         </main>
 
         <nav className="tab-bar">
-          {TABS.map(({ id, label, Icon }) => (
+          {visibleTabs.map(({ id, label, Icon }) => (
             <button
               key={id}
               className={`tab ${tab === id ? "active" : ""}`}
@@ -74,9 +94,6 @@ export function App() {
               <span className="tab-icon">
                 <Icon />
                 {id === "dms" && unread > 0 && <span className="tab-badge">{unread}</span>}
-                {id === "dms" && !game.rexUnlocked && (
-                  <span className="tab-lock"><IconLock size={10} /></span>
-                )}
               </span>
               <span className="tab-label">{label}</span>
             </button>

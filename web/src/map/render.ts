@@ -1,4 +1,4 @@
-// Procedural vector renderer for the New Carthage map. No bitmap assets —
+// Procedural vector renderer for the Eastport map. No bitmap assets —
 // everything is paths + emoji glyphs, so it stays crisp at any DPI/zoom.
 import { Camera } from "./camera";
 import {
@@ -110,8 +110,8 @@ export class MapFX {
 
 const WATER = "#152b30";
 const WATER_LINE = "rgba(120, 180, 175, 0.16)";
-const ROAD = "rgba(20, 16, 12, 0.35)";
-const LOCKED_LAND = "#4a4436";
+const ROAD = "rgba(10, 13, 18, 0.4)";
+const LOCKED_LAND = "#3e434c";
 
 /** 0 (noon) → 1 (midnight). ~4 minute full cycle. */
 export function nightFactor(now: number): number {
@@ -132,7 +132,7 @@ export function drawScene(
 ): void {
   const night = reducedMotion ? 0.25 : nightFactor(now);
 
-  // The harbor: a lit sea, deep at the horizon, warm brass glimmer up top.
+  // The harbor: a lit sea, deep at the horizon, a cold city glow up top.
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const sea = ctx.createLinearGradient(0, 0, 0, viewH);
   sea.addColorStop(0, "#1a3339");
@@ -140,9 +140,9 @@ export function drawScene(
   sea.addColorStop(1, "#0c1c22");
   ctx.fillStyle = sea;
   ctx.fillRect(0, 0, viewW, viewH);
-  // brass light reflecting off the top of the water
+  // city light reflecting off the top of the water
   const glim = ctx.createRadialGradient(viewW * 0.5, -viewH * 0.15, 0, viewW * 0.5, -viewH * 0.15, viewH * 0.9);
-  glim.addColorStop(0, "rgba(212, 169, 67, 0.14)");
+  glim.addColorStop(0, "rgba(150, 185, 215, 0.11)");
   glim.addColorStop(1, "transparent");
   ctx.fillStyle = glim;
   ctx.fillRect(0, 0, viewW, viewH);
@@ -164,11 +164,11 @@ export function drawScene(
   // engraved chart label in the open water
   ctx.save();
   ctx.textAlign = "center";
-  ctx.font = "24px Limelight, serif";
+  ctx.font = "24px Anton, sans-serif";
   ctx.fillStyle = "rgba(140, 185, 178, 0.22)";
-  ctx.fillText("NEW  CARTHAGE  HARBOR", 1000, 1365);
-  ctx.font = "13px Limelight, serif";
-  ctx.fillText("EST. 1926", 1000, 1385);
+  ctx.fillText("EASTPORT  HARBOR", 1000, 1365);
+  ctx.font = "13px Anton, sans-serif";
+  ctx.fillText("CITY LIMITS", 1000, 1385);
   ctx.restore();
   drawBridges(ctx);
   for (const d of DISTRICTS) {
@@ -284,7 +284,7 @@ function drawActiveShipment(ctx: CanvasRenderingContext2D, game: Game, now: numb
     ctx.fillStyle = PALETTE.paper;
     ctx.fillRect(x - 3, y - 16, 5, 12);
     // wake
-    ctx.strokeStyle = "rgba(232, 220, 195, 0.3)";
+    ctx.strokeStyle = "rgba(231, 235, 242, 0.3)";
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(x - 22, y + 10);
@@ -332,7 +332,7 @@ function drawWaterLines(ctx: CanvasRenderingContext2D, now: number, reduced: boo
 }
 
 function drawBridges(ctx: CanvasRenderingContext2D): void {
-  ctx.strokeStyle = "#3a332a";
+  ctx.strokeStyle = "#343941";
   ctx.lineWidth = 26;
   ctx.lineCap = "round";
   // downtown → islands bridge
@@ -371,15 +371,15 @@ function drawDistrict(
   ctx.fill();
   ctx.restore();
 
-  // Parchment shading on the land: warm top light, cool at the water's edge.
+  // Concrete shading on the land: cold top light, darker at the water's edge.
   const land = ctx.createLinearGradient(x, y, x, y + h);
   if (unlocked) {
-    land.addColorStop(0, "rgba(255, 240, 205, 0.14)");
+    land.addColorStop(0, "rgba(235, 243, 255, 0.13)");
     land.addColorStop(0.5, "rgba(0, 0, 0, 0)");
-    land.addColorStop(1, "rgba(10, 20, 24, 0.28)");
+    land.addColorStop(1, "rgba(10, 16, 24, 0.28)");
   } else {
-    land.addColorStop(0, "rgba(255, 240, 205, 0.05)");
-    land.addColorStop(1, "rgba(10, 20, 24, 0.35)");
+    land.addColorStop(0, "rgba(235, 243, 255, 0.05)");
+    land.addColorStop(1, "rgba(10, 16, 24, 0.35)");
   }
   ctx.fillStyle = land;
   ctx.beginPath();
@@ -407,7 +407,7 @@ function drawDistrict(
     for (let r = 1; r < rows; r++) { ctx.moveTo(x, y + r * ch); ctx.lineTo(x + w, y + r * ch); }
     ctx.stroke();
     // road centre-lines
-    ctx.strokeStyle = "rgba(224, 200, 150, 0.14)";
+    ctx.strokeStyle = "rgba(235, 220, 130, 0.15)";
     ctx.lineWidth = 1;
     ctx.setLineDash([8, 10]);
     ctx.stroke();
@@ -415,13 +415,13 @@ function drawDistrict(
     ctx.restore();
   }
 
-  // deco double keyline border
-  ctx.strokeStyle = unlocked ? "rgba(224, 182, 79, 0.6)" : "rgba(232, 220, 195, 0.2)";
+  // double keyline border
+  ctx.strokeStyle = unlocked ? "rgba(224, 182, 79, 0.6)" : "rgba(231, 235, 242, 0.2)";
   ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.roundRect(x, y, w, h, 26);
   ctx.stroke();
-  ctx.strokeStyle = unlocked ? "rgba(42, 32, 24, 0.55)" : "rgba(0, 0, 0, 0.35)";
+  ctx.strokeStyle = unlocked ? "rgba(8, 12, 18, 0.55)" : "rgba(0, 0, 0, 0.35)";
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.roundRect(x + 7, y + 7, w - 14, h - 14, 20);
@@ -430,7 +430,7 @@ function drawDistrict(
   if (unlocked) {
     // Engraved name plate riveted to the district's top edge.
     const label = d.name.toUpperCase();
-    ctx.font = "15px Limelight, serif";
+    ctx.font = "15px Anton, sans-serif";
     const pw = Math.max(ctx.measureText(label).width + 34, 120);
     const px = x + w / 2 - pw / 2, py = y - 15, ph = 28;
     ctx.fillStyle = "rgba(14, 18, 24, 0.94)";
@@ -443,14 +443,14 @@ function drawDistrict(
     ctx.fillStyle = PALETTE.gold;
     ctx.fillText("◆", px + 13, py + 19);
     ctx.fillText("◆", px + pw - 13, py + 19);
-    ctx.fillStyle = "#efe4c8";
+    ctx.fillStyle = "#eef2f8";
     ctx.fillText(label, x + w / 2, py + 19);
   } else {
     // sepia silhouette + ribbon
-    ctx.fillStyle = "rgba(232, 220, 195, 0.5)";
+    ctx.fillStyle = "rgba(231, 235, 242, 0.5)";
     ctx.fillText(d.name.toUpperCase(), x + w / 2, y + h / 2 - 26);
     ctx.font = "700 12px 'Barlow Condensed', sans-serif";
-    ctx.fillStyle = "rgba(232, 220, 195, 0.4)";
+    ctx.fillStyle = "rgba(231, 235, 242, 0.4)";
     ctx.fillText(MAP_COPY.locked("", d.respectLevel).replace(" — ", ""), x + w / 2, y + h / 2 - 6);
     // ribbon
     const rw = 150, rh = 26;
@@ -468,7 +468,7 @@ function drawDistrict(
 
 function drawCompass(ctx: CanvasRenderingContext2D): void {
   const cx = 90, cy = 120, r = 34;
-  ctx.strokeStyle = "rgba(232, 220, 195, 0.4)";
+  ctx.strokeStyle = "rgba(231, 235, 242, 0.4)";
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.arc(cx, cy, r, 0, Math.PI * 2);
@@ -481,8 +481,8 @@ function drawCompass(ctx: CanvasRenderingContext2D): void {
   ctx.closePath();
   ctx.fillStyle = "rgba(224, 182, 79, 0.55)";
   ctx.fill();
-  ctx.font = "12px Limelight, serif";
-  ctx.fillStyle = "rgba(232, 220, 195, 0.55)";
+  ctx.font = "12px Anton, sans-serif";
+  ctx.fillStyle = "rgba(231, 235, 242, 0.55)";
   ctx.textAlign = "center";
   ctx.fillText("N", cx, cy - r - 8);
 }
@@ -585,7 +585,7 @@ function drawPlot(
 
   // name + status
   ctx.font = "700 11px 'Barlow Condensed', sans-serif";
-  ctx.fillStyle = "rgba(232, 220, 195, 0.85)";
+  ctx.fillStyle = "rgba(231, 235, 242, 0.85)";
   ctx.fillText(plotName(def), def.x, def.y + 13);
 
   if (state === "raided") {
@@ -618,7 +618,7 @@ function drawPlot(
     ctx.save();
     ctx.translate(def.x, y - 10);
     ctx.rotate(-0.06);
-    ctx.fillStyle = `rgba(232, 220, 195, ${pulse})`;
+    ctx.fillStyle = `rgba(231, 235, 242, ${pulse})`;
     ctx.fillRect(-34, -12, 68, 20);
     ctx.strokeStyle = afford ? PALETTE.gold : "rgba(42,32,24,0.7)";
     ctx.lineWidth = afford ? 2.5 : 1.5;

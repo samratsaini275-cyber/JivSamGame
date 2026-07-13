@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Two apps live here
 
-1. **`web/` — "Bootleg Empire"** (Vite + React 18 + TypeScript): the mobile-first web version, re-themed as a 1926 Prohibition mob tycoon with an interactive canvas city map, dirty/clean laundering economy, police heat/prison system, shipments, Respect levels and Legacy prestige. See "The web app" section below.
+1. **`web/` — "Drug Empire"** (Vite + React 18 + TypeScript): the mobile-first web version, themed as a modern-day street-to-cartel drug tycoon (weed corners → coke money → the cartel table) set in the fictional port city of Eastport, with an interactive canvas city map, dirty/clean laundering economy, police heat/prison system, shipments, Respect levels and Legacy prestige. See "The web app" section below.
 2. **`Sources/` — "Drip Empire"** (SwiftPM macOS): the original streetwear-themed idle game. See the Swift sections that follow.
 
 The two share design DNA (same economy math, tick pattern, prestige curve) but have separate codebases and save formats. Work on one does not touch the other.
